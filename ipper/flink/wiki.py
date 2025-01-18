@@ -1,6 +1,7 @@
 import re
 
-from typing import Any, Optional, cast, Union
+from enum import StrEnum
+from typing import Any, Optional, cast, Union, Tuple
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -11,9 +12,11 @@ from ipper.common.wiki import (
     get_wiki_page_info,
     child_page_generator,
 )
+from ipper.common.jira import JiraStatus, get_apache_jira_status
 
-KIP_PATTERN: re.Pattern = re.compile(r"FLIP-(?P<flip>\d+)", re.IGNORECASE)
-RELEASE_NUMBER_PATTERN: re.Pattern = re.compile(r"\d+\.?\d*")
+FLIP_PATTERN: re.Pattern = re.compile(r"FLIP-(?P<flip>\d+)", re.IGNORECASE)
+FLINK_JIRA_PATTERN: re.Pattern = re.compile(r"FLINK-\d+")
+RELEASE_NUMBER_PATTERN: re.Pattern = re.compile(r"(\d+\.?\d*\.?\d*)")
 
 TEMPLATE_BOILER_PLATE_PREFIX = "here (<-"
 
@@ -21,7 +24,9 @@ DISCUSSION_THREAD_KEY = "discussion_thread"
 VOTE_THREAD_KEY = "vote_thread"
 JIRA_ID_KEY = "jira_id"
 JIRA_LINK_KEY = "jira_link"
-RELEASE_KEY = "release"
+RELEASE_COMPONENT_KEY = "release_component"
+RELEASE_VERSION_KEY = "release_version"
+FLINK_COMPONENT_STR = "Flink"
 
 
 def get_flip_main_page_info(timeout: int = 30) -> dict[str, Any]:
@@ -123,23 +128,83 @@ def _add_row_data(header: str, row_data: Tag, flip_dict: dict[str, Union[str, in
 
     if "release" in header:
 
-        result = RELEASE_NUMBER_PATTERN.search(row_data.text)
-        if result:
-            release_number = result.group()
-            if "operator" in row_data.text:
-                release_number = "operator " + release_number
-            flip_dict[RELEASE_KEY] = release_number
+        component, version = _get_release_version(row_data.text)
+
+        if component:
+            flip_dict[RELEASE_COMPONENT_KEY] = component
+            flip_dict[RELEASE_VERSION_KEY] = version
         else:
-            flip_dict[RELEASE_KEY] = NOT_SET_STR
+            flip_dict[RELEASE_COMPONENT_KEY] = NOT_SET_STR
+            flip_dict[RELEASE_COMPONENT_KEY] = version
 
 
-def _determine_state(flip_dict) -> None:
+def _get_release_version(release_row_text) -> Tuple[Optional[str], str]:
+    """ Returns the component (Flink by default) and version the release row refers to."""
 
-    if flip_dict[RELEASE_KEY] != UNKNOWN_STR and flip_dict[RELEASE_KEY] != NOT_SET_STR:
-        flip_dict["state"] = IPState.RELEASED
-        return
+    release_split = RELEASE_NUMBER_PATTERN.split(release_row_text.strip())
 
-    # TODO: figure out the rest of the state algorithm
+    if len(release_split) < 2:
+        # There was no match
+        return None, NOT_SET_STR
+
+    if release_split[0]:
+        component = release_split[0].strip(r"[-_]")
+    else:
+        component = FLINK_COMPONENT_STR
+
+    if len(release_split) == 3:
+        version = release_split[1]
+    else:
+        # We have more than 1 version numbers in the release text so we join them together
+        version = ", ".join(
+            sorted(
+                RELEASE_NUMBER_PATTERN.findall(release_row_text.strip())
+            )
+        )
+
+    return component, version
+
+
+def check_if_set(flip_dict, key):
+
+    if key not in flip_dict:
+        return False
+
+    if flip_dict[key] != UNKNOWN_STR and flip_dict[key] != NOT_SET_STR:
+        return True
+
+    return False
+
+
+def _determine_state(flip_dict) -> IPState:
+
+    has_discussion_thread = check_if_set(flip_dict, DISCUSSION_THREAD_KEY)
+    has_vote_thread = check_if_set(flip_dict, VOTE_THREAD_KEY)
+    has_jira = check_if_set(flip_dict, JIRA_LINK_KEY)
+    has_target_release = check_if_set(flip_dict, RELEASE_VERSION_KEY)
+
+    if has_discussion_thread and not has_jira and not has_target_release:
+        return IPState.UNDER_DISCUSSION
+
+    if has_jira:
+
+        jira_id_match: Optional[re.Match] = FLINK_JIRA_PATTERN.search(flip_dict[JIRA_LINK_KEY])
+        if jira_id_match:
+            jira_id = jira_id_match.group()
+        else:
+            print("WARNING: Could not find JIRA ID from url: " + flip_dict[JIRA_LINK_KEY])
+            return IPState.UNKNOWN
+
+        jira_state: JiraStatus = get_apache_jira_status(jira_id)
+
+        if jira_state == JiraStatus.RESOLVED:
+            return IPState.COMPLETED
+
+        if jira_state in (JiraStatus.OPEN, JiraStatus.IN_PROGRESS):
+            return IPState.IN_PROGRESS
+
+    return IPState.UNKNOWN
+
 
 def _enrich_flip_info(flip_id: int, body_html: str, flip_dict: dict[str, Union[str, int]]) -> None:
     """Parses the body of the FLIP wiki page pointed to by the 'content_url'
@@ -161,7 +226,8 @@ def _enrich_flip_info(flip_id: int, body_html: str, flip_dict: dict[str, Union[s
     # Setup the status entries to default unknown
     flip_dict[DISCUSSION_THREAD_KEY] = UNKNOWN_STR
     flip_dict[VOTE_THREAD_KEY] = UNKNOWN_STR
-    flip_dict[RELEASE_KEY] = UNKNOWN_STR
+    flip_dict[RELEASE_COMPONENT_KEY] = UNKNOWN_STR
+    flip_dict[RELEASE_VERSION_KEY] = UNKNOWN_STR
     flip_dict["state"] = IPState.UNKNOWN
 
     if not tables:
@@ -193,7 +259,7 @@ def _enrich_flip_info(flip_id: int, body_html: str, flip_dict: dict[str, Union[s
         if row_data:
             _add_row_data(header, row_data, flip_dict)
 
-    _determine_state(flip_dict)
+    flip_dict["state"] = _determine_state(flip_dict)
 
 
 def process_child_kip(flip_id: int, child: dict):
@@ -225,7 +291,7 @@ def get_flip_information(
     output = {}
 
     for child in child_page_generator(flip_main_info, chunk, timeout):
-        flip_match: Optional[re.Match] = re.search(KIP_PATTERN, child["title"])
+        flip_match: Optional[re.Match] = re.search(FLIP_PATTERN, child["title"])
         if flip_match:
             flip_id: int = int(flip_match.groupdict()["flip"])
             if flip_id not in output:
