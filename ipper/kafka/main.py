@@ -15,12 +15,10 @@ from ipper.kafka.output import render_standalone_status_page
 from ipper.kafka.wiki import get_kip_information, get_kip_main_page_info
 
 
-def setup_kafka_parser(top_level_parser: ArgumentParser) -> None:
+def setup_kafka_parser(top_level_subparsers) -> None:
     """Add the kafka subcommands to the supplied top level subparser"""
 
-    top_level_subparsers = top_level_parser.add_subparsers()
-
-    kafka_parser: ArgumentParser = top_level_subparsers.add_parser("kafka")
+    kafka_parser = top_level_subparsers.add_parser("kafka")
     kafka_parser.set_defaults(func=lambda _: print(kafka_parser.format_help()))
 
     main_subparser = kafka_parser.add_subparsers(

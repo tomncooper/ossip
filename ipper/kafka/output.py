@@ -9,10 +9,10 @@ from pandas import DataFrame, Series, Timestamp, Timedelta, to_datetime
 from jinja2 import Template, Environment, FileSystemLoader
 
 from ipper.common.utils import calculate_age
+from ipper.common.constants import IPState
+from ipper.common.wiki import APACHE_CONFLUENCE_DATE_FORMAT
 from ipper.kafka.mailing_list import get_most_recent_mention_by_type
 from ipper.kafka.wiki import (
-    UNDER_DISCUSSION,
-    WIKI_DATE_FORMAT,
     get_kip_information,
     get_kip_main_page_info,
 )
@@ -59,7 +59,7 @@ def clean_description(description: str):
 
     kip_match: Optional[re.Match] = re.match(KIP_SPLITTER, description)
     if kip_match:
-        return description[kip_match.span()[1] :].strip()
+        return description[kip_match.span()[1]:].strip()
 
     return description
 
@@ -101,13 +101,15 @@ def create_status_dict(
     output: List[Dict[str, Union[int, str, KIPStatus, List[str]]]] = []
     for kip_id in sorted(kip_wiki_info.keys(), reverse=True):
         kip_data: Dict[str, Union[int, str]] = kip_wiki_info[kip_id]
-        if kip_data["state"] == UNDER_DISCUSSION:
+        if kip_data["state"] == IPState.UNDER_DISCUSSION:
             status_entry: Dict[str, Union[int, str, KIPStatus, List[str]]] = {}
             status_entry["id"] = kip_id
             status_entry["text"] = clean_description(cast(str, kip_data["title"]))
             status_entry["url"] = kip_data["web_url"]
             status_entry["created_by"] = kip_data["created_by"]
-            status_entry["age"] = calculate_age(cast(str, kip_data["created_on"]), WIKI_DATE_FORMAT)
+            status_entry["age"] = calculate_age(
+                cast(str, kip_data["created_on"]), APACHE_CONFLUENCE_DATE_FORMAT
+            )
 
             if kip_id in subject_mentions:
                 status_entry["status"] = calculate_status(subject_mentions[kip_id])
@@ -115,7 +117,7 @@ def create_status_dict(
                 created_diff: dt.timedelta = dt.datetime.now(
                     dt.timezone.utc
                 ) - dt.datetime.strptime(
-                    cast(str, kip_data["created_on"]), WIKI_DATE_FORMAT
+                    cast(str, kip_data["created_on"]), APACHE_CONFLUENCE_DATE_FORMAT
                 ).replace(
                     tzinfo=dt.timezone.utc
                 )
@@ -153,6 +155,8 @@ def render_standalone_status_page(
     kip_status: List[
         Dict[str, Union[int, str, KIPStatus, List[str]]]
     ] = create_status_dict(kip_mentions, kip_wiki_info)
+
+    breakpoint()
 
     template: Template = Environment(loader=FileSystemLoader(templates_dir)).get_template(
         template_filename
