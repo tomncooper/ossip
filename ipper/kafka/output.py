@@ -9,7 +9,7 @@ from pandas import DataFrame, Series, Timestamp, Timedelta, to_datetime
 from jinja2 import Template, Environment, FileSystemLoader
 
 from ipper.common.utils import calculate_age
-from ipper.common.constants import IPState
+from ipper.common.constants import IPState, DATE_FORMAT, DEFAULT_TEMPLATES_DIR
 from ipper.common.wiki import APACHE_CONFLUENCE_DATE_FORMAT
 from ipper.kafka.mailing_list import get_most_recent_mention_by_type
 from ipper.kafka.wiki import (
@@ -18,6 +18,8 @@ from ipper.kafka.wiki import (
 )
 
 KIP_SPLITTER: re.Pattern = re.compile(r"KIP-\d+\W?[:-]?\W?", re.IGNORECASE)
+
+KAFKA_MAIN_PAGE_TEMPLATE = "kafka-index.html.jinja"
 
 
 class KIPStatus(Enum):
@@ -140,8 +142,8 @@ def create_status_dict(
 def render_standalone_status_page(
     kip_mentions: DataFrame,
     output_filename: str,
-    templates_dir: str = "templates",
-    template_filename: str = "kafka-index.html.jinja",
+    templates_dir: str = DEFAULT_TEMPLATES_DIR,
+    template_filename: str = KAFKA_MAIN_PAGE_TEMPLATE,
 ) -> None:
     """Renders the KIPs under discussion table with a status entry based on
     how recently the KIP was mentioned in an email subject line."""
@@ -156,8 +158,6 @@ def render_standalone_status_page(
         Dict[str, Union[int, str, KIPStatus, List[str]]]
     ] = create_status_dict(kip_mentions, kip_wiki_info)
 
-    breakpoint()
-
     template: Template = Environment(loader=FileSystemLoader(templates_dir)).get_template(
         template_filename
     )
@@ -165,7 +165,7 @@ def render_standalone_status_page(
     output: str = template.render(
         kip_status=kip_status,
         kip_status_enum=KIPStatus,
-        date=dt.datetime.now(dt.timezone.utc).strftime("%Y/%m/%d %H:%M:%S %Z"),
+        date=dt.datetime.now(dt.timezone.utc).strftime(DATE_FORMAT),
     )
 
     with open(output_path, "w", encoding="utf8") as out_file:

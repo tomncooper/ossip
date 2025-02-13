@@ -1,6 +1,5 @@
 import re
 
-from enum import StrEnum
 from typing import Any, Optional, cast, Union, Tuple
 
 from bs4 import BeautifulSoup
@@ -199,6 +198,10 @@ def _determine_state(flip_dict) -> IPState:
 
         if jira_state == JiraStatus.RESOLVED:
             return IPState.COMPLETED
+
+        if jira_id_match == JiraStatus.CLOSED:
+            if has_target_release:
+                return IPState.COMPLETED
 
         if jira_state in (JiraStatus.OPEN, JiraStatus.IN_PROGRESS):
             return IPState.IN_PROGRESS

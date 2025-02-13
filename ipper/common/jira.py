@@ -7,11 +7,11 @@ APACHE_JIRA_URL = "https://issues.apache.org/jira"
 
 class JiraStatus(StrEnum):
 
-    OPEN: str = "open"
-    IN_PROGRESS: str = "in progress"
-    RESOLVED: str = "resolved"
-    CLOSED: str = "closed"
-    UNKNOWN: str = "unknown"
+    OPEN = "open"
+    IN_PROGRESS = "in progress"
+    RESOLVED = "resolved"
+    CLOSED = "closed"
+    UNKNOWN = "unknown"
 
     @classmethod
     def getStatus(cls, status: str):

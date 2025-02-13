@@ -2,4 +2,6 @@
 *.mbox
 *.csv
 *.json
+
 site_files/*
+cache/*

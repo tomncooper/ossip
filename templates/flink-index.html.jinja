@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Flink Improvement Proposals</title>
+    <style type="text/css">
+        
+        html * {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        tr:hover {
+          background-color:#CCE6FF;
+        }
+
+        /* Tooltip container */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted black;
+            /* If you want dots under the hoverable text */
+        }
+
+        /* Tooltip text */
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: black;
+            color: #fff;
+            text-align: center;
+            padding: 5px 0;
+            border-radius: 6px;
+
+
+            /* Position the tooltip text - see examples below! */
+            position: absolute;
+            z-index: 1;
+            top: -5px;
+            right: 105%;
+        }
+
+        /* Show the tooltip text when you mouse over the tooltip container */
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Flink Improvement Proposals (FLIPs)</h1>
+    <p><a href="index.html">Back to OSSIP</a></p>
+    <p>GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></p>
+    <p>Last Updated: {{ date }}</p>
+    <table>
+        <tr>
+            <th>FLIP</th>
+            <th>Description</th>
+            <th>Created by</th>
+            <th>State</th>
+            <th>JIRA</th>
+        </tr>
+        {% for flip in flip_data %}
+        <tr>
+            <td><a href={{ flip['web_url'] }}>{{ flip['id'] }}</a></td>
+            <td>{{ flip['title'] }}
+            <td>{{ flip['created_by'] }}</td>
+            <td>{{ flip["state"] }}</td>
+            <td><a href={{ flip['jira_link'] }}>{{ flip['jira_id'] }}</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>
