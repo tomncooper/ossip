@@ -6,9 +6,14 @@ from pathlib import Path
 
 from ipper.flink.wiki import (
     get_flip_main_page_info,
-    get_flip_information
+    get_flip_information,
 )
-from ipper.flink.output import render_flink_main_page, FLINK_MAIN_PAGE_TEMPLATE
+from ipper.flink.output import (
+    render_flink_main_page,
+    render_raw_info_pages,
+    FLINK_MAIN_PAGE_TEMPLATE,
+    FLIP_RAW_INFO_PAGE_TEMPLATE,
+)
 from ipper.common.constants import DEFAULT_TEMPLATES_DIR
 
 FLIP_CACHE_FILENAME = "flip_wiki_cache.json"
@@ -55,9 +60,16 @@ def process_output(args: Namespace) -> None:
 
     render_flink_main_page(
         wiki_cache_data,
-        args.output_file,
+        args.main_page_file,
         args.template_dir,
-        args.template_filename,
+        args.main_page_template_filename,
+    )
+
+    render_raw_info_pages(
+        wiki_cache_data,
+        args.raw_flip_dir,
+        args.template_dir,
+        args.raw_flip_template_filename,
     )
 
 
@@ -114,7 +126,11 @@ def setup_output_command(main_subparser):
     )
 
     output_parser.add_argument(
-        "output_file", help="The path to the output html file"
+        "main_page_file", help="The path to the main Flink index html file"
+    )
+    
+    output_parser.add_argument(
+        "raw_flip_dir", help="The path to the directory for storing the raw flip information files"
     )
 
     output_parser.add_argument(
@@ -123,8 +139,13 @@ def setup_output_command(main_subparser):
     )
 
     output_parser.add_argument(
-        "--template_filename", required=False, default=FLINK_MAIN_PAGE_TEMPLATE,
-        help="Name of the flink main page template inside the template directory",
+        "--main_page_template_filename", required=False, default=FLINK_MAIN_PAGE_TEMPLATE,
+        help="Name of the flink main page template, inside the template directory",
+    )
+    
+    output_parser.add_argument(
+        "--raw_flip_template_filename", required=False, default=FLIP_RAW_INFO_PAGE_TEMPLATE,
+        help="Name of the template for the raw flip info pages, inside the template directory",
     )
 
     output_parser.set_defaults(func=process_output)

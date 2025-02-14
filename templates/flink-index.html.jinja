@@ -60,17 +60,35 @@
         <tr>
             <th>FLIP</th>
             <th>Description</th>
+            <th>Component</th>
+            <th>Target Release</th>
             <th>Created by</th>
             <th>State</th>
             <th>JIRA</th>
+            <th>Raw Data</th>
         </tr>
         {% for flip in flip_data %}
         <tr>
             <td><a href={{ flip['web_url'] }}>{{ flip['id'] }}</a></td>
             <td>{{ flip['title'] }}
+            {% if flip["release_component"] == "not set" or flip["release_component"] == "unknown" %}
+            <td></td>
+            {% else %}
+            <td>{{ flip['release_component'] }}
+            {% endif %}
+            {% if flip["release_version"] == "not set" or flip["release_version"] == "unknown" %}
+            <td></td>
+            {% else %}
+            <td>{{ flip['release_version'] }}
+            {% endif %}
             <td>{{ flip['created_by'] }}</td>
             <td>{{ flip["state"] }}</td>
+            {% if flip["jira_id"] == "not set" %}
+            <td></td>
+            {% else %}
             <td><a href={{ flip['jira_link'] }}>{{ flip['jira_id'] }}</a></td>
+            {% endif %}
+            <td><a href=flips/FLIP-{{ flip['id'] }}.html>info</a></td>
         </tr>
         {% endfor %}
     </table>

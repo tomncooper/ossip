@@ -30,6 +30,9 @@ jobs:
       
       - name: Download and process KIP data
         run: python ipper/main.py kafka init --days 365
+      
+      - name: Download and process FLIP data
+        run: python ipper/main.py flink wiki download
 
       - name: Copy main page to site_files
         run: |
@@ -40,7 +43,7 @@ jobs:
         run: python ipper/main.py kafka output standalone dev/kip_mentions.csv site_files/kafka.html
 
       - name: Build the Flink site
-        run: cp templates/flink-index.html site_files/flink.html
+        run: python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips 
      
       - name: Upload static files as artifact
         id: deployment

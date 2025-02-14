@@ -129,12 +129,16 @@ def _add_row_data(header: str, row_data: Tag, flip_dict: dict[str, Union[str, in
 
         component, version = _get_release_version(row_data.text)
 
+        print("\tTarget Release:")
+        print(f"\t\tComponent:\t\t{component}")
+        print(f"\t\tVersion:\t\t{version}")
+
         if component:
             flip_dict[RELEASE_COMPONENT_KEY] = component
-            flip_dict[RELEASE_VERSION_KEY] = version
         else:
             flip_dict[RELEASE_COMPONENT_KEY] = NOT_SET_STR
-            flip_dict[RELEASE_COMPONENT_KEY] = version
+
+        flip_dict[RELEASE_VERSION_KEY] = version
 
 
 def _get_release_version(release_row_text) -> Tuple[Optional[str], str]:
@@ -146,10 +150,10 @@ def _get_release_version(release_row_text) -> Tuple[Optional[str], str]:
         # There was no match
         return None, NOT_SET_STR
 
+    component = FLINK_COMPONENT_STR
+
     if release_split[0]:
         component = release_split[0].strip(r"[-_]")
-    else:
-        component = FLINK_COMPONENT_STR
 
     if len(release_split) == 3:
         version = release_split[1]
@@ -182,7 +186,14 @@ def _determine_state(flip_dict) -> IPState:
     has_jira = check_if_set(flip_dict, JIRA_LINK_KEY)
     has_target_release = check_if_set(flip_dict, RELEASE_VERSION_KEY)
 
+    print("\tDetermining state:")
+    print(f"\t\tDiscussion Thread:\t{has_discussion_thread}")
+    print(f"\t\tVote Thread:\t\t{has_vote_thread}")
+    print(f"\t\tJIRA:\t\t\t{has_jira}")
+    print(f"\t\tTarget Release:\t\t{has_target_release}")
+
     if has_discussion_thread and not has_jira and not has_target_release:
+        print(f"\t\tFLIP State:\t\t{IPState.UNDER_DISCUSSION}")
         return IPState.UNDER_DISCUSSION
 
     if has_jira:
@@ -192,18 +203,26 @@ def _determine_state(flip_dict) -> IPState:
             jira_id = jira_id_match.group()
         else:
             print("WARNING: Could not find JIRA ID from url: " + flip_dict[JIRA_LINK_KEY])
+            print(f"\t\tFLIP State:\t\t{IPState.UNKNOWN}")
             return IPState.UNKNOWN
 
         jira_state: JiraStatus = get_apache_jira_status(jira_id)
+        print(f"\t\tJIRA State:\t\t{jira_state}")
 
         if jira_state == JiraStatus.RESOLVED:
+            print(f"\t\tFLIP State:\t\t{IPState.COMPLETED}")
             return IPState.COMPLETED
 
-        if jira_id_match == JiraStatus.CLOSED:
+        if jira_state == JiraStatus.CLOSED:
             if has_target_release:
+                print(f"\t\tFLIP State:\t\t{IPState.COMPLETED}")
                 return IPState.COMPLETED
 
+            print(f"\t\tFLIP State:\t\t{IPState.NOT_ACCEPTED}")
+            return IPState.NOT_ACCEPTED
+
         if jira_state in (JiraStatus.OPEN, JiraStatus.IN_PROGRESS):
+            print(f"\t\tFLIP State:\t\t{IPState.IN_PROGRESS}")
             return IPState.IN_PROGRESS
 
     return IPState.UNKNOWN
