@@ -34,10 +34,11 @@ jobs:
       - name: Download and process FLIP data
         run: python ipper/main.py flink wiki download
 
-      - name: Copy main page to site_files
+      - name: Copy static page to site_files
         run: |
           mkdir site_files
           cp templates/index.html site_files
+          cp templates/style.css site_files
 
       - name: Build the Kafka site
         run: python ipper/main.py kafka output standalone cache/mailbox_files/kip_mentions.csv site_files/kafka.html
