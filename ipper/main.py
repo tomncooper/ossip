@@ -13,7 +13,7 @@ def setup_top_level_parser() -> ArgumentParser:
         description="Ipper - The Improvement Proposal Enrichment program",
     )
     top_level_parser.set_defaults(func=lambda _: print(top_level_parser.format_help()))
-    
+
     top_level_subparsers = top_level_parser.add_subparsers()
 
     setup_kafka_parser(top_level_subparsers)

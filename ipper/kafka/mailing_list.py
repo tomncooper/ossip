@@ -30,7 +30,7 @@ KIP_MENTION_COLUMNS = [
     "from",
     "vote",
 ]
-CACHE_DIR = "cache"
+CACHE_DIR = "kafka_processed_mailbox_cache"
 CACHE_SUFFIX = ".cache.csv"
 
 

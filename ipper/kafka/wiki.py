@@ -151,7 +151,7 @@ def get_kip_information(
     chunk: int = 100,
     update: bool = False,
     overwrite_cache: bool = False,
-    cache_filepath: str = "kip_wiki_cache.json",
+    cache_filepath: str = "cache/kip_wiki_cache.json",
     timeout: int = 30,
 ) -> dict[int, dict[str, Union[int, str]]]:
     """Gets the details of all child pages of the KIP main page that relate
@@ -170,6 +170,7 @@ def get_kip_information(
         if not update:
             return output
     else:
+        cache_file_path.parent.mkdir(parents=True, exist_ok=True)
         output = {}
 
     if cache_file_path.exists() and update:

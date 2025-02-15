@@ -261,9 +261,10 @@ def run_init_cmd(args: Namespace) -> None:
     setup_wiki_download(args)
     print("Downloading Developer Mailing List Archives")
     args.mailing_list = "dev"
+    args.output_dir = "cache/mailbox_files"
     setup_mail_download(args)
     args.overwrite_cache = True
-    args.directory = "dev"
+    args.directory = "cache/mailbox_files"
     process_mail_archives(args)
 
 
@@ -280,11 +281,11 @@ def run_update_cmd(args: Namespace) -> None:
     args.mailing_list = "dev"
     updated_files: List[Path] = setup_mail_download(args)
     # Reprocess just the newly downloaded mail file
-    cache_dir: Path = Path("dev").joinpath(CACHE_DIR)
+    cache_dir: Path = Path("cache").joinpath(CACHE_DIR)
     process_mbox_files(updated_files, cache_dir, overwrite_cache=True)
     # Overwrite the kip mentions cache by process all the old mbox cache files
     # and the newly overwritten one(s)
-    args.directory = "dev"
+    args.directory = "cache"
     args.overwrite_cache = False
     process_mail_archives(args)
 
