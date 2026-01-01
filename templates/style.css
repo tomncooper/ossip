@@ -15,7 +15,9 @@ tr:hover {
 /* Tooltip container */
 .tooltip {
     position: relative;
-    display: inline-block;
+    display: block;
+    width: 100%;
+    height: 100%;
     border-bottom: 1px dotted black;
     /* If you want dots under the hoverable text */
 }

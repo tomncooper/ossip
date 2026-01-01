@@ -10,19 +10,6 @@
     <p><a href="index.html">Back to OSSIP</a></p>
     <p>GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></p>
     <p>Last Updated: {{ date }}</p>
-    <h2>Status Key</h2>
-    <table>
-        <tr>
-            <th>Status</th>
-            <th>Mentioned within the last N days</th>
-        </tr>
-        {% for status in kip_status_enum %}
-        <tr>
-            <td style="background-color:{{ status.text }};"></td>
-            <td>{{ status.duration.days }}</td>
-        </tr>
-        {% endfor %}
-    </table>
     <h2>KIPs Under Discussion</h2>
     <table>
         <tr>
@@ -39,7 +26,11 @@
         <tr>
             <td><a href={{ kip['url'] }}>{{ kip['id'] }}</a></td>
             <td>{{ kip['text'] }}
-            <td style="background-color:{{ kip['status'].text }};"></td>
+            <td style="background-color:{{ kip['status'].text }};">
+                <div class="tooltip">&nbsp;
+                    <span class="tooltiptext">Mentioned within the last {{ kip['status'].duration.days }} days</span>
+                </div>
+            </td>
             {% if kip["+1"] %}
             <td style="background-color:green;">
                 <div class="tooltip">{{ kip["+1"]|length }}
