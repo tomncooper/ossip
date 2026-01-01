@@ -3,10 +3,11 @@ _A hub for Open Source Software Improvement Proposals_
 
 [ossip.dev](https://ossip.dev/)
 
-This repo holds a collection of scripts for making a more enriched version of the Improvement Proposals from various open source projects.
+This repo holds scripts for generating a website which collects and enriches the Improvement Proposals (IPs) from various open source software (OSS) projects (hence the name).
+
 Currently supported projects are:
-- [Apache Kafka](https://kafka.apache.org/) project's [Kafka Improvement Proposal (KIP)](https://cwiki.apache.org/confluence/display/kafka/kafka+improvement+proposals)
-- [Apache Flink](https://flink.apache.org/)'s [FLIP](https://cwiki.apache.org/confluence/display/FLINK/Flink+Improvement+Proposals)
+- [Apache Kafka](https://kafka.apache.org/) project's [Kafka Improvement Proposals (KIPs)](https://cwiki.apache.org/confluence/display/kafka/kafka+improvement+proposals)
+- [Apache Flink](https://flink.apache.org/) project's [Flink Improvement Proposals (FLIPs)](https://cwiki.apache.org/confluence/display/FLINK/Flink+Improvement+Proposals)
 
 ## Development
 
@@ -43,7 +44,21 @@ $ uv run python ipper/main.py flink wiki download --update --refresh-days 60
 
 The `--update` flag will update existing cached data, and `--refresh-days` specifies how many days back to refresh.
 
-### Creating the standalone site
+### Building the site
+
+#### Quick Local Build
+
+For convenience, a `local_build.sh` script is provided that automates the entire build process:
+
+```bash
+# Full build (updates data + generates HTML)
+$ ./local_build.sh
+
+# Render-only build (skips data updates, only regenerates HTML from cached data)
+$ ./local_build.sh --render-only
+```
+
+#### Manual Build Steps
 
 To create the standalone Kafka site html run the command below where the first argument is the kip mentions cache file produced by the step above and the second is the html output filepath:
 
