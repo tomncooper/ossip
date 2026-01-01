@@ -10,6 +10,7 @@ from ipper.kafka.mailing_list import (
     process_all_mbox_in_directory,
     CACHE_DIR,
     process_mbox_files,
+    update_kip_mentions_cache,
 )
 from ipper.kafka.output import render_standalone_status_page
 from ipper.kafka.wiki import get_kip_information, get_kip_main_page_info
@@ -27,6 +28,7 @@ def setup_kafka_parser(top_level_subparsers) -> None:
     )
     setup_init_command(main_subparser)
     setup_update_command(main_subparser)
+    setup_refresh_command(main_subparser)
     setup_mail_command(main_subparser)
     setup_wiki_command(main_subparser)
     setup_output_command(main_subparser)
@@ -77,6 +79,17 @@ def setup_update_command(main_subparser) -> None:
     )
 
     update_parser.set_defaults(func=run_update_cmd)
+
+
+def setup_refresh_command(main_subparser) -> None:
+    """Setup the 'refresh' command parser"""
+
+    refresh_parser = main_subparser.add_parser(
+        "refresh",
+        help="Command for regenerating outputs from existing cache files without downloading",
+    )
+
+    refresh_parser.set_defaults(func=run_refresh_cmd)
 
 
 def setup_mail_command(main_subparser) -> None:
@@ -222,11 +235,15 @@ def setup_mail_download(args: Namespace) -> List[Path]:
     else:
         out_dir = args.output_dir
 
+    use_metadata = getattr(args, "use_metadata", False)
+    days = getattr(args, "days", None)
+
     files: List[Path] = get_multiple_mbox(
         args.mailing_list,
-        args.days,
+        days_back=days,
         output_directory=out_dir,
         overwrite=args.overwrite,
+        use_metadata=use_metadata,
     )
 
     return files
@@ -262,6 +279,7 @@ def run_init_cmd(args: Namespace) -> None:
     print("Downloading Developer Mailing List Archives")
     args.mailing_list = "dev"
     args.output_dir = "cache/mailbox_files"
+    args.use_metadata = True  # Enable metadata tracking even for init
     setup_mail_download(args)
     args.overwrite_cache = True
     args.directory = "cache/mailbox_files"
@@ -269,23 +287,33 @@ def run_init_cmd(args: Namespace) -> None:
 
 
 def run_update_cmd(args: Namespace) -> None:
-    print("Updating all data caches")
+    print("Updating all data caches (incremental mode)")
     print("Updating KIP Wiki Information")
     args.update = True
     args.overwrite = False
+    args.chunk = 100  # Default chunk size for wiki download
     setup_wiki_download(args)
+    
     print("Updating Developer Mailing List Archives")
-    # Re-download the most recent months archive
-    args.days = 1
-    args.overwrite = True
+    # Use metadata to download only new months
     args.mailing_list = "dev"
+    args.output_dir = "cache/mailbox_files"
+    args.overwrite = True
+    args.use_metadata = True
+    args.days = None  # Let metadata determine what to download
+    
     updated_files: List[Path] = setup_mail_download(args)
-    # Reprocess just the newly downloaded mail file
-    cache_dir: Path = Path("cache").joinpath(CACHE_DIR)
-    process_mbox_files(updated_files, cache_dir, overwrite_cache=True)
-    # Overwrite the kip mentions cache by process all the old mbox cache files
-    # and the newly overwritten one(s)
-    args.directory = "cache"
+    
+    # Update kip_mentions.csv by appending new data
+    output_file = Path("cache/mailbox_files/kip_mentions.csv")
+    mbox_directory = Path("cache/mailbox_files")
+    update_kip_mentions_cache(updated_files, output_file, mbox_directory)
+
+
+def run_refresh_cmd(args: Namespace) -> None:
+    print("Refreshing outputs from existing cache files")
+    # Regenerate kip_mentions.csv from all existing cache files
+    args.directory = "cache/mailbox_files"
     args.overwrite_cache = False
     process_mail_archives(args)
 

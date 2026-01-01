@@ -1,10 +1,15 @@
 *.pyc
 *.mbox
-*.csv
-*.json
 
 site_files/*
-cache/*
+
+# Allow cache files to be committed
+!cache/
+!cache/**/*.csv
+!cache/**/*.json
+
+# But ignore the intermediate processed mbox cache files
+cache/**/kafka_processed_mailbox_cache/
 
 # uv
 .venv/

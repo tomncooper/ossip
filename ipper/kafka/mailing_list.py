@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import datetime as dt
 
 from typing import Dict, List, Tuple, Optional, Union, Set, cast
@@ -32,6 +33,7 @@ KIP_MENTION_COLUMNS = [
 ]
 CACHE_DIR = "kafka_processed_mailbox_cache"
 CACHE_SUFFIX = ".cache.csv"
+METADATA_FILE = "kip_mentions_metadata.json"
 
 
 class KIPMentionType(Enum):
@@ -104,12 +106,16 @@ def get_monthly_mbox_file(
 
 def get_multiple_mbox(
     mailing_list: str,
-    days_back: int,
+    days_back: Optional[int] = None,
     output_directory: Optional[str] = None,
     overwrite: bool = False,
+    use_metadata: bool = False,
 ) -> List[Path]:
-    """Gets all monthly mbox archives from the specified mailing list over the specified
-    number of days into the past"""
+    """Gets all monthly mbox archives from the specified mailing list.
+    
+    If use_metadata is True and metadata exists, downloads only new months since last update.
+    Otherwise downloads based on days_back parameter.
+    """
 
     if not output_directory:
         output_directory = mailing_list
@@ -119,14 +125,23 @@ def get_multiple_mbox(
     if not output_dir.exists():
         os.mkdir(output_dir)
 
-    now: dt.datetime = dt.datetime.now(dt.timezone.utc)
-    then: dt.datetime = now - dt.timedelta(days=days_back)
-
-    print(f"Downloading mail archives for mailing list {mailing_list} between {then.isoformat()} and {now.isoformat()}")
-
-    month_list: List[Tuple[int, int]] = generate_month_list(now, then)
+    metadata_path: Path = output_dir.parent.joinpath(METADATA_FILE)
+    
+    month_list: List[Tuple[int, int]]
+    if use_metadata:
+        month_list = get_months_to_download(metadata_path, days_back)
+    else:
+        if days_back is None:
+            days_back = 365
+        now: dt.datetime = dt.datetime.now(dt.timezone.utc)
+        then: dt.datetime = now - dt.timedelta(days=days_back)
+        print(f"Downloading mail archives for mailing list {mailing_list} between {then.isoformat()} and {now.isoformat()}")
+        month_list = generate_month_list(now, then)
 
     filepaths: List[Path] = []
+    latest_year = 0
+    latest_month = 0
+    
     for year, month in month_list:
         print(f"Downloading {mailing_list} archive for {month}/{year}")
         filepath = get_monthly_mbox_file(
@@ -137,8 +152,74 @@ def get_multiple_mbox(
             overwrite=overwrite,
         )
         filepaths.append(filepath)
+        
+        # Track the most recent month
+        if year > latest_year or (year == latest_year and month > latest_month):
+            latest_year = year
+            latest_month = month
+    
+    # Update metadata if using metadata mode
+    if use_metadata and latest_year > 0:
+        save_metadata(metadata_path, latest_year, latest_month)
 
     return filepaths
+
+
+def save_metadata(metadata_path: Path, year: int, month: int) -> None:
+    """Save metadata about the last processed mbox file"""
+    
+    metadata = {
+        "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "latest_mbox_year": year,
+        "latest_mbox_month": month,
+    }
+    
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=2)
+    
+    print(f"Updated metadata: {metadata}")
+
+
+def load_metadata(metadata_path: Path) -> Optional[Dict[str, Union[str, int]]]:
+    """Load metadata about the last processed mbox file"""
+    
+    if not metadata_path.exists():
+        return None
+    
+    with open(metadata_path, "r") as f:
+        metadata = json.load(f)
+    
+    return metadata
+
+
+def get_months_to_download(metadata_path: Path, days_back: Optional[int] = None) -> List[Tuple[int, int]]:
+    """Determine which months need to be downloaded based on metadata.
+    
+    If metadata exists and days_back is None, downloads from last update to now.
+    If metadata doesn't exist or days_back is specified, downloads last days_back days.
+    """
+    
+    now: dt.datetime = dt.datetime.now(dt.timezone.utc)
+    
+    metadata = load_metadata(metadata_path)
+    
+    if metadata and days_back is None:
+        # Incremental update: download from last update to now
+        last_year = metadata["latest_mbox_year"]
+        last_month = metadata["latest_mbox_month"]
+        
+        # Start from the last processed month (re-download it to catch any late emails)
+        then = dt.datetime(last_year, last_month, 1, tzinfo=dt.timezone.utc)
+        print(f"Incremental update from {then.isoformat()} to {now.isoformat()}")
+    else:
+        # Full download: use days_back
+        if days_back is None:
+            days_back = 365
+        then = now - dt.timedelta(days=days_back)
+        print(f"Full download for last {days_back} days")
+    
+    return generate_month_list(now, then)
 
 
 def parse_message_timestamp(date_str) -> Optional[dt.datetime]:
@@ -435,6 +516,53 @@ def process_all_mbox_in_directory(
     output: DataFrame = process_mbox_files(mbox_files, cache_dir, overwrite_cache)
 
     return output
+
+
+def update_kip_mentions_cache(
+    new_mbox_files: List[Path], 
+    output_file: Path,
+    mbox_directory: Path
+) -> DataFrame:
+    """Update the kip mentions cache by processing new mbox files and appending to existing cache.
+    
+    Args:
+        new_mbox_files: List of newly downloaded mbox files to process
+        output_file: Path to the kip_mentions.csv file
+        mbox_directory: Directory containing mbox files
+    
+    Returns:
+        The updated DataFrame with all mentions
+    """
+    
+    # Load existing kip_mentions.csv if it exists
+    if output_file.exists():
+        print(f"Loading existing KIP mentions from {output_file}")
+        existing_mentions: DataFrame = load_mbox_cache_file(output_file)
+    else:
+        print("No existing KIP mentions file found, starting fresh")
+        existing_mentions = DataFrame(columns=KIP_MENTION_COLUMNS)
+    
+    # Process new mbox files directly (no intermediate cache)
+    print(f"Processing {len(new_mbox_files)} new mbox file(s)")
+    new_mentions: DataFrame = DataFrame(columns=KIP_MENTION_COLUMNS)
+    
+    for mbox_file in new_mbox_files:
+        print(f"Processing {mbox_file.name}")
+        try:
+            file_data = process_mbox_archive(mbox_file)
+            new_mentions = concat((new_mentions, file_data), ignore_index=True)
+        except Exception as ex:
+            print(f"ERROR processing file {mbox_file.name}: {ex}")
+    
+    # Combine and deduplicate
+    combined: DataFrame = concat((existing_mentions, new_mentions), ignore_index=True)
+    combined = combined.drop_duplicates()
+    
+    # Save updated cache
+    combined.to_csv(output_file, index=False)
+    print(f"Saved updated KIP mentions to {output_file} ({len(combined)} total mentions)")
+    
+    return combined
 
 
 def get_most_recent_mentions(kip_mentions: DataFrame) -> DataFrame:

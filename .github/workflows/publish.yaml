@@ -28,8 +28,8 @@ jobs:
       - name: Install dependencies
         run: uv sync
       
-      - name: Download and process KIP data
-        run: uv run python ipper/main.py kafka init --days 365
+      - name: Update KIP data (incremental)
+        run: uv run python ipper/main.py kafka update
       
       - name: Download and process FLIP data
         run: uv run python ipper/main.py flink wiki download
@@ -45,6 +45,13 @@ jobs:
 
       - name: Build the Flink site
         run: uv run python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips 
+      
+      - name: Commit updated cache files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cache/
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update KIP mentions cache [skip ci]" && git push)
      
       - name: Upload static files as artifact
         id: deployment
