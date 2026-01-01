@@ -5,3 +5,7 @@
 
 site_files/*
 cache/*
+
+# uv
+.venv/
+uv.lock

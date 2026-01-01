@@ -13,26 +13,26 @@ jobs:
     name: Build Site Source
     steps:
       - name: Git checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      
       - name: Install dependencies
-        run: |
-          pip install -U pip
-          pip install poetry
-          poetry install
-        env:
-          POETRY_VIRTUALENVS_CREATE: false
+        run: uv sync
       
       - name: Download and process KIP data
-        run: python ipper/main.py kafka init --days 365
+        run: uv run python ipper/main.py kafka init --days 365
       
       - name: Download and process FLIP data
-        run: python ipper/main.py flink wiki download
+        run: uv run python ipper/main.py flink wiki download
 
       - name: Copy static page to site_files
         run: |
@@ -41,10 +41,10 @@ jobs:
           cp templates/style.css site_files
 
       - name: Build the Kafka site
-        run: python ipper/main.py kafka output standalone cache/mailbox_files/kip_mentions.csv site_files/kafka.html
+        run: uv run python ipper/main.py kafka output standalone cache/mailbox_files/kip_mentions.csv site_files/kafka.html
 
       - name: Build the Flink site
-        run: python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips 
+        run: uv run python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips 
      
       - name: Upload static files as artifact
         id: deployment

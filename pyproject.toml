@@ -1,27 +1,32 @@
-[tool.poetry]
+[project]
 name = "ipper"
 version = "0.2.0"
-description = ""
-authors = ["Thomas Cooper <code@tomcooper.dev>"]
+description = "A hub for Open Source Software Improvement Proposals"
+authors = [
+    { name = "Thomas Cooper", email = "code@tomcooper.dev" }
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.32.3",
+    "beautifulsoup4>=4.10.0",
+    "pandas>=2.2.3",
+    "Jinja2>=3.1.4",
+    "jira>=3.8.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-requests = "^2.32.3"
-beautifulsoup4 = "^4.10.0"
-pandas = "^2.2.3"
-Jinja2 = "^3.1.4"
-jira = "^3.8.0"
-
-[tool.poetry.group.dev.dependencies]
-ipython = "^8.29.0"
-pylint = "^3.3.3"
-black = "^24.10.0"
-mypy = "^1.14.0"
-types-requests = "^2.32.0.20241016"
-ipdb = "^0.13.13"
-pandas-stubs = "^2.2.3.241126"
-types-beautifulsoup4 = "^4.12.0.20241020"
+[dependency-groups]
+dev = [
+    "ipython>=8.29.0",
+    "pylint>=3.3.3",
+    "black>=24.10.0",
+    "mypy>=1.14.0",
+    "types-requests>=2.32.0.20241016",
+    "ipdb>=0.13.13",
+    "pandas-stubs>=2.2.3.241126",
+    "types-beautifulsoup4>=4.12.0.20241020",
+]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
