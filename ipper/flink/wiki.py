@@ -1,6 +1,7 @@
 import re
 
 from typing import Any, Optional, cast, Union, Tuple
+from datetime import datetime, timedelta, timezone
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -307,18 +308,46 @@ def process_child_kip(flip_id: int, child: dict):
 def get_flip_information(
     flip_main_info,
     chunk: int = 100,
-    timeout: int = 30
+    timeout: int = 30,
+    existing_cache: dict = None,
+    refresh_days: int = 30,
 ):
 
-    output = {}
+    output = existing_cache if existing_cache else {}
+    
+    # Calculate refresh cutoff date
+    refresh_cutoff = datetime.now(timezone.utc) - timedelta(days=refresh_days)
+    
+    if existing_cache:
+        print(f"Updating FLIP Wiki information with new FLIPs and refreshing FLIPs created within {refresh_days} days")
+    else:
+        print("Downloading FLIP Wiki information for all FLIPs")
 
     for child in child_page_generator(flip_main_info, chunk, timeout):
         flip_match: Optional[re.Match] = re.search(FLIP_PATTERN, child["title"])
         if flip_match:
             flip_id: int = int(flip_match.groupdict()["flip"])
-            if flip_id not in output:
-                output[flip_id] = process_child_kip(flip_id, child)
-            else:
-                print(f"WARNING: FLIP-{flip_id} has been seen more than once in the child pages")
+            
+            # Check if FLIP already exists in cache
+            if flip_id in output:
+                # Parse the created_on date from the cached FLIP
+                try:
+                    created_on_str = output[flip_id]["created_on"]
+                    # Handle ISO format with 'Z' or timezone info
+                    created_date = datetime.fromisoformat(created_on_str.replace('Z', '+00:00'))
+                    
+                    # Skip if FLIP was created outside the refresh window
+                    if created_date < refresh_cutoff:
+                        print(f"Skipping FLIP-{flip_id} (created {created_on_str}, outside {refresh_days}-day refresh window)")
+                        continue
+                    else:
+                        print(f"Refreshing FLIP-{flip_id} (created recently: {created_on_str})")
+                except (KeyError, ValueError) as e:
+                    print(f"WARNING: Could not parse created_on date for FLIP-{flip_id}, refreshing anyway: {e}")
+            
+            output[flip_id] = process_child_kip(flip_id, child)
+            
+            if flip_id not in (existing_cache or {}):
+                print(f"Added new FLIP-{flip_id} to cache")
 
     return output

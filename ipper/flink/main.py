@@ -38,12 +38,27 @@ def process_wiki(args: Namespace) -> None:
     cache_path.mkdir(parents=True, exist_ok=True)
     flip_cache_path: Path = cache_path.joinpath(FLIP_CACHE_FILENAME)
 
+    # Handle update vs overwrite vs error
+    if args.update and args.overwrite:
+        args.update = False
+
+    existing_flips = {}
     if flip_cache_path.exists() and not args.overwrite:
-        print(f"Cache file {flip_cache_path} already exists. Add --overwrite to redownload")
-        sys.exit(1)
+        if not args.update:
+            print(f"Cache file {flip_cache_path} already exists. Add --overwrite to redownload or --update for incremental update")
+            sys.exit(1)
+        
+        print(f"Loading existing FLIP cache from {flip_cache_path}")
+        with open(flip_cache_path, "r", encoding="utf8") as flip_cache_file:
+            existing_flips = {int(k): v for k, v in json.load(flip_cache_file).items()}
 
     main_page = get_flip_main_page_info()
-    flip_data = get_flip_information(main_page, chunk=args.chunk)
+    flip_data = get_flip_information(
+        main_page, 
+        chunk=args.chunk,
+        existing_cache=existing_flips,
+        refresh_days=args.refresh_days,
+    )
 
     with open(flip_cache_path, "w", encoding="utf8") as flip_cache_file:
         json.dump(flip_data, flip_cache_file)
@@ -108,6 +123,22 @@ def setup_wiki_command(main_subparser):
         required=False,
         action="store_true",
         help="Redownload all FLIP wiki information.",
+    )
+
+    wiki_download_subparser.add_argument(
+        "-u",
+        "--update",
+        required=False,
+        action="store_true",
+        help="Update FLIP wiki information. Adds new FLIPs and refreshes recently created ones.",
+    )
+
+    wiki_download_subparser.add_argument(
+        "--refresh-days",
+        required=False,
+        type=int,
+        default=30,
+        help="Days since FLIP creation within which to refresh metadata (default: 30)",
     )
 
     wiki_download_subparser.set_defaults(func=process_wiki)

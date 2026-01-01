@@ -32,7 +32,7 @@ jobs:
         run: uv run python ipper/main.py kafka update
       
       - name: Download and process FLIP data
-        run: uv run python ipper/main.py flink wiki download
+        run: uv run python ipper/main.py flink wiki download --update --refresh-days 60
 
       - name: Copy static page to site_files
         run: |
