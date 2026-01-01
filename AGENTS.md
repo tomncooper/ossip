@@ -5,9 +5,10 @@
 **OSSIP** (Open Source Software Improvement Proposals) is a Python-based data enrichment and visualization tool that aggregates, processes, and presents improvement proposals from various open source projects. The project creates enriched, searchable web interfaces for tracking the status and discussion of improvement proposals.
 
 - **Primary Language:** Python 3.12+
-- **Dependency Management:** Poetry
+- **Dependency Management:** uv (modern Python package manager)
 - **Deployment:** GitHub Pages (via GitHub Actions)
 - **Live Site:** [ossip.dev](https://ossip.dev/)
+- **Current Status:** Both Apache Kafka (KIP) and Apache Flink (FLIP) are fully supported
 
 ## Tools
 
@@ -70,7 +71,7 @@ ossip/
 
 ### Development Tools
 
-- **Poetry** - Dependency management and packaging
+- **uv** - Modern, fast Python package installer and dependency manager
 - **Black** - Code formatting
 - **Pylint** - Code linting
 - **MyPy** - Static type checking
@@ -89,7 +90,8 @@ ossip/
 
 ### Apache Flink
 - **Wiki:** Confluence page - "Flink Improvement Proposals"
-- **Status:** Partial implementation (wiki only, no mailing list processing yet)
+- **Status:** Fully implemented with wiki scraping and individual FLIP pages
+- **Output:** Main index page plus individual FLIP detail pages
 
 ## Workflow
 
@@ -113,10 +115,11 @@ ossip/
 ### CI/CD Pipeline (`.github/workflows/publish.yaml`)
 - **Trigger:** Push to main branch or daily cron (09:30 UTC)
 - **Steps:**
-  1. Install Python 3.12 and Poetry
-  2. Run `kafka init` and `flink wiki download`
-  3. Generate HTML files from cached data
-  4. Deploy to GitHub Pages
+  1. Install Python 3.12 and uv
+  2. Run `kafka update` (incremental) and `flink wiki download --update --refresh-days 60`
+  3. Generate HTML files from cached data (kafka.html and flink.html + individual FLIP pages)
+  4. Commit updated cache files back to repository
+  5. Deploy to GitHub Pages
 
 ## Important Patterns
 
@@ -163,23 +166,26 @@ KIP_PATTERN = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
 
 ```bash
 # Install dependencies
-poetry install
+uv sync
 
 # Initialize Kafka data (365 days)
-poetry run python ipper/main.py kafka init --days 365
+uv run python ipper/main.py kafka init --days 365
 
-# Update Kafka data
-poetry run python ipper/main.py kafka update
+# Update Kafka data (incremental)
+uv run python ipper/main.py kafka update
 
-# Download Flink wiki data
-poetry run python ipper/main.py flink wiki download
+# Download Flink wiki data (initial or full refresh)
+uv run python ipper/main.py flink wiki download
+
+# Update Flink wiki data (incremental, refresh last 60 days)
+uv run python ipper/main.py flink wiki download --update --refresh-days 60
 
 # Generate Kafka HTML
-poetry run python ipper/main.py kafka output standalone \
+uv run python ipper/main.py kafka output standalone \
   cache/mailbox_files/kip_mentions.csv site_files/kafka.html
 
-# Generate Flink HTML
-poetry run python ipper/main.py flink output \
+# Generate Flink HTML (creates main index + individual FLIP pages)
+uv run python ipper/main.py flink output \
   cache/flip_wiki_cache.json site_files/flink.html site_files/flips
 ```
 
@@ -208,12 +214,13 @@ The project includes:
 
 ### When Working on This Project:
 
-1. **Respect the Poetry workflow** - Always use `poetry run` or `poetry install`, never pip directly
+1. **Use uv for dependency management** - Always use `uv run` or `uv sync`, never pip directly
 2. **Type hints are required** - The project uses MyPy, maintain type annotations
 3. **Minimal changes** - The data pipeline is working; focus on incremental improvements
 4. **Test with small data first** - Use `--days 30` for testing instead of full 365-day downloads
 5. **Cache awareness** - Understand the caching strategy to avoid unnecessary API calls
 6. **HTML templates** - Modify Jinja2 templates for UI changes, not Python code
+7. **Project structure** - Each supported project (kafka, flink) has its own submodule under `ipper/`
 
 ### Common Tasks:
 
@@ -232,21 +239,23 @@ CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 
 ## Known Limitations
 
-1. Flink support is incomplete (no mailing list processing)
+1. Flink does not process mailing lists (only wiki data)
 2. No rate limiting on API calls
-3. No incremental wiki updates (only full refresh or add new)
-4. Limited error recovery in data collection
-5. No automated tests
-6. Status keyword matching is English-only
+3. Limited error recovery in data collection
+4. No automated tests
+5. Status keyword matching is English-only
+6. Individual FLIP pages only generated for Flink (not Kafka yet)
 
 ## Future Considerations
 
 - Add support for more Apache projects (e.g., Airflow, Spark)
-- Implement GraphQL or better API pagination
+- Implement mailing list processing for Flink (similar to Kafka)
+- Generate individual KIP detail pages (similar to FLIPs)
 - Add search functionality to generated pages
 - Real-time updates via webhooks
 - Internationalization support
-- Database backend instead of CSV caching
+- Database backend instead of CSV/JSON caching
+- Better rate limiting and error handling for API calls
 
 ---
 
