@@ -1,23 +1,34 @@
 <!DOCTYPE html>
-
+<html lang="en">
 <head>
-    <title>OSSIP</title>
-    <style type="text/css">
-        html * {
-            font-family: Arial, Helvetica, sans-serif;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSSIP - Open Source Software Improvement Proposals</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
-    <h1>OSSIP</h1>
-    <h2>A hub for information on Open Source Software Improvement Proposals</h2>
+<body class="index-page">
+    <div class="container">
+        <h1>OSSIP</h1>
+        <p class="subtitle">A hub for information on Open Source Software Improvement Proposals</p>
 
-    <p>Created by <a href="https://tomcooper.dev">Tom Cooper</a></p>
-    <p>GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></p>
+        <div class="projects">
+            <a href="kafka.html" class="project-card kafka">
+                <img src="assets/images/kafka-logo-tall.png" alt="Apache Kafka Logo" class="logo">
+                <div class="project-name">Apache Kafka</div>
+            </a>
 
-    <h2><a href="kafka.html">Kafka</a></h2>
-    <h2><a href="flink.html">Flink</a></h2>
+            <a href="flink.html" class="project-card flink">
+                <img src="assets/images/flink_squirrel.png" alt="Apache Flink Logo" class="logo">
+                <div class="project-name">Apache Flink</div>
+            </a>
+        </div>
+
+        <div class="footer">
+            <p>Created by <a href="https://tomcooper.dev">Tom Cooper</a></p>
+            <p>GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></p>
+        </div>
+    </div>
 </body>
 
 </html>

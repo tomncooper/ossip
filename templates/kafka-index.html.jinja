@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kafka Improvement Proposals</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -32,7 +34,7 @@
                 </div>
             </td>
             {% if kip["+1"] %}
-            <td style="background-color:green;">
+            <td class="vote-positive">
                 <div class="tooltip">{{ kip["+1"]|length }}
                     <span class="tooltiptext">
                         {% for name in kip["+1"] %}
@@ -45,7 +47,7 @@
             <td>{{ kip["+1"]|length }}</td>
             {% endif %}
             {% if kip["0"] %}
-            <td style="background-color:yellow;">
+            <td class="vote-neutral">
                 <div class="tooltip">{{ kip["0"]|length }}
                     <span class="tooltiptext">
                         {% for name in kip["0"] %}
@@ -58,7 +60,7 @@
             <td>{{ kip["0"]|length }}</td>
             {% endif %}
             {% if kip["-1"] %}
-            <td style="background-color:red;">
+            <td class="vote-negative">
                 <div class="tooltip">{{ kip["-1"]|length }}
                     <span class="tooltiptext">
                         {% for name in kip["-1"] %}

@@ -1,15 +1,210 @@
-html * {
-    font-family: Arial, Helvetica, sans-serif;
+/* Solarized Dark Color Scheme */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-table,
+html * {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+body {
+    background: #002b36;
+    color: #839496;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* Index page specific styles */
+body.index-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    background: #073642;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    max-width: 900px;
+    width: 100%;
+    padding: 60px 40px;
+    animation: fadeIn 0.6s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #268bd2 0%, #2aa198 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+h2 {
+    color: #93a1a1;
+    margin: 20px 0;
+}
+
+.subtitle {
+    font-size: 1.3rem;
+    color: #839496;
+    text-align: center;
+    margin-bottom: 40px;
+    line-height: 1.6;
+}
+
+p {
+    color: #839496;
+    line-height: 1.6;
+    margin: 10px 0;
+}
+
+a {
+    color: #268bd2;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #2aa198;
+    text-decoration: underline;
+}
+
+.projects {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin: 50px 0;
+}
+
+.project-card {
+    background: #002b36;
+    border: 2px solid #586e75;
+    border-radius: 15px;
+    padding: 40px 30px;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    text-decoration: none;
+    display: block;
+}
+
+.project-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+}
+
+.project-card.kafka {
+    background: #002b36;
+    border-color: #b58900;
+}
+
+.project-card.kafka:hover {
+    border-color: #cb4b16;
+    box-shadow: 0 15px 40px rgba(181, 137, 0, 0.3);
+}
+
+.project-card.flink {
+    background: #002b36;
+    border-color: #268bd2;
+}
+
+.project-card.flink:hover {
+    border-color: #2aa198;
+    box-shadow: 0 15px 40px rgba(38, 139, 210, 0.3);
+}
+
+.logo {
+    height: 80px;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+.project-card.kafka .logo {
+    filter: brightness(0) invert(1) opacity(0.9);
+}
+
+.project-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #93a1a1;
+    margin-bottom: 10px;
+}
+
+.project-card.kafka .project-name {
+    color: #b58900;
+}
+
+.project-card.flink .project-name {
+    color: #268bd2;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 2px solid #586e75;
+}
+
+.footer p {
+    color: #839496;
+    margin: 10px 0;
+    font-size: 0.95rem;
+}
+
+.footer a {
+    color: #268bd2;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.footer a:hover {
+    color: #2aa198;
+    text-decoration: underline;
+}
+
+/* Table styles for Kafka/Flink pages */
+table {
+    border: 1px solid #586e75;
+    border-collapse: collapse;
+    width: 100%;
+    margin: 20px 0;
+    background: #073642;
+}
+
 th,
 td {
-    border: 1px solid black;
-    border-collapse: collapse;
+    border: 1px solid #586e75;
+    padding: 12px;
+    text-align: left;
+    color: #839496;
 }
+
+th {
+    background: #002b36;
+    color: #93a1a1;
+    font-weight: 700;
+}
+
 tr:hover {
-    background-color:#CCE6FF;
+    background-color: #002b36;
 }
 
 /* Tooltip container */
@@ -18,20 +213,24 @@ tr:hover {
     display: block;
     width: 100%;
     height: 100%;
-    border-bottom: 1px dotted black;
-    /* If you want dots under the hoverable text */
+    border-bottom: 1px dotted #586e75;
+}
+
+/* Hide tooltip border in status cells */
+td[style*="background-color"] .tooltip {
+    border-bottom: none;
 }
 
 /* Tooltip text */
 .tooltip .tooltiptext {
     visibility: hidden;
     width: 200px;
-    background-color: black;
-    color: #fff;
+    background-color: #073642;
+    color: #839496;
     text-align: center;
     padding: 5px 0;
     border-radius: 6px;
-
+    border: 1px solid #586e75;
 
     /* Position the tooltip text - see examples below! */
     position: absolute;
@@ -43,4 +242,84 @@ tr:hover {
 /* Show the tooltip text when you mouse over the tooltip container */
 .tooltip:hover .tooltiptext {
     visibility: visible;
+}
+
+/* Vote count cell colors - Solarized Dark accents */
+td.vote-positive {
+    background-color: #859900 !important; /* Solarized green */
+    color: #002b36 !important; /* Dark text for contrast */
+}
+
+td.vote-positive .tooltip {
+    color: #002b36 !important;
+    border-bottom: none;
+}
+
+td.vote-neutral {
+    background-color: #b58900 !important; /* Solarized yellow */
+    color: #002b36 !important; /* Dark text for contrast */
+}
+
+td.vote-neutral .tooltip {
+    color: #002b36 !important;
+    border-bottom: none;
+}
+
+td.vote-negative {
+    background-color: #dc322f !important; /* Solarized red */
+    color: #fdf6e3 !important; /* Light text for red background */
+}
+
+td.vote-negative .tooltip {
+    color: #fdf6e3 !important;
+    border-bottom: none;
+}
+
+/* Status colors need to work with inline hex values, so we'll override common colors */
+td[style*="background-color:blue"],
+td[style*="background-color: blue"] {
+    background-color: transparent !important;
+}
+
+td[style*="background-color:green"],
+td[style*="background-color: green"] {
+    background-color: #859900 !important;
+}
+
+td[style*="background-color:yellow"],
+td[style*="background-color: yellow"] {
+    background-color: #b58900 !important;
+    color: #002b36 !important;
+}
+
+td[style*="background-color:red"],
+td[style*="background-color: red"] {
+    background-color: #dc322f !important;
+}
+
+td[style*="background-color:black"],
+td[style*="background-color: black"] {
+    background-color: #586e75 !important;
+}
+
+@media (max-width: 600px) {
+    h1 {
+        font-size: 2.5rem;
+    }
+    
+    .subtitle {
+        font-size: 1.1rem;
+    }
+
+    .container {
+        padding: 40px 25px;
+    }
+    
+    table {
+        font-size: 0.9rem;
+    }
+    
+    th, td {
+        padding: 8px;
+    }
 }
