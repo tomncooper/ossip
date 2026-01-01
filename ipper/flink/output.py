@@ -7,7 +7,7 @@ from jinja2 import Template, Environment, FileSystemLoader
 from ipper.common.constants import DEFAULT_TEMPLATES_DIR, DATE_FORMAT
 
 FLINK_MAIN_PAGE_TEMPLATE = "flink-index.html.jinja"
-FLIP_RAW_INFO_PAGE_TEMPLATE = "flip-raw-info.html.jinja"
+FLIP_RAW_INFO_PAGE_TEMPLATE = "flip-more-info.html.jinja"
 
 
 def get_template(template_dir: str, template_filename) -> Template:

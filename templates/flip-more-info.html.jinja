@@ -13,7 +13,13 @@
         {% for key, value in flip_data.items() %}
         <tr>
             <td>{{ key }}</td>
-            <td>{{ value }}</td>
+            <td>
+                {% if value and value is string and (value.startswith('http://') or value.startswith('https://')) %}
+                    <a href="{{ value }}">{{ value }}</a>
+                {% else %}
+                    {{ value }}
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </table>
