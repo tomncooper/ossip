@@ -302,6 +302,30 @@ td[style*="background-color: black"] {
     background-color: #586e75 !important;
 }
 
+/* Navigation bar for Kafka/Flink pages */
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #073642;
+    border: 1px solid #586e75;
+    border-radius: 10px;
+    margin: 20px 0 30px 0;
+    overflow: hidden;
+}
+
+.nav-bar .nav-item {
+    flex: 1;
+    padding: 15px 20px;
+    margin: 0;
+    text-align: center;
+    border-right: 1px solid #586e75;
+}
+
+.nav-bar .nav-item:last-child {
+    border-right: none;
+}
+
 @media (max-width: 600px) {
     h1 {
         font-size: 2.5rem;
@@ -313,6 +337,21 @@ td[style*="background-color: black"] {
 
     .container {
         padding: 40px 25px;
+    }
+    
+    .nav-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .nav-bar .nav-item {
+        border-right: none;
+        border-bottom: 1px solid #586e75;
+        padding: 10px;
+    }
+    
+    .nav-bar .nav-item:last-child {
+        border-bottom: none;
     }
     
     table {
