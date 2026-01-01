@@ -34,7 +34,7 @@ cp -r templates/assets site_files/assets
 
 # Build the Kafka site
 echo "🏗️  Building Kafka site..."
-uv run python ipper/main.py kafka output standalone cache/mailbox_files/kip_mentions.csv site_files/kafka.html
+uv run python ipper/main.py kafka output standalone cache/mailbox_files/kip_mentions.csv site_files/kafka.html site_files/kips
 
 # Build the Flink site
 echo "🏗️  Building Flink site..."

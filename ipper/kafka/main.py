@@ -12,7 +12,11 @@ from ipper.kafka.mailing_list import (
     process_mbox_files,
     update_kip_mentions_cache,
 )
-from ipper.kafka.output import render_standalone_status_page
+from ipper.kafka.output import (
+    render_standalone_status_page,
+    render_kip_info_pages,
+    enrich_kip_wiki_info_with_votes,
+)
 from ipper.kafka.wiki import get_kip_information, get_kip_main_page_info
 
 
@@ -224,6 +228,13 @@ def setup_output_command(main_subparser):
         "output_file", help="The path to the output html file"
     )
 
+    standalone_subparser.add_argument(
+        "kip_info_dir", 
+        nargs="?",
+        default=None,
+        help="Optional: The path to the directory for storing individual KIP info pages"
+    )
+
     standalone_subparser.set_defaults(func=run_output_standalone_cmd)
 
 
@@ -322,6 +333,17 @@ def run_output_standalone_cmd(args: Namespace) -> None:
     cache_file = Path(args.kip_mentions_file)
     kip_mentions: DataFrame = load_mbox_cache_file(cache_file)
     render_standalone_status_page(kip_mentions, args.output_file)
+    
+    # Generate individual KIP info pages if directory is specified
+    if args.kip_info_dir:
+        kip_main_info = get_kip_main_page_info()
+        kip_wiki_info = get_kip_information(kip_main_info)
+        
+        # Enrich with vote data
+        enriched_kip_info = enrich_kip_wiki_info_with_votes(kip_wiki_info, kip_mentions)
+        
+        # Render individual pages
+        render_kip_info_pages(enriched_kip_info, args.kip_info_dir)
 
 
 if __name__ == "__main__":

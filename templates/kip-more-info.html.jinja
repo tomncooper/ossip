@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Kafka Improvement Proposals</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+    <h1>KIP-{{ kip_data["kip_id"] }}</h1>
+    <p><a href="../kafka.html">Back to KIP Summary</a></p>
+    <p>Last Updated: {{ date }}</p>
+    <table>
+        {% for key, value in kip_data.items() %}
+        {% if key not in ["+1", "0", "-1"] %}
+        <tr>
+            <td>{{ key }}</td>
+            <td>
+                {% if value and value is string and (value.startswith('http://') or value.startswith('https://')) %}
+                    <a href="{{ value }}">{{ value }}</a>
+                {% else %}
+                    {{ value }}
+                {% endif %}
+            </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+        {% if "+1" in kip_data %}
+        <tr>
+            <td>Votes +1</td>
+            <td>
+                {% if kip_data["+1"] %}
+                {{ kip_data["+1"]|length }} votes: {{ kip_data["+1"]|join(", ") }}
+                {% else %}
+                0 votes
+                {% endif %}
+            </td>
+        </tr>
+        {% endif %}
+        {% if "0" in kip_data %}
+        <tr>
+            <td>Votes 0</td>
+            <td>
+                {% if kip_data["0"] %}
+                {{ kip_data["0"]|length }} votes: {{ kip_data["0"]|join(", ") }}
+                {% else %}
+                0 votes
+                {% endif %}
+            </td>
+        </tr>
+        {% endif %}
+        {% if "-1" in kip_data %}
+        <tr>
+            <td>Votes -1</td>
+            <td>
+                {% if kip_data["-1"] %}
+                {{ kip_data["-1"]|length }} votes: {{ kip_data["-1"]|join(", ") }}
+                {% else %}
+                0 votes
+                {% endif %}
+            </td>
+        </tr>
+        {% endif %}
+    </table>
+</body>
+
+</html>

@@ -25,6 +25,7 @@
             <th>-1</th>
             <th>Created by</th>
             <th>Age</th>
+            <th>More Info</th>
         </tr>
         {% for kip in kip_status %}
         <tr>
@@ -76,6 +77,7 @@
             {% endif %}
             <td>{{ kip["created_by"] }}</td>
             <td>{{ kip["age"] }}</td>
+            <td><a href=kips/KIP-{{ kip['id'] }}.html>info</a></td>
         </tr>
         {% endfor %}
     </table>

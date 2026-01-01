@@ -20,6 +20,7 @@ from ipper.kafka.wiki import (
 KIP_SPLITTER: re.Pattern = re.compile(r"KIP-\d+\W?[:-]?\W?", re.IGNORECASE)
 
 KAFKA_MAIN_PAGE_TEMPLATE = "kafka-index.html.jinja"
+KIP_RAW_INFO_PAGE_TEMPLATE = "kip-more-info.html.jinja"
 
 
 class KIPStatus(Enum):
@@ -170,3 +171,55 @@ def render_standalone_status_page(
 
     with open(output_path, "w", encoding="utf8") as out_file:
         out_file.write(output)
+
+
+def enrich_kip_wiki_info_with_votes(
+    kip_wiki_info: Dict[int, Dict[str, Union[int, str]]],
+    kip_mentions: DataFrame,
+) -> Dict[int, Dict[str, Union[int, str, List[str]]]]:
+    """Enriches KIP wiki information with vote data from mailing list mentions."""
+    
+    vote_dict: Dict[int, Dict[str, List[str]]] = create_vote_dict(kip_mentions)
+    
+    enriched_info: Dict[int, Dict[str, Union[int, str, List[str]]]] = {}
+    for kip_id, kip_data in kip_wiki_info.items():
+        enriched_kip: Dict[str, Union[int, str, List[str]]] = dict(kip_data)
+        
+        if kip_id in vote_dict:
+            for vote in ["+1", "0", "-1"]:
+                enriched_kip[vote] = vote_dict[kip_id][vote]
+        else:
+            for vote in ["+1", "0", "-1"]:
+                enriched_kip[vote] = []
+        
+        enriched_info[kip_id] = enriched_kip
+    
+    return enriched_info
+
+
+def render_kip_info_pages(
+    kip_wiki_info: Dict[int, Dict[str, Union[int, str, List[str]]]],
+    output_directory: str,
+    template_dir: str = DEFAULT_TEMPLATES_DIR,
+    template_filename: str = KIP_RAW_INFO_PAGE_TEMPLATE,
+) -> None:
+    """Renders individual more info pages for each KIP."""
+
+    template: Template = Environment(loader=FileSystemLoader(template_dir)).get_template(
+        template_filename
+    )
+
+    output_dir_path = Path(output_directory)
+    output_dir_path.mkdir(parents=True, exist_ok=True)
+
+    for kip_id, kip in kip_wiki_info.items():
+        filename = f"KIP-{kip_id}.html"
+        output_filepath = output_dir_path.joinpath(Path(filename))
+
+        output: str = template.render(
+            kip_data=kip,
+            date=dt.datetime.now(dt.timezone.utc).strftime(DATE_FORMAT),
+        )
+
+        with open(output_filepath, "w", encoding="utf8") as out_file:
+            out_file.write(output)
