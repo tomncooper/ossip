@@ -14,13 +14,13 @@
         {% if key not in ["+1", "0", "-1"] %}
         <tr>
             <td>
-                {% if key in ["discussion_thread", "vote_thread", "jira"] and value != "Unknown" %}
+                {% if key in ["discussion_thread", "vote_thread", "jira"] and value != "Unknown" and value != "not set" %}
                     <strong>{{ key.replace('_', ' ').title() }}</strong>
                 {% else %}
                     {{ key }}
                 {% endif %}
             </td>
-            <td>
+            <td {% if value in ["not set", "unknown"] %}class="not-set"{% endif %}>
                 {% if value and value is string and (value.startswith('http://') or value.startswith('https://')) %}
                     <a href="{{ value }}">{{ value }}</a>
                 {% else %}

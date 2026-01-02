@@ -12,9 +12,16 @@ from ipper.common.wiki import (
     get_wiki_page_body,
     child_page_generator,
 )
-from ipper.common.constants import IPState, UNKNOWN_STR
+from ipper.common.constants import IPState, UNKNOWN_STR, NOT_SET_STR
 
 KIP_PATTERN: re.Pattern = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
+
+# Template default values that indicate the field was not actually set
+KIP_TEMPLATE_DEFAULT_DISCUSSION_URL = (
+    "http://mail-archives.apache.org/mod_mbox/kafka-dev/201501.mbox/"
+    "%3CCAOeJiJh6Vkkca85bWYgkeOZ8rC6%2BKDh7zzq8vMKECL_7PNExTA%40mail.gmail.com%3E"
+)
+KIP_TEMPLATE_DEFAULT_JIRA_URL = "https://issues.apache.org/jira/browse/KAFKA-1"
 ACCEPTED_TERMS: list[str] = [
     "accepted",
     "approved",
@@ -82,6 +89,33 @@ def get_current_state(html: str) -> Optional[str]:
     return None
 
 
+def is_template_default_url(url: Optional[Union[list, str]], field_type: str) -> bool:
+    """Check if a URL is a KIP template default placeholder value.
+    
+    Args:
+        url: The URL to check (can be None, string, or list)
+        field_type: The type of field ('discussion', 'jira', 'vote')
+    
+    Returns:
+        True if the URL matches a known template default, False otherwise
+    """
+    if not url:
+        return False
+    
+    # Handle list-type href values
+    url_str = url[0] if isinstance(url, list) else url
+    
+    if field_type == "discussion":
+        return url_str == KIP_TEMPLATE_DEFAULT_DISCUSSION_URL
+    elif field_type == "jira":
+        return url_str == KIP_TEMPLATE_DEFAULT_JIRA_URL
+    elif field_type == "vote":
+        # No known default for voting thread (voting is usually added later)
+        return False
+    
+    return False
+
+
 def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, int]]) -> None:
     """Parses the body of the KIP wiki page pointed to by the 'content_url'
     key in the supplied dictionary. It will add the derived data to the
@@ -113,11 +147,11 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, in
             else:
                 href = None
 
-            if href:
+            if href and not is_template_default_url(href, "jira"):
                 kip_dict["jira"] = href
             else:
-                print(f"Could not discern JIRA link from {para}")
-                kip_dict["jira"] = UNKNOWN_STR
+                print(f"JIRA link is template default or missing for KIP")
+                kip_dict["jira"] = NOT_SET_STR
 
             jira_processed = True
 
@@ -128,11 +162,11 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, in
             else:
                 href = None
 
-            if href:
+            if href and not is_template_default_url(href, "discussion"):
                 kip_dict["discussion_thread"] = href
             else:
-                print(f"Could not discern discussion thread link from {para}")
-                kip_dict["discussion_thread"] = UNKNOWN_STR
+                print(f"Discussion thread link is template default or missing for KIP")
+                kip_dict["discussion_thread"] = NOT_SET_STR
 
             discussion_processed = True
 
@@ -143,11 +177,11 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, in
             else:
                 href = None
 
-            if href:
+            if href and not is_template_default_url(href, "vote"):
                 kip_dict["vote_thread"] = href
             else:
-                print(f"Could not discern voting thread link from {para}")
-                kip_dict["vote_thread"] = UNKNOWN_STR
+                print(f"Voting thread link is template default or missing for KIP")
+                kip_dict["vote_thread"] = NOT_SET_STR
 
             vote_processed = True
 
@@ -155,13 +189,13 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, in
         kip_dict["state"] = UNKNOWN_STR
 
     if not jira_processed:
-        kip_dict["jira"] = UNKNOWN_STR
+        kip_dict["jira"] = NOT_SET_STR
 
     if not discussion_processed:
-        kip_dict["discussion_thread"] = UNKNOWN_STR
+        kip_dict["discussion_thread"] = NOT_SET_STR
 
     if not vote_processed:
-        kip_dict["vote_thread"] = UNKNOWN_STR
+        kip_dict["vote_thread"] = NOT_SET_STR
 
 
 def process_child_kip(kip_id: int, child: dict):

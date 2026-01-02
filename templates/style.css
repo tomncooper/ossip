@@ -275,6 +275,12 @@ td.vote-negative .tooltip {
     border-bottom: none;
 }
 
+/* Styling for "not set" values */
+td.not-set {
+    color: #586e75;
+    font-style: italic;
+}
+
 /* Status colors need to work with inline hex values, so we'll override common colors */
 td[style*="background-color:blue"],
 td[style*="background-color: blue"] {
