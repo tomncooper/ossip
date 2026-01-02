@@ -91,6 +91,8 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, in
 
     state_processed: bool = False
     jira_processed: bool = False
+    discussion_processed: bool = False
+    vote_processed: bool = False
 
     for para in parsed_body.find_all("p"):
 
@@ -119,11 +121,47 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, in
 
             jira_processed = True
 
+        elif not discussion_processed and "discussion thread" in para.text.lower():
+            link: Tag = para.find("a")
+            if link:
+                href: Optional[Union[list, str]] = link.get("href")
+            else:
+                href = None
+
+            if href:
+                kip_dict["discussion_thread"] = href
+            else:
+                print(f"Could not discern discussion thread link from {para}")
+                kip_dict["discussion_thread"] = UNKNOWN_STR
+
+            discussion_processed = True
+
+        elif not vote_processed and "voting thread" in para.text.lower():
+            link: Tag = para.find("a")
+            if link:
+                href: Optional[Union[list, str]] = link.get("href")
+            else:
+                href = None
+
+            if href:
+                kip_dict["vote_thread"] = href
+            else:
+                print(f"Could not discern voting thread link from {para}")
+                kip_dict["vote_thread"] = UNKNOWN_STR
+
+            vote_processed = True
+
     if not state_processed:
         kip_dict["state"] = UNKNOWN_STR
 
     if not jira_processed:
         kip_dict["jira"] = UNKNOWN_STR
+
+    if not discussion_processed:
+        kip_dict["discussion_thread"] = UNKNOWN_STR
+
+    if not vote_processed:
+        kip_dict["vote_thread"] = UNKNOWN_STR
 
 
 def process_child_kip(kip_id: int, child: dict):

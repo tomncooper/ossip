@@ -13,7 +13,13 @@
         {% for key, value in kip_data.items() %}
         {% if key not in ["+1", "0", "-1"] %}
         <tr>
-            <td>{{ key }}</td>
+            <td>
+                {% if key in ["discussion_thread", "vote_thread", "jira"] and value != "Unknown" %}
+                    <strong>{{ key.replace('_', ' ').title() }}</strong>
+                {% else %}
+                    {{ key }}
+                {% endif %}
+            </td>
             <td>
                 {% if value and value is string and (value.startswith('http://') or value.startswith('https://')) %}
                     <a href="{{ value }}">{{ value }}</a>
