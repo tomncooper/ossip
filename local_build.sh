@@ -16,13 +16,43 @@ if [[ "$RENDER_MODE" == false ]]; then
     echo "📦 Installing dependencies with uv..."
     uv sync
 
-    # Update KIP data (incremental)
-    echo "🔄 Updating KIP data..."
-    uv run python ipper/main.py kafka update
+    # Create temporary files for buffering parallel process output
+    KIP_LOG=$(mktemp)
+    FLIP_LOG=$(mktemp)
+    
+    # Clean up temp files on exit
+    trap "rm -f $KIP_LOG $FLIP_LOG" EXIT
 
-    # Download and process FLIP data
-    echo "📥 Downloading and processing FLIP data..."
-    uv run python ipper/main.py flink wiki download --update --refresh-days 60
+    # Update KIP and FLIP data in parallel (both are I/O-bound)
+    echo "🔄 Updating KIP and FLIP data in parallel..."
+    
+    uv run python ipper/main.py kafka update > "$KIP_LOG" 2>&1 &
+    KIP_PID=$!
+    
+    uv run python ipper/main.py flink wiki download --update --refresh-days 60 > "$FLIP_LOG" 2>&1 &
+    FLIP_PID=$!
+
+    # Wait for both processes and capture exit codes
+    wait $KIP_PID
+    KIP_EXIT=$?
+    wait $FLIP_PID
+    FLIP_EXIT=$?
+
+    # Display buffered output sequentially
+    echo "📊 KIP Update Output:"
+    cat "$KIP_LOG"
+    echo ""
+    echo "📊 FLIP Update Output:"
+    cat "$FLIP_LOG"
+    echo ""
+
+    # Check if either process failed
+    if [ $KIP_EXIT -ne 0 ] || [ $FLIP_EXIT -ne 0 ]; then
+        echo "❌ Update failed: KIP exit code=$KIP_EXIT, FLIP exit code=$FLIP_EXIT"
+        exit 1
+    fi
+    
+    echo "✅ Both updates completed successfully"
 fi
 
 # Copy static page to site_files

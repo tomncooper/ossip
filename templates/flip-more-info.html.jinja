@@ -11,9 +11,10 @@
     <p>Last Updated: {{ date }}</p>
     <table>
         {% for key, value in flip_data.items() %}
+        {% if key not in ["+1", "0", "-1"] %}
         <tr>
             <td>{{ key }}</td>
-            <td>
+            <td {% if value in ["not set", "unknown"] %}class="not-set"{% endif %}>
                 {% if value and value is string and (value.startswith('http://') or value.startswith('https://')) %}
                     <a href="{{ value }}">{{ value }}</a>
                 {% else %}
@@ -21,7 +22,44 @@
                 {% endif %}
             </td>
         </tr>
+        {% endif %}
         {% endfor %}
+        {% if "+1" in flip_data %}
+        <tr>
+            <td>Votes +1</td>
+            <td>
+                {% if flip_data["+1"] %}
+                {{ flip_data["+1"]|length }} votes: {{ flip_data["+1"]|join(", ") }}
+                {% else %}
+                0 votes
+                {% endif %}
+            </td>
+        </tr>
+        {% endif %}
+        {% if "0" in flip_data %}
+        <tr>
+            <td>Votes 0</td>
+            <td>
+                {% if flip_data["0"] %}
+                {{ flip_data["0"]|length }} votes: {{ flip_data["0"]|join(", ") }}
+                {% else %}
+                0 votes
+                {% endif %}
+            </td>
+        </tr>
+        {% endif %}
+        {% if "-1" in flip_data %}
+        <tr>
+            <td>Votes -1</td>
+            <td>
+                {% if flip_data["-1"] %}
+                {{ flip_data["-1"]|length }} votes: {{ flip_data["-1"]|join(", ") }}
+                {% else %}
+                0 votes
+                {% endif %}
+            </td>
+        </tr>
+        {% endif %}
     </table>
 </body>
 

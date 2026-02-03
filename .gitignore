@@ -10,6 +10,7 @@ site_files/*
 
 # But ignore the intermediate processed mbox cache files
 cache/**/kafka_processed_mailbox_cache/
+cache/**/flink_processed_mailbox_cache/
 
 # uv
 .venv/

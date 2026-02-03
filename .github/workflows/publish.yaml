@@ -33,6 +33,9 @@ jobs:
       
       - name: Download and process FLIP data
         run: uv run python ipper/main.py flink wiki download --update --refresh-days 60
+      
+      - name: Update FLIP mailing list data (incremental)
+        run: uv run python ipper/main.py flink update
 
       - name: Copy static page to site_files
         run: |

@@ -20,6 +20,9 @@
             <th>Description</th>
             <th>Component</th>
             <th>Target Release</th>
+            <th>+1</th>
+            <th>0</th>
+            <th>-1</th>
             <th>Created by</th>
             <th>State</th>
             <th>JIRA</th>
@@ -38,6 +41,45 @@
             <td></td>
             {% else %}
             <td>{{ flip['release_version'] }}
+            {% endif %}
+            {% if flip["+1"] %}
+            <td class="vote-positive">
+                <div class="tooltip">{{ flip["+1"]|length }}
+                    <span class="tooltiptext">
+                        {% for name in flip["+1"] %}
+                        {{ name }}<br>
+                        {% endfor %}
+                    </span>
+                </div>
+            </td>
+            {% else %}
+            <td>{{ flip["+1"]|length }}</td>
+            {% endif %}
+            {% if flip["0"] %}
+            <td class="vote-neutral">
+                <div class="tooltip">{{ flip["0"]|length }}
+                    <span class="tooltiptext">
+                        {% for name in flip["0"] %}
+                        {{ name }}<br>
+                        {% endfor %}
+                    </span>
+                </div>
+            </td>
+            {% else %}
+            <td>{{ flip["0"]|length }}</td>
+            {% endif %}
+            {% if flip["-1"] %}
+            <td class="vote-negative">
+                <div class="tooltip">{{ flip["-1"]|length }}
+                    <span class="tooltiptext">
+                        {% for name in flip["-1"] %}
+                        {{ name }}<br>
+                        {% endfor %}
+                    </span>
+                </div>
+            </td>
+            {% else %}
+            <td>{{ flip["-1"]|length }}</td>
             {% endif %}
             <td>{{ flip['created_by'] }}</td>
             <td>{{ flip["state"] }}</td>
