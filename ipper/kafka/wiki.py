@@ -1,18 +1,18 @@
-import re
 import json
-from typing import Any, Optional, Union, cast
+import re
 from pathlib import Path
+from typing import Any, cast
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
+from ipper.common.constants import NOT_SET_STR, UNKNOWN_STR, IPState
 from ipper.common.wiki import (
     APACHE_CONFLUENCE_BASE_URL,
-    get_wiki_page_info,
-    get_wiki_page_body,
     child_page_generator,
+    get_wiki_page_body,
+    get_wiki_page_info,
 )
-from ipper.common.constants import IPState, UNKNOWN_STR, NOT_SET_STR
 
 KIP_PATTERN: re.Pattern = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
 
@@ -74,7 +74,7 @@ def get_kip_main_page_body(kip_main_info: dict[str, Any], timeout: int = 30) -> 
     return get_wiki_page_body(kip_main_info, timeout=timeout)
 
 
-def get_current_state(html: str) -> Optional[str]:
+def get_current_state(html: str) -> str | None:
     """Discerns the state of the kip from the supplied current state html paragraph"""
 
     if any(option in html.lower() for option in ACCEPTED_TERMS):
@@ -89,22 +89,22 @@ def get_current_state(html: str) -> Optional[str]:
     return None
 
 
-def is_template_default_url(url: Optional[Union[list, str]], field_type: str) -> bool:
+def is_template_default_url(url: list | str | None, field_type: str) -> bool:
     """Check if a URL is a KIP template default placeholder value.
-    
+
     Args:
         url: The URL to check (can be None, string, or list)
         field_type: The type of field ('discussion', 'jira', 'vote')
-    
+
     Returns:
         True if the URL matches a known template default, False otherwise
     """
     if not url:
         return False
-    
+
     # Handle list-type href values
     url_str = url[0] if isinstance(url, list) else url
-    
+
     if field_type == "discussion":
         return url_str == KIP_TEMPLATE_DEFAULT_DISCUSSION_URL
     elif field_type == "jira":
@@ -112,11 +112,13 @@ def is_template_default_url(url: Optional[Union[list, str]], field_type: str) ->
     elif field_type == "vote":
         # No known default for voting thread (voting is usually added later)
         return False
-    
+
     return False
 
 
-def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, int]]) -> None:
+def enrich_kip_info(
+    body_html: str, kip_dict: dict[str, list[str] | str | int]
+) -> None:
     """Parses the body of the KIP wiki page pointed to by the 'content_url'
     key in the supplied dictionary. It will add the derived data to the
     supplied dict."""
@@ -129,9 +131,8 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, in
     vote_processed: bool = False
 
     for para in parsed_body.find_all("p"):
-
         if not state_processed and "current state" in para.text.lower():
-            state: Optional[str] = get_current_state(para.text)
+            state: str | None = get_current_state(para.text)
             if state:
                 kip_dict["state"] = state
             else:
@@ -143,14 +144,14 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, in
         elif not jira_processed and "jira" in para.text.lower():
             link: Tag = para.find("a")
             if link:
-                href: Optional[Union[list, str]] = link.get("href")
+                href: list | str | None = link.get("href")
             else:
                 href = None
 
             if href and not is_template_default_url(href, "jira"):
                 kip_dict["jira"] = href
             else:
-                print(f"JIRA link is template default or missing for KIP")
+                print("JIRA link is template default or missing for KIP")
                 kip_dict["jira"] = NOT_SET_STR
 
             jira_processed = True
@@ -158,14 +159,14 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, in
         elif not discussion_processed and "discussion thread" in para.text.lower():
             link: Tag = para.find("a")
             if link:
-                href: Optional[Union[list, str]] = link.get("href")
+                href: list | str | None = link.get("href")
             else:
                 href = None
 
             if href and not is_template_default_url(href, "discussion"):
                 kip_dict["discussion_thread"] = href
             else:
-                print(f"Discussion thread link is template default or missing for KIP")
+                print("Discussion thread link is template default or missing for KIP")
                 kip_dict["discussion_thread"] = NOT_SET_STR
 
             discussion_processed = True
@@ -173,14 +174,14 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, Union[list[str], str, in
         elif not vote_processed and "voting thread" in para.text.lower():
             link: Tag = para.find("a")
             if link:
-                href: Optional[Union[list, str]] = link.get("href")
+                href: list | str | None = link.get("href")
             else:
                 href = None
 
             if href and not is_template_default_url(href, "vote"):
                 kip_dict["vote_thread"] = href
             else:
-                print(f"Voting thread link is template default or missing for KIP")
+                print("Voting thread link is template default or missing for KIP")
                 kip_dict["vote_thread"] = NOT_SET_STR
 
             vote_processed = True
@@ -202,7 +203,7 @@ def process_child_kip(kip_id: int, child: dict):
     """Process and enrich the KIP child page dictionary"""
 
     print(f"Processing KIP {kip_id} wiki page")
-    child_dict: dict[str, Union[list[str], str, int]] = {}
+    child_dict: dict[str, list[str] | str | int] = {}
     child_dict["kip_id"] = kip_id
     child_dict["title"] = child["title"]
     child_dict["web_url"] = APACHE_CONFLUENCE_BASE_URL + child["_links"]["webui"]
@@ -225,7 +226,7 @@ def get_kip_information(
     overwrite_cache: bool = False,
     cache_filepath: str = "cache/kip_wiki_cache.json",
     timeout: int = 30,
-) -> dict[int, dict[str, Union[int, str]]]:
+) -> dict[int, dict[str, int | str]]:
     """Gets the details of all child pages of the KIP main page that relate
     to a KIP. This takes a long time so will cache its results in a json file."""
 
@@ -235,8 +236,8 @@ def get_kip_information(
     cache_file_path: Path = Path(cache_filepath)
     if cache_file_path.exists() and not overwrite_cache:
         print(f"Loading KIP Wiki information from cache file: {cache_file_path}")
-        with open(cache_file_path, "r", encoding="utf8") as cache_file:
-            output: dict[int, dict[str, Union[int, str]]] = {
+        with open(cache_file_path, encoding="utf8") as cache_file:
+            output: dict[int, dict[str, int | str]] = {
                 int(k): v for k, v in json.load(cache_file).items()
             }
         if not update:
@@ -251,7 +252,7 @@ def get_kip_information(
         print("Downloading KIP Wiki information for all KIPS")
 
     for child in child_page_generator(kip_main_info, chunk, timeout):
-        kip_match: Optional[re.Match] = re.search(KIP_PATTERN, child["title"])
+        kip_match: re.Match | None = re.search(KIP_PATTERN, child["title"])
         if kip_match:
             kip_id: int = int(kip_match.groupdict()["kip"])
             if kip_id not in output:
@@ -290,7 +291,7 @@ def get_kip_tables(kip_main_info: dict[str, Any]) -> dict[str, Tag]:
 
 
 def process_discussion_table(
-    discussion_table: Tag, kip_child_urls: dict[int, dict[str, Union[str, int]]]
+    discussion_table: Tag, kip_child_urls: dict[int, dict[str, str | int]]
 ) -> dict[int, dict[str, str]]:
     """Process the KIPs under discussion table"""
 
@@ -307,7 +308,7 @@ def process_discussion_table(
             continue
 
         kip_text: str = columns[0].a.text
-        kip_match: Optional[re.Match] = re.search(KIP_PATTERN, kip_text)
+        kip_match: re.Match | None = re.search(KIP_PATTERN, kip_text)
 
         if kip_match:
             kip_id: int = int(kip_match.groupdict()["kip"])
@@ -316,7 +317,7 @@ def process_discussion_table(
             try:
                 kip_dict["url"] = cast(str, kip_child_urls[kip_id]["web_url"])
             except KeyError:
-                href: Optional[Union[list[str], str]] = columns[0].a.get("href")
+                href: list[str] | str | None = columns[0].a.get("href")
                 if href:
                     if isinstance(href, list):
                         kip_dict["url"] = href[0]

@@ -38,6 +38,12 @@ jobs:
       - name: Install dependencies
         run: uv sync
       
+      - name: Run Ruff linting
+        run: uv run ruff check ipper/
+      
+      - name: Run Ruff formatting check
+        run: uv run ruff format --check ipper/
+      
       - name: Run tests with coverage
         run: uv run pytest
       

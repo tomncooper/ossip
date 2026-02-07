@@ -1,6 +1,5 @@
-import math
-
 import datetime as dt
+import math
 
 
 def generate_month_list(now: dt.datetime, then: dt.datetime) -> list[tuple[int, int]]:
@@ -14,7 +13,7 @@ def generate_month_list(now: dt.datetime, then: dt.datetime) -> list[tuple[int, 
 
     while not finished:
         month_list.append((year, month))
-        
+
         # Check if we've reached or passed the current month/year
         if year > now.year or (year == now.year and month >= now.month):
             finished = True
@@ -32,9 +31,9 @@ def calculate_age(date_str: str, date_format: str) -> str:
     """Calculate the age string for the given date string"""
 
     then: dt.datetime = dt.datetime.strptime(date_str, date_format).replace(
-        tzinfo=dt.timezone.utc
+        tzinfo=dt.UTC
     )
-    now: dt.datetime = dt.datetime.now(dt.timezone.utc)
+    now: dt.datetime = dt.datetime.now(dt.UTC)
     diff: dt.timedelta = now - then
 
     if diff.days < 7:

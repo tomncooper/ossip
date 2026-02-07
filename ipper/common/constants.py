@@ -1,4 +1,4 @@
-from enum import StrEnum, Enum
+from enum import Enum, StrEnum
 
 UNKNOWN_STR: str = "unknown"
 NOT_SET_STR: str = "not set"

@@ -6,7 +6,6 @@ APACHE_JIRA_URL = "https://issues.apache.org/jira"
 
 
 class JiraStatus(StrEnum):
-
     OPEN = "open"
     IN_PROGRESS = "in progress"
     RESOLVED = "resolved"

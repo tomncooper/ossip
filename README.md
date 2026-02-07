@@ -52,6 +52,40 @@ The test suite includes 38 tests covering:
 
 Coverage reports are generated in HTML format (see `htmlcov/index.html`) and in the terminal output.
 
+### Code Quality Checks
+
+This project uses **Ruff** for fast linting and formatting:
+
+```bash
+# Check code for issues
+$ uv run ruff check ipper/
+
+# Auto-fix issues (removes unused imports, fixes formatting, etc.)
+$ uv run ruff check ipper/ --fix
+
+# Format code
+$ uv run ruff format ipper/
+
+# Check formatting without modifying files
+$ uv run ruff format --check ipper/
+```
+
+Ruff checks for:
+- **Unused imports** (auto-removed)
+- **Import sorting** (auto-organized)
+- **Modern Python idioms** (e.g., `list[str]` instead of `List[str]`)
+- **Common bugs** (mutable defaults, etc.)
+- **Code simplifications**
+
+Configuration is in `pyproject.toml` under `[tool.ruff]`.
+
+Type checking with MyPy:
+
+```bash
+# Run type checker
+$ uv run mypy ipper/
+```
+
 ### Downloading and processing KIP data
 
 To download the Apache Kafka `dev` mailing list for the last year (longer periods can be set via the `--days` option), process the archives and download the KIP Wiki information from the confluence site; run the `init` command:

@@ -1,4 +1,5 @@
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 import requests
 
@@ -7,7 +8,9 @@ APACHE_CONFLUENCE_DATE_FORMAT: str = "%Y-%m-%dT%H:%M:%S.000Z"
 CONTENT_URL: str = APACHE_CONFLUENCE_BASE_URL + "/rest/api/content"
 
 
-def get_wiki_page_info(space_key: str, page_title: str, timeout: int = 30) -> dict[str, Any]:
+def get_wiki_page_info(
+    space_key: str, page_title: str, timeout: int = 30
+) -> dict[str, Any]:
     """Gets the details of the main KIP page"""
 
     wiki_request: requests.Response = requests.get(
@@ -25,7 +28,9 @@ def get_wiki_page_info(space_key: str, page_title: str, timeout: int = 30) -> di
     results: list[dict[str, Any]] = wiki_request.json()["results"]
 
     if len(results) == 0:
-        raise RuntimeError(f"No results found for page {page_title} in space {space_key}")
+        raise RuntimeError(
+            f"No results found for page {page_title} in space {space_key}"
+        )
 
     if len(results) > 1:
         raise RuntimeError(
@@ -50,7 +55,9 @@ def get_wiki_page_body(wiki_page_info: dict[str, Any], timeout: int = 30) -> str
     return wiki_body_request.json()["body"]["view"]["value"]
 
 
-def child_page_generator(wiki_page_info, chunk: int, timeout: int) -> Generator[dict, None, None]:
+def child_page_generator(
+    wiki_page_info, chunk: int, timeout: int
+) -> Generator[dict, None, None]:
     """Generator function which will yield the child info dict of each child page of the
     supplied wiki page"""
 
@@ -62,7 +69,8 @@ def child_page_generator(wiki_page_info, chunk: int, timeout: int) -> Generator[
     wiki_page_child_info_request.raise_for_status()
 
     first_child_request: requests.Response = requests.get(
-        APACHE_CONFLUENCE_BASE_URL + wiki_page_child_info_request.json()["_expandable"]["page"],
+        APACHE_CONFLUENCE_BASE_URL
+        + wiki_page_child_info_request.json()["_expandable"]["page"],
         params={
             "limit": str(chunk),
             "expand": "history.lastUpdated,body.view",
@@ -76,7 +84,6 @@ def child_page_generator(wiki_page_info, chunk: int, timeout: int) -> Generator[
     more_results: bool = True
 
     while more_results:
-
         yield from response_json["results"]
 
         if "next" in response_json["_links"]:

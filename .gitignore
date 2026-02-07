@@ -20,3 +20,6 @@ uv.lock
 htmlcov/
 .coverage
 .pytest_cache/
+
+# Ruff cache
+.ruff_cache/

@@ -1,6 +1,5 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from typing import List
 
 from pandas import DataFrame
 
@@ -8,14 +7,12 @@ from ipper.kafka.mailing_list import (
     get_multiple_mbox,
     load_mbox_cache_file,
     process_all_mbox_in_directory,
-    CACHE_DIR,
-    process_mbox_files,
     update_kip_mentions_cache,
 )
 from ipper.kafka.output import (
-    render_standalone_status_page,
-    render_kip_info_pages,
     enrich_kip_wiki_info_with_votes,
+    render_kip_info_pages,
+    render_standalone_status_page,
 )
 from ipper.kafka.wiki import get_kip_information, get_kip_main_page_info
 
@@ -57,7 +54,8 @@ def setup_init_command(main_subparser):
     )
 
     init_parser.add_argument(
-        "-od", "--output_dir",
+        "-od",
+        "--output_dir",
         required=False,
         help="Directory to save mailing list archives too.",
     )
@@ -128,7 +126,8 @@ def setup_mail_command(main_subparser) -> None:
     )
 
     download_subparser.add_argument(
-        "-od", "--output_dir",
+        "-od",
+        "--output_dir",
         required=False,
         help="Directory to save mailing list archives too.",
     )
@@ -197,8 +196,8 @@ def setup_wiki_command(main_subparser):
         required=False,
         action="store_true",
         help=(
-            "Update KIP wiki information. " +
-            "This will add any newly added KIPs to the existing cache."
+            "Update KIP wiki information. "
+            + "This will add any newly added KIPs to the existing cache."
         ),
     )
 
@@ -229,16 +228,16 @@ def setup_output_command(main_subparser):
     )
 
     standalone_subparser.add_argument(
-        "kip_info_dir", 
+        "kip_info_dir",
         nargs="?",
         default=None,
-        help="Optional: The path to the directory for storing individual KIP info pages"
+        help="Optional: The path to the directory for storing individual KIP info pages",
     )
 
     standalone_subparser.set_defaults(func=run_output_standalone_cmd)
 
 
-def setup_mail_download(args: Namespace) -> List[Path]:
+def setup_mail_download(args: Namespace) -> list[Path]:
     """Run the mail archive download command"""
 
     if "output_dir" not in args:
@@ -249,7 +248,7 @@ def setup_mail_download(args: Namespace) -> List[Path]:
     use_metadata = getattr(args, "use_metadata", False)
     days = getattr(args, "days", None)
 
-    files: List[Path] = get_multiple_mbox(
+    files: list[Path] = get_multiple_mbox(
         args.mailing_list,
         days_back=days,
         output_directory=out_dir,
@@ -277,7 +276,10 @@ def setup_wiki_download(args: Namespace) -> None:
 
     kip_main_info = get_kip_main_page_info()
     get_kip_information(
-        kip_main_info, chunk=args.chunk, update=args.update, overwrite_cache=args.overwrite
+        kip_main_info,
+        chunk=args.chunk,
+        update=args.update,
+        overwrite_cache=args.overwrite,
     )
 
 
@@ -304,7 +306,7 @@ def run_update_cmd(args: Namespace) -> None:
     args.overwrite = False
     args.chunk = 100  # Default chunk size for wiki download
     setup_wiki_download(args)
-    
+
     print("Updating Developer Mailing List Archives")
     # Use metadata to download only new months
     args.mailing_list = "dev"
@@ -312,9 +314,9 @@ def run_update_cmd(args: Namespace) -> None:
     args.overwrite = True
     args.use_metadata = True
     args.days = None  # Let metadata determine what to download
-    
-    updated_files: List[Path] = setup_mail_download(args)
-    
+
+    updated_files: list[Path] = setup_mail_download(args)
+
     # Update kip_mentions.csv by appending new data
     output_file = Path("cache/mailbox_files/kip_mentions.csv")
     mbox_directory = Path("cache/mailbox_files")
@@ -333,22 +335,23 @@ def run_output_standalone_cmd(args: Namespace) -> None:
     cache_file = Path(args.kip_mentions_file)
     kip_mentions: DataFrame = load_mbox_cache_file(cache_file)
     render_standalone_status_page(kip_mentions, args.output_file)
-    
+
     # Generate individual KIP info pages if directory is specified
     if args.kip_info_dir:
         kip_main_info = get_kip_main_page_info()
         kip_wiki_info = get_kip_information(kip_main_info)
-        
+
         # Enrich with vote data
         enriched_kip_info = enrich_kip_wiki_info_with_votes(kip_wiki_info, kip_mentions)
-        
+
         # Render individual pages
         render_kip_info_pages(enriched_kip_info, args.kip_info_dir)
 
 
 if __name__ == "__main__":
-
-    PARSER: ArgumentParser = ArgumentParser("Kafka Improvement Proposal Enrichment Program")
+    PARSER: ArgumentParser = ArgumentParser(
+        "Kafka Improvement Proposal Enrichment Program"
+    )
     setup_kafka_parser(PARSER)
     ARGS: Namespace = PARSER.parse_args()
     ARGS.func(ARGS)

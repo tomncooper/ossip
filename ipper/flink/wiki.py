@@ -1,18 +1,17 @@
 import re
-
-from typing import Any, Optional, cast, Union, Tuple
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from ipper.common.constants import IPState, UNKNOWN_STR, NOT_SET_STR
+from ipper.common.constants import NOT_SET_STR, UNKNOWN_STR, IPState
+from ipper.common.jira import JiraStatus, get_apache_jira_status
 from ipper.common.wiki import (
     APACHE_CONFLUENCE_BASE_URL,
-    get_wiki_page_info,
     child_page_generator,
+    get_wiki_page_info,
 )
-from ipper.common.jira import JiraStatus, get_apache_jira_status
 
 FLIP_PATTERN: re.Pattern = re.compile(r"FLIP-(?P<flip>\d+)", re.IGNORECASE)
 FLINK_JIRA_PATTERN: re.Pattern = re.compile(r"FLINK-\d+")
@@ -39,7 +38,7 @@ def get_flip_main_page_info(timeout: int = 30) -> dict[str, Any]:
     )
 
 
-def _find_Jira_key_and_link(row_data: Tag) -> tuple[Optional[str], Optional[str]]:
+def _find_Jira_key_and_link(row_data: Tag) -> tuple[str | None, str | None]:
 
     jira_div = row_data.find("div", {"class": "content-wrapper"})
 
@@ -53,7 +52,7 @@ def _find_Jira_key_and_link(row_data: Tag) -> tuple[Optional[str], Optional[str]
 
     if jira_span:
         if cast(Tag, jira_span).has_attr("data-jira-key"):
-            jira_id_values: Optional[Union[list[str], str]] = cast(Tag, jira_span).get(
+            jira_id_values: list[str] | str | None = cast(Tag, jira_span).get(
                 "data-jira-key"
             )
             if isinstance(jira_id_values, list):
@@ -65,7 +64,9 @@ def _find_Jira_key_and_link(row_data: Tag) -> tuple[Optional[str], Optional[str]
 
         link = jira_span.find("a")
         if link and cast(Tag, link).has_attr("href"):
-            jira_link_values: Optional[Union[list[str], str]] = cast(Tag, link).get("href")
+            jira_link_values: list[str] | str | None = cast(Tag, link).get(
+                "href"
+            )
             if isinstance(jira_link_values, list):
                 jira_link = jira_link_values[0]
             else:
@@ -78,7 +79,9 @@ def _find_Jira_key_and_link(row_data: Tag) -> tuple[Optional[str], Optional[str]
     return None, None
 
 
-def _add_row_data(header: str, row_data: Tag, flip_dict: dict[str, Union[str, int]]) -> None:
+def _add_row_data(
+    header: str, row_data: Tag, flip_dict: dict[str, str | int]
+) -> None:
 
     if "discussion" in header:
         if TEMPLATE_BOILER_PLATE_PREFIX in row_data.text:
@@ -127,7 +130,6 @@ def _add_row_data(header: str, row_data: Tag, flip_dict: dict[str, Union[str, in
         return
 
     if "release" in header:
-
         component, version = _get_release_version(row_data.text)
 
         print("\tTarget Release:")
@@ -142,8 +144,8 @@ def _add_row_data(header: str, row_data: Tag, flip_dict: dict[str, Union[str, in
         flip_dict[RELEASE_VERSION_KEY] = version
 
 
-def _get_release_version(release_row_text) -> Tuple[Optional[str], str]:
-    """ Returns the component (Flink by default) and version the release row refers to."""
+def _get_release_version(release_row_text) -> tuple[str | None, str]:
+    """Returns the component (Flink by default) and version the release row refers to."""
 
     release_split = RELEASE_NUMBER_PATTERN.split(release_row_text.strip())
 
@@ -161,9 +163,7 @@ def _get_release_version(release_row_text) -> Tuple[Optional[str], str]:
     else:
         # We have more than 1 version numbers in the release text so we join them together
         version = ", ".join(
-            sorted(
-                RELEASE_NUMBER_PATTERN.findall(release_row_text.strip())
-            )
+            sorted(RELEASE_NUMBER_PATTERN.findall(release_row_text.strip()))
         )
 
     return component, version
@@ -198,12 +198,15 @@ def _determine_state(flip_dict) -> IPState:
         return IPState.UNDER_DISCUSSION
 
     if has_jira:
-
-        jira_id_match: Optional[re.Match] = FLINK_JIRA_PATTERN.search(flip_dict[JIRA_LINK_KEY])
+        jira_id_match: re.Match | None = FLINK_JIRA_PATTERN.search(
+            flip_dict[JIRA_LINK_KEY]
+        )
         if jira_id_match:
             jira_id = jira_id_match.group()
         else:
-            print("WARNING: Could not find JIRA ID from url: " + flip_dict[JIRA_LINK_KEY])
+            print(
+                "WARNING: Could not find JIRA ID from url: " + flip_dict[JIRA_LINK_KEY]
+            )
             print(f"\t\tFLIP State:\t\t{IPState.UNKNOWN}")
             return IPState.UNKNOWN
 
@@ -229,20 +232,22 @@ def _determine_state(flip_dict) -> IPState:
     return IPState.UNKNOWN
 
 
-def _enrich_flip_info(flip_id: int, body_html: str, flip_dict: dict[str, Union[str, int]]) -> None:
+def _enrich_flip_info(
+    flip_id: int, body_html: str, flip_dict: dict[str, str | int]
+) -> None:
     """Parses the body of the FLIP wiki page pointed to by the 'content_url'
     key in the supplied dictionary. It will add the derived data to the
     supplied dict.
 
     Search process:
         1. Find the first table in the body (some flips don't have a table and will be ignored)
-        2. Identify if there is a Discussion Thread, Vote Thread, JIRA or Release entry. 
+        2. Identify if there is a Discussion Thread, Vote Thread, JIRA or Release entry.
            Add the details to the flip_dict.
         3. If there is a release, set the status as RELEASED.
-        4. 
+        4.
     """
 
-    parsed_body: BeautifulSoup = BeautifulSoup(body_html, "html.parser")    
+    parsed_body: BeautifulSoup = BeautifulSoup(body_html, "html.parser")
 
     tables = parsed_body.find_all("table")
 
@@ -255,8 +260,8 @@ def _enrich_flip_info(flip_id: int, body_html: str, flip_dict: dict[str, Union[s
 
     if not tables:
         print(
-            f"WARNING: no summary table in FLIP-{flip_id}. " +
-            f"This FLIP state will be set to {UNKNOWN_STR}."
+            f"WARNING: no summary table in FLIP-{flip_id}. "
+            + f"This FLIP state will be set to {UNKNOWN_STR}."
         )
         return
 
@@ -265,8 +270,8 @@ def _enrich_flip_info(flip_id: int, body_html: str, flip_dict: dict[str, Union[s
     summary_rows = summary_table.findAll("tr")
     if not summary_rows:
         print(
-            f"WARNING: no information in summary table in FLIP-{flip_id}. " +
-            f"This FLIP state will be set to {UNKNOWN_STR}."
+            f"WARNING: no information in summary table in FLIP-{flip_id}. "
+            + f"This FLIP state will be set to {UNKNOWN_STR}."
         )
         return
 
@@ -278,7 +283,7 @@ def _enrich_flip_info(flip_id: int, body_html: str, flip_dict: dict[str, Union[s
             # We have no idea what this row is
             continue
 
-        row_data = row.find('td')
+        row_data = row.find("td")
         if row_data:
             _add_row_data(header, row_data, flip_dict)
 
@@ -289,7 +294,7 @@ def process_child_kip(flip_id: int, child: dict):
     """Process and enrich the KIP child page dictionary"""
 
     print(f"Processing FLIP {flip_id} wiki page")
-    child_dict: dict[str, Union[int, str]] = {}
+    child_dict: dict[str, int | str] = {}
     child_dict["id"] = flip_id
     child_dict["title"] = child["title"]
     child_dict["web_url"] = APACHE_CONFLUENCE_BASE_URL + child["_links"]["webui"]
@@ -314,39 +319,49 @@ def get_flip_information(
 ):
 
     output = existing_cache if existing_cache else {}
-    
+
     # Calculate refresh cutoff date
-    refresh_cutoff = datetime.now(timezone.utc) - timedelta(days=refresh_days)
-    
+    refresh_cutoff = datetime.now(UTC) - timedelta(days=refresh_days)
+
     if existing_cache:
-        print(f"Updating FLIP Wiki information with new FLIPs and refreshing FLIPs created within {refresh_days} days")
+        print(
+            f"Updating FLIP Wiki information with new FLIPs and refreshing FLIPs created within {refresh_days} days"
+        )
     else:
         print("Downloading FLIP Wiki information for all FLIPs")
 
     for child in child_page_generator(flip_main_info, chunk, timeout):
-        flip_match: Optional[re.Match] = re.search(FLIP_PATTERN, child["title"])
+        flip_match: re.Match | None = re.search(FLIP_PATTERN, child["title"])
         if flip_match:
             flip_id: int = int(flip_match.groupdict()["flip"])
-            
+
             # Check if FLIP already exists in cache
             if flip_id in output:
                 # Parse the created_on date from the cached FLIP
                 try:
                     created_on_str = output[flip_id]["created_on"]
                     # Handle ISO format with 'Z' or timezone info
-                    created_date = datetime.fromisoformat(created_on_str.replace('Z', '+00:00'))
-                    
+                    created_date = datetime.fromisoformat(
+                        created_on_str.replace("Z", "+00:00")
+                    )
+
                     # Skip if FLIP was created outside the refresh window
                     if created_date < refresh_cutoff:
-                        print(f"Skipping FLIP-{flip_id} (created {created_on_str}, outside {refresh_days}-day refresh window)")
+                        print(
+                            f"Skipping FLIP-{flip_id} (created {created_on_str}, outside {refresh_days}-day refresh window)"
+                        )
                         continue
                     else:
-                        print(f"Refreshing FLIP-{flip_id} (created recently: {created_on_str})")
+                        print(
+                            f"Refreshing FLIP-{flip_id} (created recently: {created_on_str})"
+                        )
                 except (KeyError, ValueError) as e:
-                    print(f"WARNING: Could not parse created_on date for FLIP-{flip_id}, refreshing anyway: {e}")
-            
+                    print(
+                        f"WARNING: Could not parse created_on date for FLIP-{flip_id}, refreshing anyway: {e}"
+                    )
+
             output[flip_id] = process_child_kip(flip_id, child)
-            
+
             if flip_id not in (existing_cache or {}):
                 print(f"Added new FLIP-{flip_id} to cache")
 

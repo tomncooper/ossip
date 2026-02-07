@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, Namespace
 
-from ipper.kafka.main import setup_kafka_parser
 from ipper.flink.main import setup_flink_parser
+from ipper.kafka.main import setup_kafka_parser
 
 CACHE_DIR = "cache"
 
@@ -23,7 +23,6 @@ def setup_top_level_parser() -> ArgumentParser:
 
 
 if __name__ == "__main__":
-
     PARSER = setup_top_level_parser()
     ARGS: Namespace = PARSER.parse_args()
     ARGS.func(ARGS)

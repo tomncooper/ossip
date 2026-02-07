@@ -1,31 +1,27 @@
 import json
 import sys
-
 from argparse import Namespace
 from pathlib import Path
-from typing import List
 
 from pandas import DataFrame
 
-from ipper.flink.wiki import (
-    get_flip_main_page_info,
-    get_flip_information,
-)
-from ipper.flink.output import (
-    render_flink_main_page,
-    render_raw_info_pages,
-    FLINK_MAIN_PAGE_TEMPLATE,
-    FLIP_RAW_INFO_PAGE_TEMPLATE,
-)
+from ipper.common.constants import DEFAULT_TEMPLATES_DIR
 from ipper.flink.mailing_list import (
     get_multiple_mbox,
     load_mbox_cache_file,
     process_all_mbox_in_directory,
-    CACHE_DIR,
-    process_mbox_files,
     update_flip_mentions_cache,
 )
-from ipper.common.constants import DEFAULT_TEMPLATES_DIR
+from ipper.flink.output import (
+    FLINK_MAIN_PAGE_TEMPLATE,
+    FLIP_RAW_INFO_PAGE_TEMPLATE,
+    render_flink_main_page,
+    render_raw_info_pages,
+)
+from ipper.flink.wiki import (
+    get_flip_information,
+    get_flip_main_page_info,
+)
 
 FLIP_CACHE_FILENAME = "flip_wiki_cache.json"
 
@@ -60,16 +56,18 @@ def process_wiki(args: Namespace) -> None:
     existing_flips = {}
     if flip_cache_path.exists() and not args.overwrite:
         if not args.update:
-            print(f"Cache file {flip_cache_path} already exists. Add --overwrite to redownload or --update for incremental update")
+            print(
+                f"Cache file {flip_cache_path} already exists. Add --overwrite to redownload or --update for incremental update"
+            )
             sys.exit(1)
-        
+
         print(f"Loading existing FLIP cache from {flip_cache_path}")
-        with open(flip_cache_path, "r", encoding="utf8") as flip_cache_file:
+        with open(flip_cache_path, encoding="utf8") as flip_cache_file:
             existing_flips = {int(k): v for k, v in json.load(flip_cache_file).items()}
 
     main_page = get_flip_main_page_info()
     flip_data = get_flip_information(
-        main_page, 
+        main_page,
         chunk=args.chunk,
         existing_cache=existing_flips,
         refresh_days=args.refresh_days,
@@ -85,7 +83,7 @@ def process_output(args: Namespace) -> None:
     if not wiki_cache_path.exists():
         raise AttributeError(f"Wiki Cache file {wiki_cache_path} does not exist")
 
-    with open(wiki_cache_path, "r", encoding="utf8") as wiki_cache_file:
+    with open(wiki_cache_path, encoding="utf8") as wiki_cache_file:
         wiki_cache_data = json.load(wiki_cache_file)
 
     # Load mailing list mentions if available
@@ -140,7 +138,7 @@ def setup_wiki_command(main_subparser):
         "--cache",
         required=False,
         default="cache",
-        help="Folder path where processed information will be cached"
+        help="Folder path where processed information will be cached",
     )
 
     wiki_download_subparser.add_argument(
@@ -189,7 +187,8 @@ def setup_init_command(main_subparser):
     )
 
     init_parser.add_argument(
-        "-od", "--output_dir",
+        "-od",
+        "--output_dir",
         required=False,
         help="Directory to save mailing list archives too.",
     )
@@ -260,7 +259,8 @@ def setup_mail_command(main_subparser) -> None:
     )
 
     download_subparser.add_argument(
-        "-od", "--output_dir",
+        "-od",
+        "--output_dir",
         required=False,
         help="Directory to save mailing list archives too.",
     )
@@ -294,7 +294,7 @@ def setup_mail_command(main_subparser) -> None:
     process_subparser.set_defaults(func=process_mail_archives)
 
 
-def setup_mail_download(args: Namespace) -> List[Path]:
+def setup_mail_download(args: Namespace) -> list[Path]:
     """Run the mail archive download command"""
 
     if "output_dir" not in args:
@@ -305,7 +305,7 @@ def setup_mail_download(args: Namespace) -> List[Path]:
     use_metadata = getattr(args, "use_metadata", False)
     days = getattr(args, "days", None)
 
-    files: List[Path] = get_multiple_mbox(
+    files: list[Path] = get_multiple_mbox(
         args.mailing_list,
         days_back=days,
         output_directory=out_dir,
@@ -355,7 +355,7 @@ def run_update_cmd(args: Namespace) -> None:
     args.chunk = 100  # Default chunk size for wiki download
     args.refresh_days = 60  # Refresh FLIPs created in last 60 days
     process_wiki(args)
-    
+
     print("Updating Developer Mailing List Archives")
     # Use metadata to download only new months
     args.mailing_list = "dev"
@@ -363,9 +363,9 @@ def run_update_cmd(args: Namespace) -> None:
     args.overwrite = True
     args.use_metadata = True
     args.days = None  # Let metadata determine what to download
-    
-    updated_files: List[Path] = setup_mail_download(args)
-    
+
+    updated_files: list[Path] = setup_mail_download(args)
+
     # Update flip_mentions.csv by appending new data
     output_file = Path("cache/flink_mailbox_files/flip_mentions.csv")
     mbox_directory = Path("cache/flink_mailbox_files")
@@ -395,23 +395,30 @@ def setup_output_command(main_subparser):
     output_parser.add_argument(
         "main_page_file", help="The path to the main Flink index html file"
     )
-    
+
     output_parser.add_argument(
-        "raw_flip_dir", help="The path to the directory for storing the raw flip information files"
+        "raw_flip_dir",
+        help="The path to the directory for storing the raw flip information files",
     )
 
     output_parser.add_argument(
-        "--template_dir", required=False, default=DEFAULT_TEMPLATES_DIR,
+        "--template_dir",
+        required=False,
+        default=DEFAULT_TEMPLATES_DIR,
         help="Path to the directory holding the jinja templates",
     )
 
     output_parser.add_argument(
-        "--main_page_template_filename", required=False, default=FLINK_MAIN_PAGE_TEMPLATE,
+        "--main_page_template_filename",
+        required=False,
+        default=FLINK_MAIN_PAGE_TEMPLATE,
         help="Name of the flink main page template, inside the template directory",
     )
-    
+
     output_parser.add_argument(
-        "--raw_flip_template_filename", required=False, default=FLIP_RAW_INFO_PAGE_TEMPLATE,
+        "--raw_flip_template_filename",
+        required=False,
+        default=FLIP_RAW_INFO_PAGE_TEMPLATE,
         help="Name of the template for the raw flip info pages, inside the template directory",
     )
 
