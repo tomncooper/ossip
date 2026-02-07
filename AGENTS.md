@@ -214,13 +214,14 @@ The project includes:
 
 ### When Working on This Project:
 
-1. **Use uv for dependency management** - Always use `uv run` or `uv sync`, never pip directly
-2. **Type hints are required** - The project uses MyPy, maintain type annotations
-3. **Minimal changes** - The data pipeline is working; focus on incremental improvements
-4. **Test with small data first** - Use `--days 30` for testing instead of full 365-day downloads
-5. **Cache awareness** - Understand the caching strategy to avoid unnecessary API calls
-6. **HTML templates** - Modify Jinja2 templates for UI changes, not Python code
-7. **Project structure** - Each supported project (kafka, flink) has its own submodule under `ipper/`
+1. **Always pull from remote first** - Before starting any work, run `git pull` to get the latest cache files. The CI job runs daily (09:30 UTC) and commits updated cache data (CSV/JSON files in `cache/`) back to the repository. Working with stale cache data can lead to inconsistencies.
+2. **Use uv for dependency management** - Always use `uv run` or `uv sync`, never pip directly
+3. **Type hints are required** - The project uses MyPy, maintain type annotations
+4. **Minimal changes** - The data pipeline is working; focus on incremental improvements
+5. **Test with small data first** - Use `--days 30` for testing instead of full 365-day downloads
+6. **Cache awareness** - Understand the caching strategy to avoid unnecessary API calls
+7. **HTML templates** - Modify Jinja2 templates for UI changes, not Python code
+8. **Project structure** - Each supported project (kafka, flink) has its own submodule under `ipper/`
 
 ### Common Tasks:
 
@@ -259,5 +260,5 @@ CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 
 ---
 
-**Last Updated:** 2026-01-01
+**Last Updated:** 2026-02-07
 **Maintainer:** Thomas Cooper
