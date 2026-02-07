@@ -77,7 +77,9 @@ def _find_Jira_key_and_link(row_data: Tag) -> tuple[str | None, str | None]:
     return None, None
 
 
-def _add_row_data(header: str, row_data: Tag, flip_dict: dict[str, str | int]) -> None:
+def _add_row_data(
+    header: str, row_data: Tag, flip_dict: dict[str, str | int | list[str]]
+) -> None:
 
     if "discussion" in header:
         if TEMPLATE_BOILER_PLATE_PREFIX in row_data.text:
@@ -85,8 +87,9 @@ def _add_row_data(header: str, row_data: Tag, flip_dict: dict[str, str | int]) -
             return
 
         link = row_data.find("a")
-        if link and cast(Tag, link).has_attr("href"):
-            flip_dict[DISCUSSION_THREAD_KEY] = cast(Tag, link).get("href")
+        if link and isinstance(link, Tag):
+            href = link.get("href")
+            flip_dict[DISCUSSION_THREAD_KEY] = href if href else NOT_SET_STR
         else:
             flip_dict[DISCUSSION_THREAD_KEY] = NOT_SET_STR
 
@@ -98,8 +101,9 @@ def _add_row_data(header: str, row_data: Tag, flip_dict: dict[str, str | int]) -
             return
 
         link = row_data.find("a")
-        if link and cast(Tag, link).has_attr("href"):
-            flip_dict[VOTE_THREAD_KEY] = link.get("href")
+        if link and isinstance(link, Tag):
+            href = link.get("href")
+            flip_dict[VOTE_THREAD_KEY] = href if href else NOT_SET_STR
         else:
             flip_dict[VOTE_THREAD_KEY] = NOT_SET_STR
 
@@ -226,7 +230,7 @@ def _determine_state(flip_dict) -> IPState:
 
 
 def _enrich_flip_info(
-    flip_id: int, body_html: str, flip_dict: dict[str, str | int]
+    flip_id: int, body_html: str, flip_dict: dict[str, str | int | list[str]]
 ) -> None:
     """Parses the body of the FLIP wiki page pointed to by the 'content_url'
     key in the supplied dictionary. It will add the derived data to the
@@ -287,7 +291,7 @@ def process_child_kip(flip_id: int, child: dict):
     """Process and enrich the KIP child page dictionary"""
 
     print(f"Processing FLIP {flip_id} wiki page")
-    child_dict: dict[str, int | str] = {}
+    child_dict: dict[str, int | str | list[str]] = {}
     child_dict["id"] = flip_id
     child_dict["title"] = child["title"]
     child_dict["web_url"] = APACHE_CONFLUENCE_BASE_URL + child["_links"]["webui"]
@@ -307,7 +311,7 @@ def get_flip_information(
     flip_main_info,
     chunk: int = 100,
     timeout: int = 30,
-    existing_cache: dict = None,
+    existing_cache: dict | None = None,
     refresh_days: int = 30,
 ):
 

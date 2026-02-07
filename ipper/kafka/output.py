@@ -221,7 +221,7 @@ def enrich_kip_wiki_info_with_votes(
 
 
 def render_kip_info_pages(
-    kip_wiki_info: dict[int, dict[str, int | str | list[str]]],
+    kip_wiki_info: dict[int, dict[str, int | str | list[dict[str, str]]]],
     output_directory: str,
     template_dir: str = DEFAULT_TEMPLATES_DIR,
     template_filename: str = KIP_RAW_INFO_PAGE_TEMPLATE,

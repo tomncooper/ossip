@@ -222,6 +222,12 @@ def get_months_to_download(
         last_year = metadata["latest_mbox_year"]
         last_month = metadata["latest_mbox_month"]
 
+        # Ensure year and month are integers for datetime constructor
+        if not isinstance(last_year, int) or not isinstance(last_month, int):
+            raise ValueError(
+                f"Invalid metadata: year and month must be integers, got {type(last_year)} and {type(last_month)}"
+            )
+
         # Start from the last processed month (re-download it to catch any late emails)
         then = dt.datetime(last_year, last_month, 1, tzinfo=dt.UTC)
         print(f"Incremental update from {then.isoformat()} to {now.isoformat()}")

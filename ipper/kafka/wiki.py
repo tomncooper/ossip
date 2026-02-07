@@ -142,9 +142,9 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
             state_processed = True
 
         elif not jira_processed and "jira" in para.text.lower():
-            link: Tag = para.find("a")
+            link = para.find("a")
             if link:
-                href: list | str | None = link.get("href")
+                href = link.get("href")
             else:
                 href = None
 
@@ -157,9 +157,9 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
             jira_processed = True
 
         elif not discussion_processed and "discussion thread" in para.text.lower():
-            link: Tag = para.find("a")
+            link = para.find("a")
             if link:
-                href: list | str | None = link.get("href")
+                href = link.get("href")
             else:
                 href = None
 
@@ -172,9 +172,9 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
             discussion_processed = True
 
         elif not vote_processed and "voting thread" in para.text.lower():
-            link: Tag = para.find("a")
+            link = para.find("a")
             if link:
-                href: list | str | None = link.get("href")
+                href = link.get("href")
             else:
                 href = None
 
