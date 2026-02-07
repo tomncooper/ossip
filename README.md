@@ -20,6 +20,38 @@ To install the necessary libraries run:
 $ uv sync
 ```
 
+### Running Tests
+
+This project includes unit tests for critical functions. To run the test suite:
+
+```bash
+# Run all tests
+$ uv run pytest
+
+# Run with verbose output
+$ uv run pytest -v
+
+# Run specific test file
+$ uv run pytest tests/common/test_utils.py
+
+# Run tests without coverage report
+$ uv run pytest --no-cov
+```
+
+Current test coverage focuses on critical functions in the `ipper/common` module:
+- **`utils.py`**: 100% coverage (date/time utilities)
+- **`mailing_list.py`**: 40% coverage (parsing functions)
+- **Overall `ipper/common`**: 35% coverage
+
+The test suite includes 38 tests covering:
+- Month list generation (prevents future month bugs)
+- Email timestamp parsing (multiple formats)
+- Vote parsing (binding votes only)
+- Metadata handling
+- Age calculation
+
+Coverage reports are generated in HTML format (see `htmlcov/index.html`) and in the terminal output.
+
 ### Downloading and processing KIP data
 
 To download the Apache Kafka `dev` mailing list for the last year (longer periods can be set via the `--days` option), process the archives and download the KIP Wiki information from the confluence site; run the `init` command:

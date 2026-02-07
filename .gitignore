@@ -15,3 +15,8 @@ cache/**/flink_processed_mailbox_cache/
 # uv
 .venv/
 uv.lock
+
+# Test coverage
+htmlcov/
+.coverage
+.pytest_cache/
