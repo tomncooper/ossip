@@ -14,13 +14,16 @@ def generate_month_list(now: dt.datetime, then: dt.datetime) -> list[tuple[int, 
 
     while not finished:
         month_list.append((year, month))
-        month = (month + 1) % 13
-        if month == 0:
-            year += 1
-            month = 1
-        if month >= now.month and year >= now.year:
-            month_list.append((year, month))
+        
+        # Check if we've reached or passed the current month/year
+        if year > now.year or (year == now.year and month >= now.month):
             finished = True
+        else:
+            # Move to next month
+            month = (month + 1) % 13
+            if month == 0:
+                year += 1
+                month = 1
 
     return month_list
 
