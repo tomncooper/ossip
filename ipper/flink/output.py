@@ -96,8 +96,8 @@ def enrich_flip_wiki_info_with_votes(
     enriched_info: dict = {}
     for flip_id_str, flip_data in flip_wiki_info.items():
         flip_id = int(flip_id_str)
-        enriched_flip: dict[str, int | str | list[str] | list[dict[str, str]]] = (
-            dict(flip_data)
+        enriched_flip: dict[str, int | str | list[str] | list[dict[str, str]]] = dict(
+            flip_data
         )
 
         if flip_id in vote_dict:
@@ -141,7 +141,7 @@ def render_flink_main_page(
     # Put the FLIPS in reverse order
     flip_data = [
         wiki_cache[str(flip_id)]
-        for flip_id in sorted([int(key) for key in wiki_cache.keys()], reverse=True)
+        for flip_id in sorted([int(key) for key in wiki_cache], reverse=True)
     ]
 
     output: str = template.render(

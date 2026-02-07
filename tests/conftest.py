@@ -1,12 +1,14 @@
 """Pytest configuration and shared fixtures."""
+
 import datetime as dt
+
 import pytest
 
 
 @pytest.fixture
 def sample_datetime_utc():
     """Returns a sample datetime with UTC timezone for testing."""
-    return dt.datetime(2026, 2, 7, 12, 0, 0, tzinfo=dt.timezone.utc)
+    return dt.datetime(2026, 2, 7, 12, 0, 0, tzinfo=dt.UTC)
 
 
 @pytest.fixture

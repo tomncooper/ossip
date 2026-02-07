@@ -105,20 +105,20 @@ def is_template_default_url(url: list | str | None, field_type: str) -> bool:
     # Handle list-type href values
     url_str = url[0] if isinstance(url, list) else url
 
-    if field_type == "discussion":
-        return url_str == KIP_TEMPLATE_DEFAULT_DISCUSSION_URL
-    elif field_type == "jira":
-        return url_str == KIP_TEMPLATE_DEFAULT_JIRA_URL
-    elif field_type == "vote":
-        # No known default for voting thread (voting is usually added later)
+    # Map field types to their default URLs
+    defaults = {
+        "discussion": KIP_TEMPLATE_DEFAULT_DISCUSSION_URL,
+        "jira": KIP_TEMPLATE_DEFAULT_JIRA_URL,
+        "vote": None,  # No known default for voting thread (voting is usually added later)
+    }
+
+    default_url = defaults.get(field_type)
+    if default_url is None:
         return False
+    return url_str == default_url
 
-    return False
 
-
-def enrich_kip_info(
-    body_html: str, kip_dict: dict[str, list[str] | str | int]
-) -> None:
+def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) -> None:
     """Parses the body of the KIP wiki page pointed to by the 'content_url'
     key in the supplied dictionary. It will add the derived data to the
     supplied dict."""

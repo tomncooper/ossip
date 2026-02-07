@@ -64,9 +64,7 @@ def _find_Jira_key_and_link(row_data: Tag) -> tuple[str | None, str | None]:
 
         link = jira_span.find("a")
         if link and cast(Tag, link).has_attr("href"):
-            jira_link_values: list[str] | str | None = cast(Tag, link).get(
-                "href"
-            )
+            jira_link_values: list[str] | str | None = cast(Tag, link).get("href")
             if isinstance(jira_link_values, list):
                 jira_link = jira_link_values[0]
             else:
@@ -79,9 +77,7 @@ def _find_Jira_key_and_link(row_data: Tag) -> tuple[str | None, str | None]:
     return None, None
 
 
-def _add_row_data(
-    header: str, row_data: Tag, flip_dict: dict[str, str | int]
-) -> None:
+def _add_row_data(header: str, row_data: Tag, flip_dict: dict[str, str | int]) -> None:
 
     if "discussion" in header:
         if TEMPLATE_BOILER_PLATE_PREFIX in row_data.text:
@@ -174,10 +170,7 @@ def check_if_set(flip_dict, key):
     if key not in flip_dict:
         return False
 
-    if flip_dict[key] != UNKNOWN_STR and flip_dict[key] != NOT_SET_STR:
-        return True
-
-    return False
+    return bool(flip_dict[key] != UNKNOWN_STR and flip_dict[key] != NOT_SET_STR)
 
 
 def _determine_state(flip_dict) -> IPState:

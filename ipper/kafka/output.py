@@ -128,9 +128,7 @@ def create_status_dict(
     for kip_id in sorted(kip_wiki_info.keys(), reverse=True):
         kip_data: dict[str, int | str] = kip_wiki_info[kip_id]
         if kip_data["state"] == IPState.UNDER_DISCUSSION:
-            status_entry: dict[
-                str, int | str | KIPStatus | list[dict[str, str]]
-            ] = {}
+            status_entry: dict[str, int | str | KIPStatus | list[dict[str, str]]] = {}
             status_entry["id"] = kip_id
             status_entry["text"] = clean_description(cast(str, kip_data["title"]))
             status_entry["url"] = kip_data["web_url"]

@@ -240,10 +240,7 @@ def setup_output_command(main_subparser):
 def setup_mail_download(args: Namespace) -> list[Path]:
     """Run the mail archive download command"""
 
-    if "output_dir" not in args:
-        out_dir = None
-    else:
-        out_dir = args.output_dir
+    out_dir = None if "output_dir" not in args else args.output_dir
 
     use_metadata = getattr(args, "use_metadata", False)
     days = getattr(args, "days", None)

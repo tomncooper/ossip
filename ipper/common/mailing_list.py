@@ -284,9 +284,7 @@ def extract_message_payload(msg: Message) -> list[str]:
     valid_payloads: list[str] = []
 
     for message in msg.walk():
-        temp_payload: list[Message | str] | Message | str = (
-            message.get_payload()
-        )
+        temp_payload: list[Message | str] | Message | str = message.get_payload()
         if isinstance(temp_payload, list):
             if isinstance(temp_payload[0], Message):
                 payload: str = cast(str, temp_payload[0].get_payload())

@@ -1,16 +1,16 @@
 """Tests for ipper.common.mailing_list module."""
-import datetime as dt
+
 import json
+
 import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+
 from ipper.common.mailing_list import (
-    parse_message_timestamp,
-    parse_for_vote,
-    vote_converter,
-    save_metadata,
-    load_metadata,
     get_months_to_download,
+    load_metadata,
+    parse_for_vote,
+    parse_message_timestamp,
+    save_metadata,
+    vote_converter,
 )
 
 
@@ -21,7 +21,7 @@ class TestParseMessageTimestamp:
         """Test parsing standard email date format."""
         date_str = "Fri, 07 Feb 2026 12:00:00 +0000"
         result = parse_message_timestamp(date_str)
-        
+
         assert result is not None
         assert result.year == 2026
         assert result.month == 2
@@ -33,7 +33,7 @@ class TestParseMessageTimestamp:
         """Test parsing date format with timezone string in parentheses."""
         date_str = "Fri, 07 Feb 2026 12:00:00 +0000 (UTC)"
         result = parse_message_timestamp(date_str)
-        
+
         assert result is not None
         assert result.year == 2026
         assert result.month == 2
@@ -43,7 +43,7 @@ class TestParseMessageTimestamp:
         """Test parsing with different timezone abbreviations."""
         date_str = "Fri, 07 Feb 2026 12:00:00 +0000 (GMT)"
         result = parse_message_timestamp(date_str)
-        
+
         assert result is not None
         assert result.year == 2026
 
@@ -51,7 +51,7 @@ class TestParseMessageTimestamp:
         """Test parsing with negative timezone offset."""
         date_str = "Fri, 07 Feb 2026 12:00:00 -0500"
         result = parse_message_timestamp(date_str)
-        
+
         assert result is not None
         assert result.year == 2026
         assert result.month == 2
@@ -60,7 +60,7 @@ class TestParseMessageTimestamp:
         """Test that invalid date format returns None."""
         date_str = "This is not a valid date"
         result = parse_message_timestamp(date_str)
-        
+
         assert result is None
 
     def test_real_world_date_examples(self):
@@ -70,7 +70,7 @@ class TestParseMessageTimestamp:
             "Wed, 25 Feb 2015 01:24:15 +0000",
             "Thu, 03 Feb 2026 12:42:00 +0000 (UTC)",
         ]
-        
+
         for date_str in test_cases:
             result = parse_message_timestamp(date_str)
             assert result is not None, f"Failed to parse: {date_str}"
@@ -104,7 +104,7 @@ class TestParseForVote:
             "+1 (Binding)",
             "+1 (BiNdInG)",
         ]
-        
+
         for payload in payloads:
             result = parse_for_vote(payload)
             assert result == "+1", f"Failed for: {payload}"
@@ -116,7 +116,7 @@ class TestParseForVote:
             "+1 (non-binding)",
             "I vote +1",
         ]
-        
+
         for payload in payloads:
             result = parse_for_vote(payload)
             assert result is None, f"Should be None for: {payload}"
@@ -128,7 +128,7 @@ class TestParseForVote:
             "+1   (binding)",
             "+1\t(binding)",
         ]
-        
+
         for payload in payloads:
             result = parse_for_vote(payload)
             assert result == "+1", f"Failed for: {payload}"
@@ -165,7 +165,7 @@ Actually, I vote differently:
             "What do you think about this?",
             "I agree with the proposal",
         ]
-        
+
         for payload in payloads:
             result = parse_for_vote(payload)
             assert result is None
@@ -213,14 +213,14 @@ class TestMetadataFunctions:
     def test_save_metadata(self, tmp_path):
         """Test saving metadata to a file."""
         metadata_path = tmp_path / "test_metadata.json"
-        
+
         save_metadata(metadata_path, 2026, 2)
-        
+
         assert metadata_path.exists()
-        
+
         with open(metadata_path) as f:
             data = json.load(f)
-        
+
         assert data["latest_mbox_year"] == 2026
         assert data["latest_mbox_month"] == 2
         assert "last_updated" in data
@@ -228,20 +228,20 @@ class TestMetadataFunctions:
     def test_load_metadata(self, tmp_path):
         """Test loading metadata from a file."""
         metadata_path = tmp_path / "test_metadata.json"
-        
+
         # Create metadata file
         metadata = {
             "last_updated": "2026-02-07T12:00:00+00:00",
             "latest_mbox_year": 2026,
             "latest_mbox_month": 2,
         }
-        
+
         with open(metadata_path, "w") as f:
             json.dump(metadata, f)
-        
+
         # Load it back
         result = load_metadata(metadata_path)
-        
+
         assert result is not None
         assert result["latest_mbox_year"] == 2026
         assert result["latest_mbox_month"] == 2
@@ -259,30 +259,30 @@ class TestGetMonthsToDownload:
     def test_with_existing_metadata(self, tmp_path):
         """Test getting months with existing metadata (incremental update)."""
         metadata_path = tmp_path / "metadata.json"
-        
+
         # Create metadata indicating last download was December 2025
         metadata = {
             "last_updated": "2025-12-15T12:00:00+00:00",
             "latest_mbox_year": 2025,
             "latest_mbox_month": 12,
         }
-        
+
         with open(metadata_path, "w") as f:
             json.dump(metadata, f)
-        
+
         # Should return months from December 2025 onwards
         result = get_months_to_download(metadata_path)
-        
+
         assert len(result) >= 2  # At least Dec 2025 and current months
         assert result[0] == (2025, 12)
 
     def test_without_metadata_uses_days_back(self, tmp_path):
         """Test getting months without metadata uses days_back parameter."""
         metadata_path = tmp_path / "nonexistent.json"
-        
+
         # Request 60 days back
         result = get_months_to_download(metadata_path, days_back=60)
-        
+
         # Should return approximately 2-3 months
         assert len(result) >= 2
         assert len(result) <= 3
@@ -290,19 +290,19 @@ class TestGetMonthsToDownload:
     def test_days_back_overrides_metadata(self, tmp_path):
         """Test that days_back parameter overrides metadata."""
         metadata_path = tmp_path / "metadata.json"
-        
+
         # Create metadata
         metadata = {
             "last_updated": "2025-01-01T12:00:00+00:00",
             "latest_mbox_year": 2025,
             "latest_mbox_month": 1,
         }
-        
+
         with open(metadata_path, "w") as f:
             json.dump(metadata, f)
-        
+
         # Override with days_back=30
         result = get_months_to_download(metadata_path, days_back=30)
-        
+
         # Should only return ~1-2 months, not from January 2025
         assert len(result) <= 2
