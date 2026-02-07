@@ -40,8 +40,8 @@
             <td class="vote-positive">
                 <div class="tooltip">{{ kip["+1"]|length }}
                     <span class="tooltiptext">
-                        {% for name in kip["+1"] %}
-                        {{ name }}<br>
+                        {% for voter in kip["+1"] %}
+                        {{ voter.name }}<br><em>{{ voter.timestamp }}</em><br>
                         {% endfor %}
                     </span>
                 </div>
@@ -53,8 +53,8 @@
             <td class="vote-neutral">
                 <div class="tooltip">{{ kip["0"]|length }}
                     <span class="tooltiptext">
-                        {% for name in kip["0"] %}
-                        {{ name }}<br>
+                        {% for voter in kip["0"] %}
+                        {{ voter.name }}<br><em>{{ voter.timestamp }}</em><br>
                         {% endfor %}
                     </span>
                 </div>
@@ -66,8 +66,8 @@
             <td class="vote-negative">
                 <div class="tooltip">{{ kip["-1"]|length }}
                     <span class="tooltiptext">
-                        {% for name in kip["-1"] %}
-                        {{ name }}<br>
+                        {% for voter in kip["-1"] %}
+                        {{ voter.name }}<br><em>{{ voter.timestamp }}</em><br>
                         {% endfor %}
                     </span>
                 </div>

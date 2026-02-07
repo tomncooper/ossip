@@ -1,7 +1,7 @@
 import datetime as dt
 
 from pathlib import Path
-from typing import Dict, List, Union, cast
+from typing import Dict, List, Union, cast, Optional
 
 from pandas import DataFrame
 from jinja2 import Template, Environment, FileSystemLoader
@@ -25,30 +25,43 @@ def get_template(template_dir: str, template_filename) -> Template:
     return template
 
 
-def create_vote_dict(flip_mentions: DataFrame) -> Dict[int, Dict[str, List[str]]]:
+def create_vote_dict(flip_mentions: DataFrame) -> Dict[int, Dict[str, List[Dict[str, str]]]]:
     """Creates a dictionary mapping from FLIP ID to a dict mapping
-    from vote type to list of those who voted that way.
+    from vote type to list of voter info (name and timestamp).
     
     Args:
         flip_mentions: DataFrame containing FLIP mentions from mailing lists
         
     Returns:
-        Dictionary mapping FLIP ID to vote counts by type
+        Dictionary mapping FLIP ID to vote info by type
     """
 
-    vote_dict: Dict[int, Dict[str, List[str]]] = {}
+    vote_dict: Dict[int, Dict[str, List[Dict[str, str]]]] = {}
     flip_votes: DataFrame
     for flip_id, flip_votes in flip_mentions[~flip_mentions["vote"].isna()][
-        ["flip", "from", "vote"]
+        ["flip", "from", "vote", "timestamp"]
     ].groupby("flip"):
         flip_dict = {}
         for vote in ["+1", "0", "-1"]:
-            flip_dict[f"{vote}"] = list(
-                set(
-                    name.replace('"', "")
-                    for name in flip_votes[flip_votes["vote"] == vote]["from"]
-                )
-            )
+            vote_rows = flip_votes[flip_votes["vote"] == vote]
+            
+            # Keep only the most recent vote per voter
+            voter_map: Dict[str, Dict[str, str]] = {}
+            for _, row in vote_rows.iterrows():
+                voter_name = row["from"].replace('"', "")
+                timestamp = row["timestamp"]
+                
+                if voter_name not in voter_map or timestamp > voter_map[voter_name]["raw_timestamp"]:
+                    voter_map[voter_name] = {
+                        "name": voter_name,
+                        "timestamp": timestamp.strftime("%b %d, %Y %H:%M UTC"),
+                        "raw_timestamp": timestamp
+                    }
+            
+            # Sort by timestamp descending (newest first) and remove raw_timestamp
+            sorted_voters = sorted(voter_map.values(), key=lambda x: x["raw_timestamp"], reverse=True)
+            flip_dict[f"{vote}"] = [{"name": v["name"], "timestamp": v["timestamp"]} for v in sorted_voters]
+        
         vote_dict[cast(int, flip_id)] = flip_dict
 
     return vote_dict
@@ -68,12 +81,12 @@ def enrich_flip_wiki_info_with_votes(
         Enriched dictionary with vote information added
     """
     
-    vote_dict: Dict[int, Dict[str, List[str]]] = create_vote_dict(flip_mentions)
+    vote_dict: Dict[int, Dict[str, List[Dict[str, str]]]] = create_vote_dict(flip_mentions)
     
     enriched_info: dict = {}
     for flip_id_str, flip_data in flip_wiki_info.items():
         flip_id = int(flip_id_str)
-        enriched_flip: Dict[str, Union[int, str, List[str]]] = dict(flip_data)
+        enriched_flip: Dict[str, Union[int, str, List[str], List[Dict[str, str]]]] = dict(flip_data)
         
         if flip_id in vote_dict:
             for vote in ["+1", "0", "-1"]:
@@ -92,7 +105,7 @@ def render_flink_main_page(
     output_filepath: str,
     template_dir: str = DEFAULT_TEMPLATES_DIR,
     template_filename: str = FLINK_MAIN_PAGE_TEMPLATE,
-    flip_mentions: DataFrame = None,
+    flip_mentions: Optional[DataFrame] = None,
 ) -> None:
     """Render the main Flink index page with FLIP data.
     
@@ -134,7 +147,7 @@ def render_raw_info_pages(
     output_directory: str,
     template_dir: str = DEFAULT_TEMPLATES_DIR,
     template_filename: str = FLIP_RAW_INFO_PAGE_TEMPLATE,
-    flip_mentions: DataFrame = None,
+    flip_mentions: Optional[DataFrame] = None,
 ) -> None:
     """Render individual FLIP information pages.
     

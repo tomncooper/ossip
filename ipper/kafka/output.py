@@ -67,23 +67,36 @@ def clean_description(description: str):
     return description
 
 
-def create_vote_dict(kip_mentions: DataFrame) -> Dict[int, Dict[str, List[str]]]:
+def create_vote_dict(kip_mentions: DataFrame) -> Dict[int, Dict[str, List[Dict[str, str]]]]:
     """Creates a dictionary mapping from KIP ID to a dict mapping
-    from vote type to list of those who voted that way"""
+    from vote type to list of voter info (name and timestamp)"""
 
-    vote_dict: Dict[int, Dict[str, List[str]]] = {}
+    vote_dict: Dict[int, Dict[str, List[Dict[str, str]]]] = {}
     kip_votes: DataFrame
     for kip_id, kip_votes in kip_mentions[~kip_mentions["vote"].isna()][
-        ["kip", "from", "vote"]
+        ["kip", "from", "vote", "timestamp"]
     ].groupby("kip"):
         kip_dict = {}
         for vote in ["+1", "0", "-1"]:
-            kip_dict[f"{vote}"] = list(
-                set(
-                    name.replace('"', "")
-                    for name in kip_votes[kip_votes["vote"] == vote]["from"]
-                )
-            )
+            vote_rows = kip_votes[kip_votes["vote"] == vote]
+            
+            # Keep only the most recent vote per voter
+            voter_map: Dict[str, Dict[str, str]] = {}
+            for _, row in vote_rows.iterrows():
+                voter_name = row["from"].replace('"', "")
+                timestamp = row["timestamp"]
+                
+                if voter_name not in voter_map or timestamp > voter_map[voter_name]["raw_timestamp"]:
+                    voter_map[voter_name] = {
+                        "name": voter_name,
+                        "timestamp": timestamp.strftime("%b %d, %Y %H:%M UTC"),
+                        "raw_timestamp": timestamp
+                    }
+            
+            # Sort by timestamp descending (newest first) and remove raw_timestamp
+            sorted_voters = sorted(voter_map.values(), key=lambda x: x["raw_timestamp"], reverse=True)
+            kip_dict[f"{vote}"] = [{"name": v["name"], "timestamp": v["timestamp"]} for v in sorted_voters]
+        
         vote_dict[cast(int, kip_id)] = kip_dict
 
     return vote_dict
@@ -91,7 +104,7 @@ def create_vote_dict(kip_mentions: DataFrame) -> Dict[int, Dict[str, List[str]]]
 
 def create_status_dict(
     kip_mentions: DataFrame, kip_wiki_info: Dict[int, Dict[str, Union[int, str]]]
-) -> List[Dict[str, Union[int, str, KIPStatus, List[str]]]]:
+) -> List[Dict[str, Union[int, str, KIPStatus, List[Dict[str, str]]]]]:
     """Calculate a status for each KIP based on how recently it was mentioned in an
     email subject"""
 
@@ -99,13 +112,13 @@ def create_status_dict(
 
     subject_mentions: Series = recent_mentions["subject"].dropna()
 
-    vote_dict: Dict[int, Dict[str, List[str]]] = create_vote_dict(kip_mentions)
+    vote_dict: Dict[int, Dict[str, List[Dict[str, str]]]] = create_vote_dict(kip_mentions)
 
-    output: List[Dict[str, Union[int, str, KIPStatus, List[str]]]] = []
+    output: List[Dict[str, Union[int, str, KIPStatus, List[Dict[str, str]]]]] = []
     for kip_id in sorted(kip_wiki_info.keys(), reverse=True):
         kip_data: Dict[str, Union[int, str]] = kip_wiki_info[kip_id]
         if kip_data["state"] == IPState.UNDER_DISCUSSION:
-            status_entry: Dict[str, Union[int, str, KIPStatus, List[str]]] = {}
+            status_entry: Dict[str, Union[int, str, KIPStatus, List[Dict[str, str]]]] = {}
             status_entry["id"] = kip_id
             status_entry["text"] = clean_description(cast(str, kip_data["title"]))
             status_entry["url"] = kip_data["web_url"]
@@ -156,7 +169,7 @@ def render_standalone_status_page(
     kip_wiki_info = get_kip_information(kip_main_info)
 
     kip_status: List[
-        Dict[str, Union[int, str, KIPStatus, List[str]]]
+        Dict[str, Union[int, str, KIPStatus, List[Dict[str, str]]]]
     ] = create_status_dict(kip_mentions, kip_wiki_info)
 
     template: Template = Environment(loader=FileSystemLoader(templates_dir)).get_template(
@@ -176,14 +189,14 @@ def render_standalone_status_page(
 def enrich_kip_wiki_info_with_votes(
     kip_wiki_info: Dict[int, Dict[str, Union[int, str]]],
     kip_mentions: DataFrame,
-) -> Dict[int, Dict[str, Union[int, str, List[str]]]]:
+) -> Dict[int, Dict[str, Union[int, str, List[Dict[str, str]]]]]:
     """Enriches KIP wiki information with vote data from mailing list mentions."""
     
-    vote_dict: Dict[int, Dict[str, List[str]]] = create_vote_dict(kip_mentions)
+    vote_dict: Dict[int, Dict[str, List[Dict[str, str]]]] = create_vote_dict(kip_mentions)
     
-    enriched_info: Dict[int, Dict[str, Union[int, str, List[str]]]] = {}
+    enriched_info: Dict[int, Dict[str, Union[int, str, List[Dict[str, str]]]]] = {}
     for kip_id, kip_data in kip_wiki_info.items():
-        enriched_kip: Dict[str, Union[int, str, List[str]]] = dict(kip_data)
+        enriched_kip: Dict[str, Union[int, str, List[Dict[str, str]]]] = dict(kip_data)
         
         if kip_id in vote_dict:
             for vote in ["+1", "0", "-1"]:

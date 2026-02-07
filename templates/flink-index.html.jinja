@@ -46,8 +46,8 @@
             <td class="vote-positive">
                 <div class="tooltip">{{ flip["+1"]|length }}
                     <span class="tooltiptext">
-                        {% for name in flip["+1"] %}
-                        {{ name }}<br>
+                        {% for voter in flip["+1"] %}
+                        {{ voter.name }}<br><em>{{ voter.timestamp }}</em><br>
                         {% endfor %}
                     </span>
                 </div>
@@ -59,8 +59,8 @@
             <td class="vote-neutral">
                 <div class="tooltip">{{ flip["0"]|length }}
                     <span class="tooltiptext">
-                        {% for name in flip["0"] %}
-                        {{ name }}<br>
+                        {% for voter in flip["0"] %}
+                        {{ voter.name }}<br><em>{{ voter.timestamp }}</em><br>
                         {% endfor %}
                     </span>
                 </div>
@@ -72,8 +72,8 @@
             <td class="vote-negative">
                 <div class="tooltip">{{ flip["-1"]|length }}
                     <span class="tooltiptext">
-                        {% for name in flip["-1"] %}
-                        {{ name }}<br>
+                        {% for voter in flip["-1"] %}
+                        {{ voter.name }}<br><em>{{ voter.timestamp }}</em><br>
                         {% endfor %}
                     </span>
                 </div>
