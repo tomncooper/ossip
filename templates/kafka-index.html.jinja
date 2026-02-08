@@ -33,7 +33,7 @@
             <td>{{ kip['text'] }}
             <td style="background-color:{{ kip['status'].text }};">
                 <div class="tooltip">&nbsp;
-                    <span class="tooltiptext">Mentioned within the last {{ kip['status'].duration.days }} days</span>
+                    <span class="tooltiptext">{% if kip['last_mention_age'] %}Last mentioned {{ kip['last_mention_age'] }} ago{% else %}Never mentioned in mailing lists{% endif %}</span>
                 </div>
             </td>
             {% if kip["+1"] %}

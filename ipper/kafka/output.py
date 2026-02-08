@@ -139,6 +139,12 @@ def create_status_dict(
 
             if kip_id in subject_mentions:
                 status_entry["status"] = calculate_status(subject_mentions[kip_id])
+                # Store the last mention date for tooltip display
+                last_mention_ts = subject_mentions[kip_id]
+                status_entry["last_mention_age"] = calculate_age(
+                    last_mention_ts.strftime("%Y-%m-%d %H:%M:%S"),
+                    "%Y-%m-%d %H:%M:%S"
+                )
             else:
                 created_diff: dt.timedelta = dt.datetime.now(
                     dt.UTC
@@ -149,6 +155,8 @@ def create_status_dict(
                     status_entry["status"] = KIPStatus.BLUE
                 else:
                     status_entry["status"] = KIPStatus.BLACK
+                # No last mention for KIPs that were never discussed
+                status_entry["last_mention_age"] = None
 
             for vote in ["+1", "0", "-1"]:
                 if kip_id in vote_dict:
