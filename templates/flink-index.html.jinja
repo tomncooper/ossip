@@ -19,6 +19,7 @@
     <div id="filter-controls"></div>
     
     <table>
+        <thead>
         <tr>
             <th>FLIP</th>
             <th>Description</th>
@@ -32,6 +33,8 @@
             <th>JIRA</th>
             <th>More Info</th>
         </tr>
+        </thead>
+        <tbody>
         {% for flip in flip_data %}
         <tr data-state="{{ flip['state']|e }}" data-created-by="{{ flip['created_by']|e }}" data-component="{{ flip['release_component']|e }}">
             <td><a href={{ flip['web_url'] }}>{{ flip['id'] }}</a></td>
@@ -95,6 +98,7 @@
             <td><a href=flips/FLIP-{{ flip['id'] }}.html>info</a></td>
         </tr>
         {% endfor %}
+        </tbody>
     </table>
 
     <!-- Filter JavaScript -->

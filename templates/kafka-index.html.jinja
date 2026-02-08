@@ -19,6 +19,7 @@
     <div id="filter-controls"></div>
     
     <table>
+        <thead>
         <tr>
             <th>KIP</th>
             <th>Description</th>
@@ -31,6 +32,8 @@
             <th>Age</th>
             <th>More Info</th>
         </tr>
+        </thead>
+        <tbody>
         {% for kip in kip_status %}
         <tr data-state="{{ kip['state']|e }}" data-created-by="{{ kip['created_by']|e }}">
             <td><a href={{ kip['url'] }}>{{ kip['id'] }}</a></td>
@@ -89,6 +92,7 @@
             <td><a href=kips/KIP-{{ kip['id'] }}.html>info</a></td>
         </tr>
         {% endfor %}
+        </tbody>
     </table>
 
     <!-- Filter JavaScript -->
