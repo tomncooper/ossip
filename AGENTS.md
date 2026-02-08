@@ -35,7 +35,7 @@ ossip/
 
 1. **CLI Interface** (`ipper/main.py`)
    - Argument parsing with subcommands for each project (kafka, flink)
-   - Commands: `init`, `update`, `wiki`, `mail`, `output`
+   - Commands: `init`, `update`, `refresh`, `wiki`, `output`
 
 2. **Data Collection Layer**
    - **Wiki Scrapers** (`kafka/wiki.py`, `flink/wiki.py`, `common/wiki.py`)
@@ -43,7 +43,7 @@ ossip/
      - Parse HTML content using BeautifulSoup4
      - Extract metadata: status, authors, discussions
    
-   - **Mailing List Processor** (`kafka/mailing_list.py`)
+   - **Mailing List Processor** (`kafka/mailing_list.py`, `common/mailing_list.py`)
      - Downloads Apache mailing list archives (mbox format)
      - Parses email threads for KIP mentions
      - Tracks voting patterns and discussion activity
@@ -51,8 +51,9 @@ ossip/
 
 3. **Data Processing**
    - **Pandas DataFrames** for tabular data manipulation
-   - CSV-based caching system for processed data
+   - CSV-based main cache files (`kip_mentions.csv`, `flip_mentions.csv`)
    - Status classification using enums (`IPState`)
+   - Automatic deduplication on all data operations
 
 4. **Output Generation**
    - **Jinja2 Templates** for HTML rendering
@@ -98,17 +99,25 @@ ossip/
 ### Initial Setup (`kafka init`)
 1. Download KIP wiki information from Confluence
 2. Download 365 days of dev mailing list archives
-3. Process mbox files to extract KIP mentions
-4. Cache all data locally
+3. Process all mbox files directly
+4. Save mentions to `kip_mentions.csv`
+5. Cache all data locally
 
 ### Updates (`kafka update`)
 1. Update KIP wiki cache with new proposals
-2. Download most recent month's mailing list archive
-3. Reprocess new messages
-4. Merge with existing cache
+2. Download most recent month's mailing list archive (re-downloads current month to catch late emails)
+3. Process new mbox files directly
+4. Append to `kip_mentions.csv` with automatic deduplication
+5. Update metadata tracking
+
+### Refresh (`kafka refresh`)
+1. Reprocess ALL mbox files from scratch
+2. Deduplicate all mentions
+3. Regenerate `kip_mentions.csv`
+4. Use when cache is corrupted or processing logic changes
 
 ### Output Generation
-1. Load cached data (CSV for Kafka, JSON for Flink)
+1. Load cached data (`kip_mentions.csv` for Kafka, `flip_wiki_cache.json` for Flink)
 2. Render Jinja2 templates with enriched data
 3. Generate standalone HTML files
 
@@ -155,11 +164,12 @@ KIP_PATTERN = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
 
 ## File Conventions
 
-- **Cache Directory:** `cache/` (not committed to git)
-- **Mbox Cache:** `cache/kafka_processed_mailbox_cache/*.cache.csv`
-- **Wiki Cache:** 
-  - Kafka: CSV files in `cache/`
+- **Cache Directory:** `cache/` (not committed to git except main cache files)
+- **Main Cache Files:**
+  - Kafka: `cache/mailbox_files/kip_mentions.csv` (single source of truth)
   - Flink: `cache/flip_wiki_cache.json`
+  - Metadata: `cache/kip_mentions_metadata.json`, `cache/flip_mentions_metadata.json`
+- **Mbox Files:** `cache/mailbox_files/*.mbox` (downloaded archives)
 - **Output:** `site_files/*.html`
 
 ## Development Commands
@@ -239,16 +249,24 @@ The project includes:
 ### Data Flow Summary:
 
 ```
-Confluence Wiki API → BeautifulSoup → Pandas → CSV/JSON Cache
-Mailing List API → mbox Parser → Pandas → CSV Cache
+Confluence Wiki API → BeautifulSoup → Pandas → JSON Cache (wiki data)
+Mailing List API → mbox Parser → Pandas → CSV Cache (mentions)
+  ↓
 CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 ```
+
+**Caching Architecture:**
+- Single source of truth: `kip_mentions.csv` / `flip_mentions.csv`
+- No intermediate per-file caches (removed for simplicity)
+- Automatic deduplication on all append operations
+- `kafka update` re-downloads current month to catch late-arriving emails
 
 ## Known Limitations
 
 1. Flink does not process mailing lists (only wiki data)
 2. No rate limiting on API calls
 3. Limited error recovery in data collection
+4. `kafka refresh` takes 2-5 minutes (reprocesses ~182 mbox files)
 4. No automated tests
 5. Status keyword matching is English-only
 6. Individual FLIP pages only generated for Flink (not Kafka yet)
