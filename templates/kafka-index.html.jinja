@@ -14,11 +14,11 @@
         <div class="nav-item">GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></div>
         <div class="nav-item">Last Updated: {{ date }}</div>
     </div>
-    <h2>KIPs Under Discussion</h2>
     <table>
         <tr>
             <th>KIP</th>
             <th>Description</th>
+            <th>State</th>
             <th>Status</th>
             <th>+1</th>
             <th>0</th>
@@ -30,12 +30,17 @@
         {% for kip in kip_status %}
         <tr>
             <td><a href={{ kip['url'] }}>{{ kip['id'] }}</a></td>
-            <td>{{ kip['text'] }}
+            <td>{{ kip['text'] }}</td>
+            <td>{{ kip['state'] }}</td>
+            {% if kip['status'] %}
             <td style="background-color:{{ kip['status'].text }};">
                 <div class="tooltip">&nbsp;
                     <span class="tooltiptext">{% if kip['last_mention_age'] %}Last mentioned {{ kip['last_mention_age'] }} ago{% else %}Never mentioned in mailing lists{% endif %}</span>
                 </div>
             </td>
+            {% else %}
+            <td style="text-align: center; font-size: 1.5em;">{{ kip['emoji'] }}</td>
+            {% endif %}
             {% if kip["+1"] %}
             <td class="vote-positive">
                 <div class="tooltip">{{ kip["+1"]|length }}

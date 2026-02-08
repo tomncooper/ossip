@@ -58,7 +58,13 @@ ossip/
 4. **Output Generation**
    - **Jinja2 Templates** for HTML rendering
    - Standalone HTML pages with embedded data
-   - Raw information pages for individual proposals
+   - Individual proposal detail pages (both KIP and FLIP)
+   - **KIP Display Strategy**:
+     - Shows ALL KIPs regardless of state (accepted, under discussion, rejected, etc.)
+     - "Under Discussion" KIPs: colored status indicators (green/yellow/red/black/blue) based on mailing list activity
+     - Accepted KIPs: ✅ emoji
+     - Rejected/Not Accepted KIPs: ❌ emoji
+     - Withdrawn/Unknown KIPs: 🚫 emoji
 
 ## Key Technologies
 
@@ -117,9 +123,11 @@ ossip/
 4. Use when cache is corrupted or processing logic changes
 
 ### Output Generation
-1. Load cached data (`kip_mentions.csv` for Kafka, `flip_wiki_cache.json` for Flink)
+1. Load cached data (`kip_mentions.csv` for Kafka, `flip_wiki_cache.json` + `flip_mentions.csv` for Flink)
 2. Render Jinja2 templates with enriched data
-3. Generate standalone HTML files
+3. Generate standalone HTML files with:
+   - Main index page showing ALL proposals (not filtered by state)
+   - Individual detail pages for each proposal (KIP-XXX.html or FLIP-XXX.html)
 
 ### CI/CD Pipeline (`.github/workflows/publish.yaml`)
 - **Trigger:** Push to main branch or daily cron (09:30 UTC)
@@ -190,11 +198,11 @@ uv run python ipper/main.py flink wiki download
 # Update Flink wiki data (incremental, refresh last 60 days)
 uv run python ipper/main.py flink wiki download --update --refresh-days 60
 
-# Generate Kafka HTML
+# Generate Kafka HTML (shows ALL KIPs + individual KIP pages)
 uv run python ipper/main.py kafka output standalone \
-  cache/mailbox_files/kip_mentions.csv site_files/kafka.html
+  cache/mailbox_files/kip_mentions.csv site_files/kafka.html site_files/kips
 
-# Generate Flink HTML (creates main index + individual FLIP pages)
+# Generate Flink HTML (shows ALL FLIPs + individual FLIP pages)
 uv run python ipper/main.py flink output \
   cache/flip_wiki_cache.json site_files/flink.html site_files/flips
 
@@ -267,14 +275,16 @@ CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 2. No rate limiting on API calls
 3. Limited error recovery in data collection
 4. `kafka refresh` takes 2-5 minutes (reprocesses ~182 mbox files)
-4. No automated tests
-5. Status keyword matching is English-only
-6. Individual FLIP pages only generated for Flink (not Kafka yet)
+5. No automated integration tests
+6. Status keyword matching is English-only
+7. Large table sizes (1000+ KIPs) may impact page load performance
 
 ## Future Considerations
 
 - Add support for more Apache projects (e.g., Airflow, Spark)
-- Add search functionality to generated pages
+- Implement mailing list processing for Flink (similar to Kafka)
+- Add JavaScript filtering/search functionality to main pages
+- Pagination or lazy loading for large KIP/FLIP tables
 - Real-time updates via webhooks
 - Internationalization support
 - Database backend instead of CSV/JSON caching

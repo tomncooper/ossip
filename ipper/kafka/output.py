@@ -56,6 +56,25 @@ def calculate_status(last_mention: Timestamp) -> KIPStatus:
     return KIPStatus.BLACK
 
 
+def get_state_emoji(state: str) -> str:
+    """Returns an emoji representing the KIP state.
+
+    Args:
+        state: The IPState value as a string
+
+    Returns:
+        Emoji string representing the state
+    """
+    if state == IPState.ACCEPTED:
+        return "✅"
+    if state == IPState.NOT_ACCEPTED:
+        return "❌"
+    if state in [IPState.COMPLETED, IPState.IN_PROGRESS]:
+        return "✅"
+    # For unknown or other states
+    return "🚫"
+
+
 def clean_description(description: str):
     """Cleans the kips description of the KIP-XXX string"""
 
@@ -112,9 +131,9 @@ def create_vote_dict(
 
 def create_status_dict(
     kip_mentions: DataFrame, kip_wiki_info: dict[int, dict[str, int | str]]
-) -> list[dict[str, int | str | KIPStatus | list[dict[str, str]]]]:
-    """Calculate a status for each KIP based on how recently it was mentioned in an
-    email subject"""
+) -> list[dict[str, int | str | None | KIPStatus | list[dict[str, str]]]]:
+    """Calculate a status for each KIP. For KIPs under discussion, calculate status
+    based on how recently it was mentioned in email subject. For other KIPs, use emoji."""
 
     recent_mentions: DataFrame = get_most_recent_mention_by_type(kip_mentions)
 
@@ -124,19 +143,23 @@ def create_status_dict(
         kip_mentions
     )
 
-    output: list[dict[str, int | str | KIPStatus | list[dict[str, str]]]] = []
+    output: list[dict[str, int | str | None | KIPStatus | list[dict[str, str]]]] = []
     for kip_id in sorted(kip_wiki_info.keys(), reverse=True):
         kip_data: dict[str, int | str] = kip_wiki_info[kip_id]
-        if kip_data["state"] == IPState.UNDER_DISCUSSION:
-            status_entry: dict[str, int | str | KIPStatus | list[dict[str, str]]] = {}
-            status_entry["id"] = kip_id
-            status_entry["text"] = clean_description(cast(str, kip_data["title"]))
-            status_entry["url"] = kip_data["web_url"]
-            status_entry["created_by"] = kip_data["created_by"]
-            status_entry["age"] = calculate_age(
-                cast(str, kip_data["created_on"]), APACHE_CONFLUENCE_DATE_FORMAT
-            )
+        status_entry: dict[
+            str, int | str | None | KIPStatus | list[dict[str, str]]
+        ] = {}
+        status_entry["id"] = kip_id
+        status_entry["text"] = clean_description(cast(str, kip_data["title"]))
+        status_entry["url"] = kip_data["web_url"]
+        status_entry["created_by"] = kip_data["created_by"]
+        status_entry["state"] = kip_data["state"]
+        status_entry["age"] = calculate_age(
+            cast(str, kip_data["created_on"]), APACHE_CONFLUENCE_DATE_FORMAT
+        )
 
+        # Only calculate colored status for KIPs under discussion
+        if kip_data["state"] == IPState.UNDER_DISCUSSION:
             if kip_id in subject_mentions:
                 status_entry["status"] = calculate_status(subject_mentions[kip_id])
                 # Store the last mention date for tooltip display
@@ -156,14 +179,20 @@ def create_status_dict(
                     status_entry["status"] = KIPStatus.BLACK
                 # No last mention for KIPs that were never discussed
                 status_entry["last_mention_age"] = None
+            status_entry["emoji"] = None
+        else:
+            # For non-discussion KIPs, use emoji instead of colored status
+            status_entry["status"] = None
+            status_entry["last_mention_age"] = None
+            status_entry["emoji"] = get_state_emoji(cast(str, kip_data["state"]))
 
-            for vote in ["+1", "0", "-1"]:
-                if kip_id in vote_dict:
-                    status_entry[vote] = vote_dict[kip_id][vote]
-                else:
-                    status_entry[vote] = []
+        for vote in ["+1", "0", "-1"]:
+            if kip_id in vote_dict:
+                status_entry[vote] = vote_dict[kip_id][vote]
+            else:
+                status_entry[vote] = []
 
-            output.append(status_entry)
+        output.append(status_entry)
 
     return output
 
@@ -174,8 +203,7 @@ def render_standalone_status_page(
     templates_dir: str = DEFAULT_TEMPLATES_DIR,
     template_filename: str = KAFKA_MAIN_PAGE_TEMPLATE,
 ) -> None:
-    """Renders the KIPs under discussion table with a status entry based on
-    how recently the KIP was mentioned in an email subject line."""
+    """Renders the KIPs table with status entries based on state and recent activity."""
 
     output_path: Path = Path(output_filename)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -183,7 +211,7 @@ def render_standalone_status_page(
     kip_main_info = get_kip_main_page_info()
     kip_wiki_info = get_kip_information(kip_main_info)
 
-    kip_status: list[dict[str, int | str | KIPStatus | list[dict[str, str]]]] = (
+    kip_status: list[dict[str, int | str | None | KIPStatus | list[dict[str, str]]]] = (
         create_status_dict(kip_mentions, kip_wiki_info)
     )
 
