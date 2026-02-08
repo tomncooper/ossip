@@ -143,10 +143,7 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
 
         elif not jira_processed and "jira" in para.text.lower():
             link = para.find("a")
-            if link:
-                href = link.get("href")
-            else:
-                href = None
+            href = link.get("href") if link else None
 
             if href and not is_template_default_url(href, "jira"):
                 kip_dict["jira"] = href
@@ -158,10 +155,7 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
 
         elif not discussion_processed and "discussion thread" in para.text.lower():
             link = para.find("a")
-            if link:
-                href = link.get("href")
-            else:
-                href = None
+            href = link.get("href") if link else None
 
             if href and not is_template_default_url(href, "discussion"):
                 kip_dict["discussion_thread"] = href
@@ -173,10 +167,7 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
 
         elif not vote_processed and "voting thread" in para.text.lower():
             link = para.find("a")
-            if link:
-                href = link.get("href")
-            else:
-                href = None
+            href = link.get("href") if link else None
 
             if href and not is_template_default_url(href, "vote"):
                 kip_dict["vote_thread"] = href

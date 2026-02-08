@@ -187,6 +187,9 @@ uv run python ipper/main.py kafka output standalone \
 # Generate Flink HTML (creates main index + individual FLIP pages)
 uv run python ipper/main.py flink output \
   cache/flip_wiki_cache.json site_files/flink.html site_files/flips
+
+# Run linting checks
+uv run ruff check .
 ```
 
 ## Testing & Quality
@@ -194,8 +197,10 @@ uv run python ipper/main.py flink output \
 The project includes:
 - Type hints throughout (checked with MyPy)
 - Code formatting with Black
-- Linting with Pylint
+- Linting with Pylint and Ruff
 - No explicit test suite currently present
+
+**Always run `uv run ruff check .` after making code changes to ensure code quality.**
 
 ## API Integrations
 
@@ -222,6 +227,7 @@ The project includes:
 6. **Cache awareness** - Understand the caching strategy to avoid unnecessary API calls
 7. **HTML templates** - Modify Jinja2 templates for UI changes, not Python code
 8. **Project structure** - Each supported project (kafka, flink) has its own submodule under `ipper/`
+9. **Run linting after code changes** - Always run `uv run ruff check .` after making code changes to catch issues early
 
 ### Common Tasks:
 
@@ -250,8 +256,6 @@ CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 ## Future Considerations
 
 - Add support for more Apache projects (e.g., Airflow, Spark)
-- Implement mailing list processing for Flink (similar to Kafka)
-- Generate individual KIP detail pages (similar to FLIPs)
 - Add search functionality to generated pages
 - Real-time updates via webhooks
 - Internationalization support
