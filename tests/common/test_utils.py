@@ -249,7 +249,7 @@ class TestCalculateAge:
             date_str = "2022-10-24T12:00:00Z"
             date_format = "%Y-%m-%dT%H:%M:%SZ"
             result = calculate_age(date_str, date_format)
-            
+
             # Should use plural forms
             assert "years" in result
             assert "months" in result
