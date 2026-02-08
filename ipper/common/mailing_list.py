@@ -22,7 +22,6 @@ from ipper.common.utils import generate_month_list
 APACHE_MAILING_LIST_BASE_URL: str = "https://lists.apache.org/api/mbox.lua"
 MAIL_DATE_FORMAT = "%a, %d %b %Y %H:%M:%S %z"
 MAIL_DATE_FORMAT_ZONE = "%a, %d %b %Y %H:%M:%S %z (%Z)"
-CACHE_SUFFIX = ".cache.csv"
 
 
 def get_monthly_mbox_file(
@@ -530,56 +529,3 @@ def load_mbox_cache_file(cache_file: Path) -> DataFrame:
 
     return file_data
 
-
-def process_mbox_files(
-    mbox_files: list[Path],
-    cache_dir: Path,
-    pattern: re.Pattern,
-    id_column_name: str,
-    mention_columns: list[str],
-    overwrite_cache: bool = False,
-) -> DataFrame:
-    """Process a list of mbox files and cache the results.
-
-    Args:
-        mbox_files: List of mbox file paths to process
-        cache_dir: Directory to store cache files
-        pattern: Regex pattern for matching proposals
-        id_column_name: Name of the ID column
-        mention_columns: List of column names
-        overwrite_cache: Whether to reprocess and overwrite existing cache files
-
-    Returns:
-        Combined DataFrame of all mentions
-    """
-
-    dataframes: list[DataFrame] = []
-
-    for element in mbox_files:
-        cache_file: Path = cache_dir.joinpath(element.name + CACHE_SUFFIX)
-        if cache_file.exists() and not overwrite_cache:
-            print(f"Loading data from cache file: {cache_file}")
-            file_data: DataFrame = load_mbox_cache_file(cache_file)
-            dataframes.append(file_data)
-        else:
-            # Either the cache file doesn't exist or we want to overwrite it
-            if overwrite_cache:
-                print(f"Processing file: {element.name}")
-            else:
-                print(f"Processing file: {element.name}")
-            try:
-                file_data = process_mbox_archive(
-                    element, pattern, id_column_name, mention_columns
-                )
-            except Exception as ex:
-                print(f"ERROR processing file {element.name}: {ex}")
-                continue
-            else:
-                file_data.to_csv(cache_file, index=False)
-                dataframes.append(file_data)
-
-    # Concatenate all dataframes at once, or return empty with proper columns
-    if dataframes:
-        return concat(dataframes, ignore_index=True)
-    else:
-        return DataFrame(columns=mention_columns)

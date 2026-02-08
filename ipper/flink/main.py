@@ -3,13 +3,14 @@ import sys
 from argparse import Namespace
 from pathlib import Path
 
-from pandas import DataFrame
+from pandas import DataFrame, concat
 
 from ipper.common.constants import DEFAULT_TEMPLATES_DIR
 from ipper.flink.mailing_list import (
+    FLIP_MENTION_COLUMNS,
     get_multiple_mbox,
     load_mbox_cache_file,
-    process_all_mbox_in_directory,
+    process_mbox_archive,
     update_flip_mentions_cache,
 )
 from ipper.flink.output import (
@@ -370,11 +371,32 @@ def run_update_cmd(args: Namespace) -> None:
 
 
 def run_refresh_cmd(args: Namespace) -> None:
-    print("Refreshing outputs from existing cache files")
-    # Regenerate flip_mentions.csv from all existing cache files
-    args.directory = "cache/flink_mailbox_files"
-    args.overwrite_cache = False
-    process_mail_archives(args)
+    print("Refreshing by reprocessing all mbox files")
+    mbox_directory = Path("cache/flink_mailbox_files")
+    
+    if not mbox_directory.exists():
+        print(f"Mbox directory {mbox_directory} does not exist. Skipping mailing list refresh.")
+        return
+        
+    mbox_files: list[Path] = sorted(mbox_directory.glob("*.mbox"))
+    
+    print(f"Found {len(mbox_files)} mbox files to process")
+    all_mentions: DataFrame = DataFrame(columns=FLIP_MENTION_COLUMNS)
+    
+    for mbox_file in mbox_files:
+        print(f"Processing {mbox_file.name}")
+        try:
+            file_data = process_mbox_archive(mbox_file)
+            all_mentions = concat((all_mentions, file_data), ignore_index=True)
+        except Exception as ex:
+            print(f"ERROR processing file {mbox_file.name}: {ex}")
+    
+    # Deduplicate before saving
+    all_mentions = all_mentions.drop_duplicates()
+    
+    output_file = mbox_directory / "flip_mentions.csv"
+    all_mentions.to_csv(output_file, index=False)
+    print(f"Saved {len(all_mentions)} FLIP mentions to {output_file}")
 
 
 def setup_output_command(main_subparser):

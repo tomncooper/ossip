@@ -22,9 +22,6 @@ from ipper.common.mailing_list import (
 from ipper.common.mailing_list import (
     process_mbox_archive as generic_process_mbox_archive,
 )
-from ipper.common.mailing_list import (
-    process_mbox_files as generic_process_mbox_files,
-)
 
 FLIP_PATTERN: re.Pattern = re.compile(r"FLIP-(?P<flip>\d+)", re.IGNORECASE)
 DOMAIN: str = "flink.apache.org"
@@ -38,7 +35,6 @@ FLIP_MENTION_COLUMNS = [
     "from",
     "vote",
 ]
-CACHE_DIR = "flink_processed_mailbox_cache"
 METADATA_FILE = "flip_mentions_metadata.json"
 
 
@@ -128,65 +124,6 @@ def process_mbox_archive(filepath: Path) -> DataFrame:
         vote_keyword="VOTE",
         discuss_keyword="DISCUSS",
     )
-
-
-def process_mbox_files(
-    mbox_files: list[Path], cache_dir: Path, overwrite_cache: bool = False
-) -> DataFrame:
-    """Process a list of mbox files and cache the results under the provided cache directory.
-
-    Args:
-        mbox_files: List of mbox file paths to process
-        cache_dir: Directory to store cache files
-        overwrite_cache: Whether to reprocess and overwrite existing cache files
-
-    Returns:
-        Combined DataFrame of all FLIP mentions
-    """
-
-    return generic_process_mbox_files(
-        mbox_files,
-        cache_dir,
-        FLIP_PATTERN,
-        "flip",
-        FLIP_MENTION_COLUMNS,
-        overwrite_cache,
-    )
-
-
-def process_all_mbox_in_directory(
-    dir_path: Path, overwrite_cache: bool = False
-) -> DataFrame:
-    """Process all the mbox files in the given directory and harvest all FLIP mentions.
-
-    Args:
-        dir_path: Directory containing mbox files
-        overwrite_cache: Whether to reprocess existing cache files
-
-    Returns:
-        Combined DataFrame of all FLIP mentions
-    """
-
-    if not dir_path.is_dir():
-        raise ValueError(f"The supplied path ({dir_path}) is not a directory.")
-
-    cache_dir: Path = dir_path.joinpath(CACHE_DIR)
-
-    if not cache_dir.exists():
-        os.mkdir(cache_dir)
-
-    mbox_files: list[Path] = []
-
-    for element in dir_path.iterdir():
-        if element.is_file():
-            if "mbox" in element.name:
-                mbox_files.append(element)
-            else:
-                print(f"Skipping non-mbox file: {element.name}")
-
-    output: DataFrame = process_mbox_files(mbox_files, cache_dir, overwrite_cache)
-
-    return output
 
 
 def update_flip_mentions_cache(

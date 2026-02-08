@@ -1,12 +1,13 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from pandas import DataFrame
+from pandas import DataFrame, concat
 
 from ipper.kafka.mailing_list import (
+    KIP_MENTION_COLUMNS,
     get_multiple_mbox,
     load_mbox_cache_file,
-    process_all_mbox_in_directory,
+    process_mbox_archive,
     update_kip_mentions_cache,
 )
 from ipper.kafka.output import (
@@ -30,7 +31,6 @@ def setup_kafka_parser(top_level_subparsers) -> None:
     setup_init_command(main_subparser)
     setup_update_command(main_subparser)
     setup_refresh_command(main_subparser)
-    setup_mail_command(main_subparser)
     setup_wiki_command(main_subparser)
     setup_output_command(main_subparser)
 
@@ -92,73 +92,6 @@ def setup_refresh_command(main_subparser) -> None:
     )
 
     refresh_parser.set_defaults(func=run_refresh_cmd)
-
-
-def setup_mail_command(main_subparser) -> None:
-    """Setup the top level mail command line option."""
-
-    mail_parser = main_subparser.add_parser(
-        "mail", help="Command for performing mailing list related commands"
-    )
-    mail_parser.set_defaults(func=mail_parser.print_help)
-
-    mail_subparser = mail_parser.add_subparsers(dest="mail_subcommand")
-
-    download_subparser = mail_subparser.add_parser(
-        "download", help="Command for downloading mailing list archives."
-    )
-
-    download_subparser.add_argument(
-        "mailing_list",
-        choices=["dev", "user", "jira", "commits"],
-        help="The mailing list to download archives from.",
-    )
-
-    download_subparser.add_argument(
-        "-d",
-        "--days",
-        required=False,
-        type=int,
-        default=365,
-        help="The number of days back in time over which to download archives. "
-        + "Archives are by month so a full month of data will be downloaded "
-        + "even if only 1 day is covered by the requested range.",
-    )
-
-    download_subparser.add_argument(
-        "-od",
-        "--output_dir",
-        required=False,
-        help="Directory to save mailing list archives too.",
-    )
-
-    download_subparser.add_argument(
-        "-ow",
-        "--overwrite",
-        required=False,
-        action="store_true",
-        help="Replace existing mail archives.",
-    )
-
-    download_subparser.set_defaults(func=setup_mail_download)
-
-    process_subparser = mail_subparser.add_parser(
-        "process", help="Command for processing mailing list archives."
-    )
-
-    process_subparser.add_argument(
-        "directory", help="The directory containing the mbox files to be processed."
-    )
-
-    process_subparser.add_argument(
-        "-owc",
-        "--overwrite_cache",
-        required=False,
-        action="store_true",
-        help="Reprocess the mbox files and overwrite their cache files.",
-    )
-
-    process_subparser.set_defaults(func=process_mail_archives)
 
 
 def setup_wiki_command(main_subparser):
@@ -256,18 +189,6 @@ def setup_mail_download(args: Namespace) -> list[Path]:
     return files
 
 
-def process_mail_archives(args: Namespace) -> None:
-    """Run the mail archive processing command"""
-
-    out_dir: Path = Path(args.directory)
-    kip_mentions: DataFrame = process_all_mbox_in_directory(
-        out_dir, overwrite_cache=args.overwrite_cache
-    )
-    output_file: Path = out_dir.joinpath("kip_mentions.csv")
-    kip_mentions.to_csv(output_file, index=False)
-    print(f"Saved KIP mentions to {output_file}")
-
-
 def setup_wiki_download(args: Namespace) -> None:
     """Run the KIP wiki information download"""
 
@@ -290,10 +211,25 @@ def run_init_cmd(args: Namespace) -> None:
     args.mailing_list = "dev"
     args.output_dir = "cache/mailbox_files"
     args.use_metadata = True  # Enable metadata tracking even for init
-    setup_mail_download(args)
-    args.overwrite_cache = True
-    args.directory = "cache/mailbox_files"
-    process_mail_archives(args)
+    mbox_files: list[Path] = setup_mail_download(args)
+    
+    # Process all mbox files directly (no intermediate cache)
+    print("Processing mbox files")
+    all_mentions: DataFrame = DataFrame(columns=KIP_MENTION_COLUMNS)
+    
+    for mbox_file in mbox_files:
+        print(f"Processing {mbox_file.name}")
+        try:
+            file_data = process_mbox_archive(mbox_file)
+            all_mentions = concat((all_mentions, file_data), ignore_index=True)
+        except Exception as ex:
+            print(f"ERROR processing file {mbox_file.name}: {ex}")
+    
+    # Deduplicate and save
+    all_mentions = all_mentions.drop_duplicates()
+    output_file = Path("cache/mailbox_files/kip_mentions.csv")
+    all_mentions.to_csv(output_file, index=False)
+    print(f"Saved {len(all_mentions)} KIP mentions to {output_file}")
 
 
 def run_update_cmd(args: Namespace) -> None:
@@ -321,11 +257,27 @@ def run_update_cmd(args: Namespace) -> None:
 
 
 def run_refresh_cmd(args: Namespace) -> None:
-    print("Refreshing outputs from existing cache files")
-    # Regenerate kip_mentions.csv from all existing cache files
-    args.directory = "cache/mailbox_files"
-    args.overwrite_cache = False
-    process_mail_archives(args)
+    print("Refreshing by reprocessing all mbox files")
+    mbox_directory = Path("cache/mailbox_files")
+    mbox_files: list[Path] = sorted(mbox_directory.glob("*.mbox"))
+    
+    print(f"Found {len(mbox_files)} mbox files to process")
+    all_mentions: DataFrame = DataFrame(columns=KIP_MENTION_COLUMNS)
+    
+    for mbox_file in mbox_files:
+        print(f"Processing {mbox_file.name}")
+        try:
+            file_data = process_mbox_archive(mbox_file)
+            all_mentions = concat((all_mentions, file_data), ignore_index=True)
+        except Exception as ex:
+            print(f"ERROR processing file {mbox_file.name}: {ex}")
+    
+    # Deduplicate before saving (important!)
+    all_mentions = all_mentions.drop_duplicates()
+    
+    output_file = mbox_directory / "kip_mentions.csv"
+    all_mentions.to_csv(output_file, index=False)
+    print(f"Saved {len(all_mentions)} KIP mentions to {output_file}")
 
 
 def run_output_standalone_cmd(args: Namespace) -> None:
