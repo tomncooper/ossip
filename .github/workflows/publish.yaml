@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "30 9 * * *"
   workflow_dispatch:  # Allow manual triggering from GitHub Actions UI
+  push:
+    branches:
+      - main
+    paths:
+      - 'templates/**'
+      - '.github/workflows/publish.yaml'
   workflow_run:
     workflows: ["Run Tests"]
     types:
@@ -15,9 +21,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Build Site Source
-    # Only run if tests passed (when triggered by workflow_run) or if triggered by schedule
+    # Run on: manual trigger, schedule, push to templates, or successful test run
     if: |
+      github.event_name == 'workflow_dispatch' ||
       github.event_name == 'schedule' || 
+      github.event_name == 'push' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     steps:
       - name: Git checkout
