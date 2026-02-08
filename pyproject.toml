@@ -13,6 +13,7 @@ dependencies = [
     "pandas>=2.2.3",
     "Jinja2>=3.1.4",
     "jira>=3.8.0",
+    "python-dateutil>=2.9.0.post0",
 ]
 
 [dependency-groups]
@@ -31,6 +32,7 @@ dev = [
     # Keeping these for now, can remove after Ruff is validated:
     "pylint>=3.3.3",
     "black>=24.10.0",
+    "types-python-dateutil>=2.9.0.20260124",
 ]
 
 [build-system]

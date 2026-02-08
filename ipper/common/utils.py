@@ -1,5 +1,6 @@
 import datetime as dt
-import math
+
+from dateutil.relativedelta import relativedelta
 
 
 def generate_month_list(now: dt.datetime, then: dt.datetime) -> list[tuple[int, int]]:
@@ -34,15 +35,57 @@ def calculate_age(date_str: str, date_format: str) -> str:
         tzinfo=dt.UTC
     )
     now: dt.datetime = dt.datetime.now(dt.UTC)
+    
+    # Get timedelta for day count
     diff: dt.timedelta = now - then
-
+    
+    # For very recent dates, just show days
     if diff.days < 7:
-        return f"{diff.days} days"
-
-    if diff.days > 7 and diff.days < 365:
-        weeks: int = int(round(diff.days / 7, 0))
-        return f"{weeks} weeks"
-
-    years: int = math.floor(diff.days / 365)
-    weeks_remaining: int = int(round(diff.days / 7 % 52, 0))
-    return f"{years} years {weeks_remaining} weeks"
+        day_word = "day" if diff.days == 1 else "days"
+        return f"{diff.days} {day_word}"
+    
+    # Use relativedelta for accurate calendar-based calculations
+    delta = relativedelta(now, then)
+    years = delta.years
+    months = delta.months
+    
+    # Calculate remaining weeks from leftover days
+    remaining_days = delta.days
+    weeks = remaining_days // 7
+    
+    # Build output components
+    parts = []
+    
+    if years > 0:
+        # For 1+ years: show years, months (if non-zero), and weeks (if non-zero)
+        year_word = "year" if years == 1 else "years"
+        parts.append(f"{years} {year_word}")
+        
+        if months > 0:
+            month_word = "month" if months == 1 else "months"
+            parts.append(f"{months} {month_word}")
+        
+        if weeks > 0:
+            week_word = "week" if weeks == 1 else "weeks"
+            parts.append(f"{weeks} {week_word}")
+    elif months > 0:
+        # For 1-11 months: show months and weeks (if non-zero)
+        month_word = "month" if months == 1 else "months"
+        parts.append(f"{months} {month_word}")
+        
+        if weeks > 0:
+            week_word = "week" if weeks == 1 else "weeks"
+            parts.append(f"{weeks} {week_word}")
+    else:
+        # Less than 1 month but >= 7 days: show weeks only
+        week_word = "week" if weeks == 1 else "weeks"
+        return f"{weeks} {week_word}"
+    
+    # Format output with commas and "and"
+    if len(parts) == 1:
+        return parts[0]
+    elif len(parts) == 2:
+        return f"{parts[0]} and {parts[1]}"
+    else:
+        # 3 parts: "X years, Y months and Z weeks"
+        return f"{parts[0]}, {parts[1]} and {parts[2]}"

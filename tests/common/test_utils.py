@@ -2,6 +2,8 @@
 
 import datetime as dt
 
+from freezegun import freeze_time
+
 from ipper.common.utils import calculate_age, generate_month_list
 
 
@@ -98,7 +100,6 @@ class TestCalculateAge:
 
     def test_days_format_less_than_week(self):
         """Test age formatting for dates less than 7 days old."""
-        from freezegun import freeze_time
 
         with freeze_time("2026-02-07 12:00:00+00:00"):
             # 5 days ago
@@ -109,37 +110,147 @@ class TestCalculateAge:
 
     def test_weeks_format(self):
         """Test age formatting for dates between 7 and 364 days."""
-        from freezegun import freeze_time
 
         with freeze_time("2026-02-07 12:00:00+00:00"):
-            # 8 weeks ago
+            # 8 weeks ago (Dec 13 to Feb 7 = 1 month, 25 days = 1 month and 3 weeks)
             date_str = "2025-12-13T12:00:00Z"
             date_format = "%Y-%m-%dT%H:%M:%SZ"
             result = calculate_age(date_str, date_format)
-            assert result == "8 weeks"
+            assert result == "1 month and 3 weeks"
 
     def test_years_format(self):
         """Test age formatting for dates 365+ days old."""
-        from freezegun import freeze_time
 
         with freeze_time("2026-02-07 12:00:00+00:00"):
-            # 1 year and some weeks ago
+            # 1 year and 1 month ago (Jan 1, 2025 to Feb 7, 2026)
             date_str = "2025-01-01T12:00:00Z"
             date_format = "%Y-%m-%dT%H:%M:%SZ"
             result = calculate_age(date_str, date_format)
 
-            # Should include both years and weeks
-            assert "years" in result or "year" in result
-            assert "weeks" in result
+            # Should include years and months
+            assert "year" in result
+            assert "month" in result
+            assert result == "1 year and 1 month"
 
     def test_exact_week(self):
         """Test age formatting for exactly 7 days."""
-        from freezegun import freeze_time
 
         with freeze_time("2026-02-07 12:00:00+00:00"):
             # Exactly 7 days ago
             date_str = "2026-01-31T12:00:00Z"
             date_format = "%Y-%m-%dT%H:%M:%SZ"
             result = calculate_age(date_str, date_format)
-            # 7 days triggers the >= 365 logic, so shows as "0 years 1 weeks"
-            assert result == "0 years 1 weeks"
+            # 7 days should show as "1 week"
+            assert result == "1 week"
+
+    def test_single_day(self):
+        """Test age formatting for exactly 1 day."""
+
+        with freeze_time("2026-02-07 12:00:00+00:00"):
+            date_str = "2026-02-06T12:00:00Z"
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            result = calculate_age(date_str, date_format)
+            assert result == "1 day"
+
+    def test_multiple_days_less_than_week(self):
+        """Test age formatting for multiple days less than a week."""
+
+        with freeze_time("2026-02-07 12:00:00+00:00"):
+            date_str = "2026-02-03T12:00:00Z"
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            result = calculate_age(date_str, date_format)
+            assert result == "4 days"
+
+    def test_single_month(self):
+        """Test age formatting for exactly 1 month."""
+
+        with freeze_time("2026-02-07 12:00:00+00:00"):
+            # 1 month ago (Jan 7 to Feb 7)
+            date_str = "2026-01-07T12:00:00Z"
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            result = calculate_age(date_str, date_format)
+            assert result == "1 month"
+
+    def test_months_and_weeks(self):
+        """Test age formatting with months and weeks."""
+
+        with freeze_time("2026-02-07 12:00:00+00:00"):
+            # 2 months and 2 weeks ago (Nov 24, 2025 to Feb 7, 2026)
+            date_str = "2025-11-24T12:00:00Z"
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            result = calculate_age(date_str, date_format)
+            assert result == "2 months and 2 weeks"
+
+    def test_year_without_months_or_weeks(self):
+        """Test age formatting for exactly 1 year."""
+
+        with freeze_time("2026-02-07 12:00:00+00:00"):
+            # Exactly 1 year ago
+            date_str = "2025-02-07T12:00:00Z"
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            result = calculate_age(date_str, date_format)
+            assert result == "1 year"
+
+    def test_years_and_months_no_weeks(self):
+        """Test age formatting with years and months but no weeks."""
+
+        with freeze_time("2026-02-07 12:00:00+00:00"):
+            # 2 years and 3 months ago (Nov 7, 2023 to Feb 7, 2026)
+            date_str = "2023-11-07T12:00:00Z"
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            result = calculate_age(date_str, date_format)
+            assert result == "2 years and 3 months"
+
+    def test_years_and_weeks_no_months(self):
+        """Test age formatting with years and weeks but no months."""
+
+        with freeze_time("2026-02-07 12:00:00+00:00"):
+            # 3 years and 2 weeks ago (Jan 24, 2023 to Feb 7, 2026)
+            date_str = "2023-01-24T12:00:00Z"
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            result = calculate_age(date_str, date_format)
+            assert result == "3 years and 2 weeks"
+
+    def test_years_months_and_weeks(self):
+        """Test age formatting with all three components."""
+
+        with freeze_time("2026-02-07 12:00:00+00:00"):
+            # 3 years, 3 months, and 2 weeks ago (Oct 24, 2022 to Feb 7, 2026)
+            date_str = "2022-10-24T12:00:00Z"
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            result = calculate_age(date_str, date_format)
+            assert result == "3 years, 3 months and 2 weeks"
+
+    def test_month_boundary_31_days(self):
+        """Test age calculation across month boundary with 31-day month."""
+
+        with freeze_time("2026-02-07 12:00:00+00:00"):
+            # Jan 31 to Feb 7 = 0 months, 7 days = 1 week
+            date_str = "2026-01-31T12:00:00Z"
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            result = calculate_age(date_str, date_format)
+            assert result == "1 week"
+
+    def test_leap_year_edge_case(self):
+        """Test age calculation over leap year February."""
+
+        with freeze_time("2024-03-01 12:00:00+00:00"):
+            # Feb 1 to Mar 1 in leap year = 1 month
+            date_str = "2024-02-01T12:00:00Z"
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            result = calculate_age(date_str, date_format)
+            assert result == "1 month"
+
+    def test_plural_vs_singular(self):
+        """Test that plural/singular forms are correct."""
+
+        with freeze_time("2026-02-07 12:00:00+00:00"):
+            # Test 2 of each unit (should be plural)
+            date_str = "2022-10-24T12:00:00Z"
+            date_format = "%Y-%m-%dT%H:%M:%SZ"
+            result = calculate_age(date_str, date_format)
+            
+            # Should use plural forms
+            assert "years" in result
+            assert "months" in result
+            assert "weeks" in result
