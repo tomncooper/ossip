@@ -368,3 +368,117 @@ td[style*="background-color: black"] {
         padding: 8px;
     }
 }
+
+/* Filter Controls Styling */
+.filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    background: #073642;
+    border: 1px solid #586e75;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-group label {
+    color: #93a1a1;
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.filter-dropdown {
+    background: #002b36;
+    color: #839496;
+    border: 1px solid #586e75;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+    min-width: 150px;
+}
+
+.filter-dropdown:hover {
+    border-color: #268bd2;
+}
+
+.filter-dropdown:focus {
+    outline: none;
+    border-color: #2aa198;
+    background-color: #073642;
+}
+
+.clear-filters-btn {
+    background: #268bd2;
+    color: #fdf6e3;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.clear-filters-btn:hover {
+    background: #2aa198;
+}
+
+.clear-filters-btn:active {
+    transform: scale(0.98);
+}
+
+.row-counter {
+    margin-left: auto;
+    color: #93a1a1;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+/* Hide filtered rows */
+tr.filtered-out {
+    display: none;
+}
+
+/* Mobile responsiveness for filters */
+@media (max-width: 768px) {
+    .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+    
+    .filter-group label {
+        font-size: 0.9rem;
+    }
+    
+    .filter-dropdown {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .clear-filters-btn {
+        width: 100%;
+    }
+    
+    .row-counter {
+        margin-left: 0;
+        text-align: center;
+    }
+}

@@ -14,6 +14,10 @@
         <div class="nav-item">GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></div>
         <div class="nav-item">Last Updated: {{ date }}</div>
     </div>
+    
+    <!-- Filter Controls -->
+    <div id="filter-controls"></div>
+    
     <table>
         <tr>
             <th>KIP</th>
@@ -28,7 +32,7 @@
             <th>More Info</th>
         </tr>
         {% for kip in kip_status %}
-        <tr>
+        <tr data-state="{{ kip['state']|e }}" data-created-by="{{ kip['created_by']|e }}">
             <td><a href={{ kip['url'] }}>{{ kip['id'] }}</a></td>
             <td>{{ kip['text'] }}</td>
             <td>{{ kip['state'] }}</td>
@@ -86,6 +90,19 @@
         </tr>
         {% endfor %}
     </table>
+
+    <!-- Filter JavaScript -->
+    <script src="assets/table-filter.js"></script>
+    <script>
+        TableFilter.init({
+            tableSelector: 'table',
+            filterContainerId: 'filter-controls',
+            columns: [
+                { id: 'state', label: 'State', dataAttr: 'data-state' },
+                { id: 'created-by', label: 'Created By', dataAttr: 'data-created-by' }
+            ]
+        });
+    </script>
 </body>
 
 </html>

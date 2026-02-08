@@ -14,6 +14,10 @@
         <div class="nav-item">GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></div>
         <div class="nav-item">Last Updated: {{ date }}</div>
     </div>
+    
+    <!-- Filter Controls -->
+    <div id="filter-controls"></div>
+    
     <table>
         <tr>
             <th>FLIP</th>
@@ -29,7 +33,7 @@
             <th>More Info</th>
         </tr>
         {% for flip in flip_data %}
-        <tr>
+        <tr data-state="{{ flip['state']|e }}" data-created-by="{{ flip['created_by']|e }}" data-component="{{ flip['release_component']|e }}">
             <td><a href={{ flip['web_url'] }}>{{ flip['id'] }}</a></td>
             <td>{{ flip['title'] }}
             {% if flip["release_component"] == "not set" or flip["release_component"] == "unknown" %}
@@ -92,6 +96,20 @@
         </tr>
         {% endfor %}
     </table>
+
+    <!-- Filter JavaScript -->
+    <script src="assets/table-filter.js"></script>
+    <script>
+        TableFilter.init({
+            tableSelector: 'table',
+            filterContainerId: 'filter-controls',
+            columns: [
+                { id: 'state', label: 'State', dataAttr: 'data-state' },
+                { id: 'created-by', label: 'Created By', dataAttr: 'data-created-by' },
+                { id: 'component', label: 'Component', dataAttr: 'data-component' }
+            ]
+        });
+    </script>
 </body>
 
 </html>
