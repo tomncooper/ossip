@@ -1,16 +1,23 @@
 name: Generate and publish site
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     - cron: "30 9 * * *"
+  workflow_run:
+    workflows: ["Run Tests"]
+    types:
+      - completed
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     name: Build Site Source
+    # Only run if tests passed (when triggered by workflow_run) or if triggered by schedule
+    if: |
+      github.event_name == 'schedule' || 
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     steps:
       - name: Git checkout
         uses: actions/checkout@v6

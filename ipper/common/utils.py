@@ -35,36 +35,36 @@ def calculate_age(date_str: str, date_format: str) -> str:
         tzinfo=dt.UTC
     )
     now: dt.datetime = dt.datetime.now(dt.UTC)
-    
+
     # Get timedelta for day count
     diff: dt.timedelta = now - then
-    
+
     # For very recent dates, just show days
     if diff.days < 7:
         day_word = "day" if diff.days == 1 else "days"
         return f"{diff.days} {day_word}"
-    
+
     # Use relativedelta for accurate calendar-based calculations
     delta = relativedelta(now, then)
     years = delta.years
     months = delta.months
-    
+
     # Calculate remaining weeks from leftover days
     remaining_days = delta.days
     weeks = remaining_days // 7
-    
+
     # Build output components
     parts = []
-    
+
     if years > 0:
         # For 1+ years: show years, months (if non-zero), and weeks (if non-zero)
         year_word = "year" if years == 1 else "years"
         parts.append(f"{years} {year_word}")
-        
+
         if months > 0:
             month_word = "month" if months == 1 else "months"
             parts.append(f"{months} {month_word}")
-        
+
         if weeks > 0:
             week_word = "week" if weeks == 1 else "weeks"
             parts.append(f"{weeks} {week_word}")
@@ -72,7 +72,7 @@ def calculate_age(date_str: str, date_format: str) -> str:
         # For 1-11 months: show months and weeks (if non-zero)
         month_word = "month" if months == 1 else "months"
         parts.append(f"{months} {month_word}")
-        
+
         if weeks > 0:
             week_word = "week" if weeks == 1 else "weeks"
             parts.append(f"{weeks} {week_word}")
@@ -80,7 +80,7 @@ def calculate_age(date_str: str, date_format: str) -> str:
         # Less than 1 month but >= 7 days: show weeks only
         week_word = "week" if weeks == 1 else "weeks"
         return f"{weeks} {week_word}"
-    
+
     # Format output with commas and "and"
     if len(parts) == 1:
         return parts[0]

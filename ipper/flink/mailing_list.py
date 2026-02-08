@@ -4,7 +4,6 @@ This module provides Flink-specific functions for downloading, parsing, and proc
 mbox archives from Apache Flink mailing lists to track FLIP mentions and votes.
 """
 
-import os
 import re
 from pathlib import Path
 

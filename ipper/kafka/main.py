@@ -212,11 +212,11 @@ def run_init_cmd(args: Namespace) -> None:
     args.output_dir = "cache/mailbox_files"
     args.use_metadata = True  # Enable metadata tracking even for init
     mbox_files: list[Path] = setup_mail_download(args)
-    
+
     # Process all mbox files directly (no intermediate cache)
     print("Processing mbox files")
     all_mentions: DataFrame = DataFrame(columns=KIP_MENTION_COLUMNS)
-    
+
     for mbox_file in mbox_files:
         print(f"Processing {mbox_file.name}")
         try:
@@ -224,7 +224,7 @@ def run_init_cmd(args: Namespace) -> None:
             all_mentions = concat((all_mentions, file_data), ignore_index=True)
         except Exception as ex:
             print(f"ERROR processing file {mbox_file.name}: {ex}")
-    
+
     # Deduplicate and save
     all_mentions = all_mentions.drop_duplicates()
     output_file = Path("cache/mailbox_files/kip_mentions.csv")
@@ -260,10 +260,10 @@ def run_refresh_cmd(args: Namespace) -> None:
     print("Refreshing by reprocessing all mbox files")
     mbox_directory = Path("cache/mailbox_files")
     mbox_files: list[Path] = sorted(mbox_directory.glob("*.mbox"))
-    
+
     print(f"Found {len(mbox_files)} mbox files to process")
     all_mentions: DataFrame = DataFrame(columns=KIP_MENTION_COLUMNS)
-    
+
     for mbox_file in mbox_files:
         print(f"Processing {mbox_file.name}")
         try:
@@ -271,10 +271,10 @@ def run_refresh_cmd(args: Namespace) -> None:
             all_mentions = concat((all_mentions, file_data), ignore_index=True)
         except Exception as ex:
             print(f"ERROR processing file {mbox_file.name}: {ex}")
-    
+
     # Deduplicate before saving (important!)
     all_mentions = all_mentions.drop_duplicates()
-    
+
     output_file = mbox_directory / "kip_mentions.csv"
     all_mentions.to_csv(output_file, index=False)
     print(f"Saved {len(all_mentions)} KIP mentions to {output_file}")

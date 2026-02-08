@@ -6,6 +6,7 @@ from pathlib import Path
 from pandas import DataFrame, concat
 
 from ipper.common.constants import DEFAULT_TEMPLATES_DIR
+from ipper.common.mailing_list import process_all_mbox_in_directory
 from ipper.flink.mailing_list import (
     FLIP_MENTION_COLUMNS,
     get_multiple_mbox,
@@ -319,11 +320,14 @@ def process_mail_archives(args: Namespace) -> None:
 
     out_dir: Path = Path(args.directory)
     flip_mentions: DataFrame = process_all_mbox_in_directory(
-        out_dir, overwrite_cache=args.overwrite_cache
+        out_dir,
+        process_mbox_archive,
+        FLIP_MENTION_COLUMNS,
+        overwrite_cache=args.overwrite_cache,
     )
     output_file: Path = out_dir.joinpath("flip_mentions.csv")
     flip_mentions.to_csv(output_file, index=False)
-    print(f"Saved FLIP mentions to {output_file}")
+    print(f"Saved {len(flip_mentions)} FLIP mentions to {output_file}")
 
 
 def run_init_cmd(args: Namespace) -> None:
@@ -373,16 +377,18 @@ def run_update_cmd(args: Namespace) -> None:
 def run_refresh_cmd(args: Namespace) -> None:
     print("Refreshing by reprocessing all mbox files")
     mbox_directory = Path("cache/flink_mailbox_files")
-    
+
     if not mbox_directory.exists():
-        print(f"Mbox directory {mbox_directory} does not exist. Skipping mailing list refresh.")
+        print(
+            f"Mbox directory {mbox_directory} does not exist. Skipping mailing list refresh."
+        )
         return
-        
+
     mbox_files: list[Path] = sorted(mbox_directory.glob("*.mbox"))
-    
+
     print(f"Found {len(mbox_files)} mbox files to process")
     all_mentions: DataFrame = DataFrame(columns=FLIP_MENTION_COLUMNS)
-    
+
     for mbox_file in mbox_files:
         print(f"Processing {mbox_file.name}")
         try:
@@ -390,10 +396,10 @@ def run_refresh_cmd(args: Namespace) -> None:
             all_mentions = concat((all_mentions, file_data), ignore_index=True)
         except Exception as ex:
             print(f"ERROR processing file {mbox_file.name}: {ex}")
-    
+
     # Deduplicate before saving
     all_mentions = all_mentions.drop_duplicates()
-    
+
     output_file = mbox_directory / "flip_mentions.csv"
     all_mentions.to_csv(output_file, index=False)
     print(f"Saved {len(all_mentions)} FLIP mentions to {output_file}")

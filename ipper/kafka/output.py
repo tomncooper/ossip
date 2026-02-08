@@ -142,8 +142,7 @@ def create_status_dict(
                 # Store the last mention date for tooltip display
                 last_mention_ts = subject_mentions[kip_id]
                 status_entry["last_mention_age"] = calculate_age(
-                    last_mention_ts.strftime("%Y-%m-%d %H:%M:%S"),
-                    "%Y-%m-%d %H:%M:%S"
+                    last_mention_ts.strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S"
                 )
             else:
                 created_diff: dt.timedelta = dt.datetime.now(

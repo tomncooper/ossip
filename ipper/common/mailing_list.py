@@ -529,3 +529,39 @@ def load_mbox_cache_file(cache_file: Path) -> DataFrame:
 
     return file_data
 
+
+def process_all_mbox_in_directory(
+    directory: Path,
+    process_func,
+    mention_columns: list[str],
+    overwrite_cache: bool = False,
+) -> DataFrame:
+    """Process all mbox files in a directory and return combined DataFrame.
+
+    Args:
+        directory: Directory containing mbox files
+        process_func: Function to process individual mbox files
+        mention_columns: List of column names for the resulting DataFrame
+        overwrite_cache: Whether to reprocess files (currently ignored)
+
+    Returns:
+        DataFrame containing all mentions from all mbox files
+    """
+
+    mbox_files: list[Path] = sorted(directory.glob("*.mbox"))
+
+    print(f"Found {len(mbox_files)} mbox files to process")
+    all_mentions: DataFrame = DataFrame(columns=mention_columns)
+
+    for mbox_file in mbox_files:
+        print(f"Processing {mbox_file.name}")
+        try:
+            file_data = process_func(mbox_file)
+            all_mentions = concat((all_mentions, file_data), ignore_index=True)
+        except Exception as ex:
+            print(f"ERROR processing file {mbox_file.name}: {ex}")
+
+    # Deduplicate before returning
+    all_mentions = all_mentions.drop_duplicates()
+
+    return all_mentions
