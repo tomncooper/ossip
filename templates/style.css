@@ -551,3 +551,30 @@ tr.filtered-out {
 .theme-toggle:hover {
     border-color: var(--sol-blue);
 }
+
+/* Trademark footer */
+.trademark-footer {
+    text-align: center;
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 2px solid var(--sol-secondary);
+    font-size: 0.8rem;
+    color: var(--sol-secondary);
+}
+
+.trademark-footer p {
+    color: var(--sol-secondary);
+    margin: 10px 0;
+    font-size: 0.8rem;
+}
+
+.trademark-footer a {
+    color: var(--sol-blue);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.trademark-footer a:hover {
+    color: var(--sol-cyan);
+    text-decoration: underline;
+}
