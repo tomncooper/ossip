@@ -395,6 +395,70 @@ def _fuzzy_match_non_binding(text: str, threshold: float = 80.0) -> bool:
     return score >= threshold
 
 
+def _check_line_for_binding_marker(line: str, vote_position: int) -> str | None:
+    """Check if a line contains 'binding' or 'non-binding' marker near the vote.
+
+    This function looks for binding markers that appear on the same line as a vote,
+    but are NOT enclosed in parentheses. Examples:
+    - "+1 binding"
+    - "+1 non-binding"
+    - "+1 non binding"
+
+    To avoid false positives, the binding marker must appear within a few words
+    of the vote (not separated by many other words).
+
+    Args:
+        line: The line containing the vote
+        vote_position: Character position where the vote pattern was found
+
+    Returns:
+        "binding" if binding marker found
+        "non-binding" if non-binding marker found
+        None if no marker found
+    """
+    if not line:
+        return None
+
+    # Get the portion of the line after the vote pattern
+    # This helps avoid matching words that appear before the vote
+    line_after_vote = line[vote_position:]
+
+    # Remove any parenthetical content (already handled separately)
+    line_no_parens = PARENTS_PATTERN.sub("", line_after_vote)
+
+    # Split into words and check only the first few words after the vote
+    # This prevents matching "binding" that's far from the vote (e.g., "binding contract")
+    words = line_no_parens.lower().split()
+
+    # Only check first 5 words after vote to avoid false matches
+    MAX_WORDS_TO_CHECK = 5
+    words_to_check = words[:MAX_WORDS_TO_CHECK]
+
+    for i, word in enumerate(words_to_check):
+        # Clean the word (remove punctuation)
+        clean_word = word.strip(".,;:!?")
+
+        # Check for non-binding first (highest priority)
+        # Look for patterns like "non-binding", "non binding", "nonbinding"
+        if clean_word.startswith("non"):
+            # Check if next word is "binding" (for "non binding")
+            if i + 1 < len(words_to_check):
+                next_word = words_to_check[i + 1].strip(".,;:!?")
+                combined = f"{clean_word} {next_word}"
+                if _fuzzy_match_non_binding(combined):
+                    return "non-binding"
+
+            # Check the word itself (for "non-binding", "nonbinding")
+            if _fuzzy_match_non_binding(clean_word):
+                return "non-binding"
+
+        # Check for binding (plain "binding" keyword)
+        if _fuzzy_match_binding(clean_word):
+            return "binding"
+
+    return None
+
+
 def parse_for_vote(
     payload: str,
     voter_from_header: str,
@@ -404,13 +468,14 @@ def parse_for_vote(
 
     Ignores lines starting with ">" (reply quotes) and checks if the line contains
     a +1, 0 or -1 voting pattern. Votes are counted as binding if:
-    1. Explicitly marked with "(binding)" or fuzzy variations, OR
+    1. Explicitly marked with "(binding)" or "binding" (with or without parentheses), OR
     2. The voter is identified as a committer via the committer index
 
     Uses fuzzy matching to handle:
     - Spacing issues: "+1(binding)" vs "+1 (binding)"
     - Typos: "+1(binging)", "+1(bindng)"
-    - Format variations for non-binding: "(non binding)", "(nonbinding)"
+    - Format variations for non-binding: "(non binding)", "(nonbinding)", "non-binding", "non binding"
+    - Both parenthetical and non-parenthetical formats: "+1 (binding)" and "+1 binding"
 
     Priority: Explicit "(binding)" votes take precedence over committer-based votes.
     This prevents false matches from phrases like "0 concerns" being counted as votes
@@ -451,6 +516,16 @@ def parse_for_vote(
         for text in parenthetical_texts:
             if _fuzzy_match_binding(text):
                 return _normalize_vote(vote)
+
+        # If no parenthetical markers found, check for non-parenthetical markers
+        # e.g., "+1 binding" or "+1 non-binding" without parentheses
+        binding_marker = _check_line_for_binding_marker(line, vote_match.start())
+
+        if binding_marker == "non-binding":
+            # Explicitly non-binding, don't count it
+            return None
+        elif binding_marker == "binding":
+            return _normalize_vote(vote)
 
     # Second pass: If no explicit binding marker found, check if voter is a committer
     # This allows committer votes to be binding, but with lower priority than explicit markers

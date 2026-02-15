@@ -303,6 +303,96 @@ It looks like a nice improvement to me.
             "Explicit +1 (binding) should be detected, not incidental 0"
         )
 
+    # Tests for non-parenthetical binding markers (KIP-1192 fix)
+
+    def test_binding_without_parentheses(self):
+        """Test parsing +1 binding without parentheses (KIP-1192 case)."""
+        payload = "+1 binding"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "+1"
+
+    def test_binding_without_parentheses_with_text(self):
+        """Test parsing binding vote without parentheses embedded in message."""
+        payloads = [
+            "Thanks for the KIP!\n\n+1 binding\n\nRegards",
+            "+1 binding vote from me",
+            "I'm +1 binding on this",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result == "+1", f"Should detect binding for: {payload}"
+
+    def test_non_binding_without_parentheses(self):
+        """Test parsing non-binding vote without parentheses."""
+        payloads = [
+            "+1 non-binding",
+            "+1 non binding",
+            "+1 nonbinding",
+            "Thanks! +1 non-binding from me",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result is None, f"Should be non-binding for: {payload}"
+
+    def test_minus_one_binding_without_parentheses(self):
+        """Test parsing -1 binding without parentheses."""
+        payload = "-1 binding"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "-1"
+
+    def test_zero_binding_without_parentheses(self):
+        """Test parsing 0 binding without parentheses."""
+        payload = "0 binding"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "0"
+
+    def test_omnia_kip_1192_exact_format(self):
+        """Test exact format from Omnia's KIP-1192 vote that was failing."""
+        payload = """Thanks for the KIP Federico.
+
++1 binding 
+
+Omnia"""
+        result = parse_for_vote(payload, "Omnia Ibrahim <o.g.h.ibrahim@gmail.com>")
+        assert result == "+1", "Should detect Omnia's +1 binding vote"
+
+    def test_parenthetical_takes_precedence_over_non_parenthetical(self):
+        """Test that parenthetical binding marker has higher priority."""
+        # If someone writes "+1 (non-binding) but actually binding" we should respect the parentheses
+        payload = "+1 (non-binding) actually binding"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result is None, "Parenthetical (non-binding) should take precedence"
+
+    def test_binding_word_in_other_context_not_matched(self):
+        """Test that 'binding' in unrelated context is not matched when clearly separate."""
+        payloads = [
+            "This is a binding decision",  # No vote pattern
+            "The binding agreement states",  # No vote pattern
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            # Without explicit marker after the vote, should return None (no committer index)
+            assert result is None, f"Should not match for: {payload}"
+
+        # Note: "+1 for the binding X" will match because "binding" is within 5 words
+        # This is acceptable as it's ambiguous - could be "+1 for the binding [vote]"
+        # The 5-word window is a reasonable tradeoff for real-world usage
+
+    def test_backward_compatibility_parenthetical_still_works(self):
+        """Test that original parenthetical format still works after changes."""
+        payloads = [
+            "+1 (binding)",
+            "+1 (non-binding)",
+            "+1(binding)",
+            "+1 (binging)",  # typo
+            "+1 (non binding)",  # no hyphen
+        ]
+        expected_results = ["+1", None, "+1", "+1", None]
+
+        for payload, expected in zip(payloads, expected_results, strict=True):
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result == expected, f"Backward compatibility failed for: {payload}"
+
 
 class TestVoteConverter:
     """Tests for the vote_converter function."""
