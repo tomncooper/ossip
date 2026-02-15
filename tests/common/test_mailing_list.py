@@ -283,6 +283,26 @@ Actually, I vote differently:
             # Should not match binding or non-binding, returns None (no committer index)
             assert result is None, f"Should not match for: {payload}"
 
+    def test_explicit_binding_takes_precedence_over_incidental_zero(self):
+        """Test that explicit binding votes are prioritized over incidental zeros.
+
+        Regression test for bug where "0 concerns" was incorrectly matched as a
+        vote instead of the explicit "+1 (binding)" that appeared later.
+        """
+        payload = """I have 0 concerns about this proposal.
+
+I'm +1 (binding)
+
+Thanks, Federico!
+
+It looks like a nice improvement to me.
+
+-John"""
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "+1", (
+            "Explicit +1 (binding) should be detected, not incidental 0"
+        )
+
 
 class TestVoteConverter:
     """Tests for the vote_converter function."""

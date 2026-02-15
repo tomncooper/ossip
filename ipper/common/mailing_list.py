@@ -412,6 +412,10 @@ def parse_for_vote(
     - Typos: "+1(binging)", "+1(bindng)"
     - Format variations for non-binding: "(non binding)", "(nonbinding)"
 
+    Priority: Explicit "(binding)" votes take precedence over committer-based votes.
+    This prevents false matches from phrases like "0 concerns" being counted as votes
+    when the actual vote appears later in the message.
+
     Args:
         payload: Email message body text
         voter_from_header: Email 'From' header to identify voter
@@ -421,6 +425,7 @@ def parse_for_vote(
         Vote string ("+1", "0", "-1") or None if no binding vote found
     """
 
+    # First pass: Look for explicit binding/non-binding votes
     for line in payload.split("\n"):
         # Skip quoted lines
         if ">" in line[:10]:
@@ -447,23 +452,54 @@ def parse_for_vote(
             if _fuzzy_match_binding(text):
                 return _normalize_vote(vote)
 
-        # No explicit binding/non-binding marker found
-        # Check if voter is a committer (automatic binding vote)
-        if committer_index:
-            voter_name, voter_email = parse_email_from_header(voter_from_header)
-            is_match, confidence, method = committer_index.is_committer(
-                voter_name, voter_email
-            )
+    # Second pass: If no explicit binding marker found, check if voter is a committer
+    # This allows committer votes to be binding, but with lower priority than explicit markers
+    # Prefer +1/-1 over 0 to avoid matching incidental zeros in text
+    if committer_index:
+        voter_name, voter_email = parse_email_from_header(voter_from_header)
+        is_match, confidence, method = committer_index.is_committer(
+            voter_name, voter_email
+        )
 
-            if is_match:
+        if is_match:
+            # Look for +1 or -1 votes first (skip 0 to avoid false matches like "0 concerns")
+            for line in payload.split("\n"):
+                # Skip quoted lines
+                if ">" in line[:10]:
+                    continue
+
+                # Check if line contains a +1 or -1 vote
+                vote_match = VOTE_PATTERN.search(line)
+                if not vote_match:
+                    continue
+
+                vote = vote_match.group(1)
+                # Skip standalone 0 - only accept +1 or -1 from committers without explicit binding
+                if vote == "0":
+                    continue
+
                 print(
                     f"  Detected binding vote from committer: {voter_name} "
                     f"<{voter_email}> (matched by {method}, confidence: {confidence:.1f}%)"
                 )
                 return _normalize_vote(vote)
 
-        # No binding indicator found - treat as non-binding
-        return None
+            # If no +1/-1 found, check for 0 votes (less common but valid)
+            for line in payload.split("\n"):
+                if ">" in line[:10]:
+                    continue
+
+                vote_match = VOTE_PATTERN.search(line)
+                if not vote_match:
+                    continue
+
+                vote = vote_match.group(1)
+                if vote == "0":
+                    print(
+                        f"  Detected binding vote from committer: {voter_name} "
+                        f"<{voter_email}> (matched by {method}, confidence: {confidence:.1f}%)"
+                    )
+                    return _normalize_vote(vote)
 
     return None
 
