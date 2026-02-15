@@ -100,15 +100,31 @@ To update only the most recent month and add any new KIPs which have been posted
 $ uv run python ipper/main.py kafka update
 ```
 
-### Downloading and processing FLIP data
-
-To download and process Apache Flink FLIP Wiki information from the confluence site, run:
+To reprocess ALL Kafka mbox files from scratch (useful when processing logic changes or cache is corrupted):
 
 ```bash
-$ uv run python ipper/main.py flink wiki download --update --refresh-days 60
+$ uv run python ipper/main.py kafka refresh
 ```
 
-The `--update` flag will update existing cached data, and `--refresh-days` specifies how many days back to refresh.
+### Downloading and processing FLIP data
+
+To download the Flink `dev` mailing list for the last year, process the archives and download the FLIP Wiki information from the confluence site; run the `init` command:
+
+```bash
+$ uv run python ipper/main.py flink init --days 365
+```
+
+To update only the most recent month and add any new FLIPs which have been posted since the last update run:
+
+```bash
+$ uv run python ipper/main.py flink update
+```
+
+To reprocess ALL Flink mbox files from scratch (useful when processing logic changes or cache is corrupted):
+
+```bash
+$ uv run python ipper/main.py flink refresh
+```
 
 ### Building the site
 

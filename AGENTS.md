@@ -114,30 +114,36 @@ ossip/
 
 ### Apache Flink
 - **Wiki:** Confluence page - "Flink Improvement Proposals"
-- **Status:** Fully implemented with wiki scraping and individual FLIP pages
+- **Mailing Lists:** 
+  - dev@flink.apache.org (primary)
+  - user@flink.apache.org
+  - jira@flink.apache.org
+  - commits@flink.apache.org
+- **Format:** mbox archives from lists.apache.org
+- **Status:** Fully implemented with wiki scraping, mailing list processing, and individual FLIP pages
 - **Output:** Main index page plus individual FLIP detail pages
 - **KEYS:** https://downloads.apache.org/flink/KEYS (PGP keys of committers)
 
 ## Workflow
 
-### Initial Setup (`kafka init`)
-1. Download KIP wiki information from Confluence
+### Initial Setup (`kafka init` / `flink init`)
+1. Download KIP/FLIP wiki information from Confluence
 2. Download 365 days of dev mailing list archives
 3. Process all mbox files directly
-4. Save mentions to `kip_mentions.csv`
+4. Save mentions to `kip_mentions.csv` / `flip_mentions.csv`
 5. Cache all data locally
 
-### Updates (`kafka update`)
-1. Update KIP wiki cache with new proposals
+### Updates (`kafka update` / `flink update`)
+1. Update KIP/FLIP wiki cache with new proposals
 2. Download most recent month's mailing list archive (re-downloads current month to catch late emails)
 3. Process new mbox files directly
-4. Append to `kip_mentions.csv` with automatic deduplication
+4. Append to `kip_mentions.csv` / `flip_mentions.csv` with automatic deduplication
 5. Update metadata tracking
 
-### Refresh (`kafka refresh`)
+### Refresh (`kafka refresh` / `flink refresh`)
 1. Reprocess ALL mbox files from scratch
 2. Deduplicate all mentions
-3. Regenerate `kip_mentions.csv`
+3. Regenerate `kip_mentions.csv` / `flip_mentions.csv`
 4. Use when cache is corrupted or processing logic changes
 
 ### Output Generation
@@ -151,8 +157,8 @@ ossip/
 - **Trigger:** Push to main branch or daily cron (09:30 UTC)
 - **Steps:**
   1. Install Python 3.12 and uv
-  2. Run `kafka update` (incremental) and `flink wiki download --update --refresh-days 60`
-  3. Generate HTML files from cached data (kafka.html and flink.html + individual FLIP pages)
+  2. Run `kafka update` and `flink update` (both incremental, including mailing lists)
+  3. Generate HTML files from cached data (kafka.html and flink.html + individual KIP/FLIP pages)
   4. Commit updated cache files back to repository
   5. Deploy to GitHub Pages
 
@@ -316,18 +322,16 @@ CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 
 ## Known Limitations
 
-1. Flink does not process mailing lists (only wiki data) - but has KEYS integration ready
-2. No rate limiting on API calls
-3. Limited error recovery in data collection
-4. `kafka refresh` takes 2-5 minutes (reprocesses ~182 mbox files)
-5. Status keyword matching is English-only
-6. Large table sizes (1000+ KIPs) may impact page load performance
-7. Fuzzy name matching may occasionally miss committers with very different email names
+1. No rate limiting on API calls
+2. Limited error recovery in data collection
+3. `kafka refresh` and `flink refresh` take 2-5 minutes (reprocess all mbox files)
+4. Status keyword matching is English-only
+5. Large table sizes (1000+ KIPs/FLIPs) may impact page load performance
+6. Fuzzy name matching may occasionally miss committers with very different email names
 
 ## Future Considerations
 
 - Add support for more Apache projects (e.g., Airflow, Spark)
-- Implement mailing list processing for Flink (similar to Kafka)
 - Add JavaScript filtering/search functionality to main pages
 - Pagination or lazy loading for large KIP/FLIP tables
 - Real-time updates via webhooks
