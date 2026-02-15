@@ -16,6 +16,7 @@ from typing import cast
 
 import requests
 from pandas import DataFrame, concat, read_csv, to_datetime
+from rapidfuzz import fuzz
 
 from ipper.common.keys import CommitterIndex, parse_email_from_header
 from ipper.common.utils import generate_month_list
@@ -23,6 +24,8 @@ from ipper.common.utils import generate_month_list
 APACHE_MAILING_LIST_BASE_URL: str = "https://lists.apache.org/api/mbox.lua"
 MAIL_DATE_FORMAT = "%a, %d %b %Y %H:%M:%S %z"
 MAIL_DATE_FORMAT_ZONE = "%a, %d %b %Y %H:%M:%S %z (%Z)"
+PARENTS_PATTERN = re.compile(r"\(([^)]+)\)")
+VOTE_PATTERN = re.compile(r"([\+\-]1|0)", re.IGNORECASE)
 
 
 def get_monthly_mbox_file(
@@ -332,6 +335,66 @@ def extract_message_payload(msg: Message) -> list[str]:
     return list(valid_payloads_set)
 
 
+def _extract_parenthetical_text(line: str) -> list[str]:
+    """Extract all text within parentheses from a line.
+
+    Args:
+        line: Text line to search
+
+    Returns:
+        List of strings found within parentheses (without the parentheses)
+    """
+    matches = PARENTS_PATTERN.findall(line)
+    return [match.strip() for match in matches]
+
+
+def _fuzzy_match_binding(text: str, threshold: float = 85.0) -> bool:
+    """Check if text fuzzy matches 'binding'.
+
+    Uses rapidfuzz to handle typos like 'binging', 'bindng', 'bindign', etc.
+
+    Args:
+        text: Text to check (typically from parentheses)
+        threshold: Minimum similarity score (0-100) to consider a match
+
+    Returns:
+        True if text matches 'binding' with similarity >= threshold
+    """
+    if not text:
+        return False
+
+    normalized_text = text.lower().strip()
+    score = fuzz.ratio(normalized_text, "binding")
+    return score >= threshold
+
+
+def _fuzzy_match_non_binding(text: str, threshold: float = 80.0) -> bool:
+    """Check if text fuzzy matches 'non-binding'.
+
+    Uses rapidfuzz to handle variations like 'non binding', 'nonbinding',
+    'non-binging', etc. Requires text to start with 'non' to avoid matching
+    plain 'binding' (which has 77.8% similarity to 'non-binding').
+
+    Args:
+        text: Text to check (typically from parentheses)
+        threshold: Minimum similarity score (0-100) to consider a match
+
+    Returns:
+        True if text starts with 'non' and matches 'non-binding' with similarity >= threshold
+    """
+    if not text:
+        return False
+
+    normalized_text = text.lower().strip()
+
+    # Must start with 'non' to avoid matching plain 'binding'
+    if not normalized_text.startswith("non"):
+        return False
+
+    score = fuzz.ratio(normalized_text, "non-binding")
+    return score >= threshold
+
+
 def parse_for_vote(
     payload: str,
     voter_from_header: str,
@@ -341,8 +404,13 @@ def parse_for_vote(
 
     Ignores lines starting with ">" (reply quotes) and checks if the line contains
     a +1, 0 or -1 voting pattern. Votes are counted as binding if:
-    1. Explicitly marked with "(binding)", OR
+    1. Explicitly marked with "(binding)" or fuzzy variations, OR
     2. The voter is identified as a committer via the committer index
+
+    Uses fuzzy matching to handle:
+    - Spacing issues: "+1(binding)" vs "+1 (binding)"
+    - Typos: "+1(binging)", "+1(bindng)"
+    - Format variations for non-binding: "(non binding)", "(nonbinding)"
 
     Args:
         payload: Email message body text
@@ -353,55 +421,49 @@ def parse_for_vote(
         Vote string ("+1", "0", "-1") or None if no binding vote found
     """
 
-    # Pattern for explicit binding votes
-    binding_pattern = re.compile(r"([\+\-]1|0)\s*\(binding\)", re.IGNORECASE)
-
-    # Pattern for non-binding votes (explicitly marked)
-    non_binding_pattern = re.compile(r"([\+\-]1|0)\s*\(non-binding\)", re.IGNORECASE)
-
-    # Pattern for unmarked votes (may be binding if from committer)
-    vote_pattern = re.compile(r"([\+\-]1|0)(?!\s*\()", re.IGNORECASE)
-
     for line in payload.split("\n"):
         # Skip quoted lines
         if ">" in line[:10]:
             continue
 
-        # Check for explicit binding vote
-        match = binding_pattern.search(line)
-        if match:
-            vote = match.group(1)
-            return _normalize_vote(vote)
+        # Check if line contains a vote
+        vote_match = VOTE_PATTERN.search(line)
+        if not vote_match:
+            continue
 
-        # Check for explicit non-binding vote
-        match = non_binding_pattern.search(line)
-        if match:
-            # Explicitly non-binding, don't count it
-            return None
+        vote = vote_match.group(1)
 
-        # Check for unmarked vote
-        match = vote_pattern.search(line)
-        if match:
-            vote = match.group(1)
+        # Extract any parenthetical text from the line
+        parenthetical_texts = _extract_parenthetical_text(line)
 
-            # If we have a committer index, check if voter is a committer
-            if committer_index:
-                voter_name, voter_email = parse_email_from_header(voter_from_header)
-                is_match, confidence, method = committer_index.is_committer(
-                    voter_name, voter_email
-                )
-
-                if is_match:
-                    print(
-                        f"  Detected binding vote from committer: {voter_name} "
-                        f"<{voter_email}> (matched by {method}, confidence: {confidence:.1f}%)"
-                    )
-                    return _normalize_vote(vote)
-                # No match - treat as non-binding per strict approach
+        # Check for non-binding first (highest priority - prevents counting as binding)
+        for text in parenthetical_texts:
+            if _fuzzy_match_non_binding(text):
+                # Explicitly non-binding, don't count it
                 return None
 
-            # No committer index - treat unmarked votes as non-binding
-            return None
+        # Check for binding marker (explicit or fuzzy match)
+        for text in parenthetical_texts:
+            if _fuzzy_match_binding(text):
+                return _normalize_vote(vote)
+
+        # No explicit binding/non-binding marker found
+        # Check if voter is a committer (automatic binding vote)
+        if committer_index:
+            voter_name, voter_email = parse_email_from_header(voter_from_header)
+            is_match, confidence, method = committer_index.is_committer(
+                voter_name, voter_email
+            )
+
+            if is_match:
+                print(
+                    f"  Detected binding vote from committer: {voter_name} "
+                    f"<{voter_email}> (matched by {method}, confidence: {confidence:.1f}%)"
+                )
+                return _normalize_vote(vote)
+
+        # No binding indicator found - treat as non-binding
+        return None
 
     return None
 

@@ -177,6 +177,112 @@ Actually, I vote differently:
         # The regex requires +1 or -1, plain "1" is not matched
         assert result is None
 
+    def test_binding_vote_no_space(self):
+        """Test parsing binding vote with no space before (binding)."""
+        payload = "+1(binding)"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "+1"
+
+    def test_binding_vote_embedded_in_text(self):
+        """Test parsing binding vote embedded in prose."""
+        payloads = [
+            "+1 from me(binding)",
+            "+1 from me (binding)",
+            "Thanks for this improvement, +1 from me(binding)",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result == "+1", f"Failed for: {payload}"
+
+    def test_binding_vote_with_typo_binging(self):
+        """Test parsing binding vote with 'binging' typo (actual KIP-927 case)."""
+        payloads = [
+            "+1(binging)",
+            "+1 from me(binging)",
+            "Thanks for this improvement, +1 from me(binging)",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result == "+1", f"Failed for: {payload}"
+
+    def test_binding_vote_with_typo_bindng(self):
+        """Test parsing binding vote with missing 'i' typo."""
+        payload = "+1(bindng)"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "+1"
+
+    def test_binding_vote_with_typo_bindign(self):
+        """Test parsing binding vote with transposed 'gn' typo."""
+        payload = "+1(bindign)"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "+1"
+
+    def test_binding_vote_case_insensitive_fuzzy(self):
+        """Test that fuzzy matching works with different cases."""
+        payloads = [
+            "+1(BINGING)",
+            "+1(Binging)",
+            "+1(BINDNG)",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result == "+1", f"Failed for: {payload}"
+
+    def test_non_binding_without_hyphen(self):
+        """Test parsing non-binding vote without hyphen (1,037 real votes!)."""
+        payloads = [
+            "+1 (non binding)",
+            "+1(non binding)",
+            "-1 (non binding)",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result is None, f"Should be non-binding for: {payload}"
+
+    def test_non_binding_no_space_or_hyphen(self):
+        """Test parsing non-binding vote with no space or hyphen (116 real votes!)."""
+        payloads = [
+            "+1(nonbinding)",
+            "+1 (nonbinding)",
+            "0(nonbinding)",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result is None, f"Should be non-binding for: {payload}"
+
+    def test_non_binding_with_typo_in_binding_part(self):
+        """Test parsing non-binding vote with typo in 'binding' part."""
+        payloads = [
+            "+1(non-binging)",
+            "+1 (non bindng)",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result is None, f"Should be non-binding for: {payload}"
+
+    def test_non_binding_case_insensitive(self):
+        """Test that non-binding fuzzy matching is case insensitive."""
+        payloads = [
+            "+1(NON-BINDING)",
+            "+1(Non-Binding)",
+            "+1(NON BINDING)",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result is None, f"Should be non-binding for: {payload}"
+
+    def test_unrelated_parenthetical_text(self):
+        """Test that unrelated parenthetical text doesn't match."""
+        payloads = [
+            "+1 (opinion)",
+            "+1 (see KIP-123)",
+            "+1 (my thoughts)",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            # Should not match binding or non-binding, returns None (no committer index)
+            assert result is None, f"Should not match for: {payload}"
+
 
 class TestVoteConverter:
     """Tests for the vote_converter function."""
