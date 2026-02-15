@@ -3,7 +3,10 @@ from pathlib import Path
 
 from pandas import DataFrame, concat
 
+from ipper.common.keys import get_committer_index
 from ipper.kafka.mailing_list import (
+    KEYS_CACHE_PATH,
+    KEYS_URL,
     KIP_MENTION_COLUMNS,
     get_multiple_mbox,
     load_mbox_cache_file,
@@ -31,6 +34,7 @@ def setup_kafka_parser(top_level_subparsers) -> None:
     setup_init_command(main_subparser)
     setup_update_command(main_subparser)
     setup_refresh_command(main_subparser)
+    setup_keys_command(main_subparser)
     setup_wiki_command(main_subparser)
     setup_output_command(main_subparser)
 
@@ -92,6 +96,25 @@ def setup_refresh_command(main_subparser) -> None:
     )
 
     refresh_parser.set_defaults(func=run_refresh_cmd)
+
+
+def setup_keys_command(main_subparser) -> None:
+    """Setup the 'keys' command parser"""
+
+    keys_parser = main_subparser.add_parser(
+        "keys", help="Commands for managing committer KEYS file cache"
+    )
+    keys_subparser = keys_parser.add_subparsers(dest="keys_subcommand")
+
+    keys_refresh_parser = keys_subparser.add_parser(
+        "refresh", help="Force refresh of committer KEYS file from Apache downloads"
+    )
+    keys_refresh_parser.set_defaults(func=run_keys_refresh_cmd)
+
+    keys_info_parser = keys_subparser.add_parser(
+        "info", help="Display information about cached committer KEYS"
+    )
+    keys_info_parser.set_defaults(func=run_keys_info_cmd)
 
 
 def setup_wiki_command(main_subparser):
@@ -295,6 +318,35 @@ def run_output_standalone_cmd(args: Namespace) -> None:
 
         # Render individual pages
         render_kip_info_pages(enriched_kip_info, args.kip_info_dir)
+
+
+def run_keys_refresh_cmd(args: Namespace) -> None:
+    """Force refresh of the Kafka committer KEYS file."""
+    print(f"Force refreshing Kafka committer KEYS from {KEYS_URL}")
+    index = get_committer_index(KEYS_URL, KEYS_CACHE_PATH, force_refresh=True)
+    print(f"Successfully loaded {len(index.committers)} committers")
+    print(f"Cache saved to: {KEYS_CACHE_PATH}")
+
+
+def run_keys_info_cmd(args: Namespace) -> None:
+    """Display information about cached committer KEYS."""
+    from ipper.common.keys import load_committer_index
+
+    print(f"Loading Kafka committer KEYS from cache: {KEYS_CACHE_PATH}")
+    index = load_committer_index(KEYS_CACHE_PATH)
+
+    if not index:
+        print("No cached KEYS file found. Run 'kafka keys refresh' to download.")
+        return
+
+    print(f"\nSource: {index.source_url}")
+    print(f"Last updated: {index.last_updated.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+    print(f"Number of committers: {len(index.committers)}")
+    print("\nSample committers:")
+    for committer in index.committers[:5]:
+        print(f"  - {committer.name} ({', '.join(committer.emails[:2])})")
+    if len(index.committers) > 5:
+        print(f"  ... and {len(index.committers) - 5} more")
 
 
 if __name__ == "__main__":

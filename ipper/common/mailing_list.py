@@ -17,6 +17,7 @@ from typing import cast
 import requests
 from pandas import DataFrame, concat, read_csv, to_datetime
 
+from ipper.common.keys import CommitterIndex, parse_email_from_header
 from ipper.common.utils import generate_month_list
 
 APACHE_MAILING_LIST_BASE_URL: str = "https://lists.apache.org/api/mbox.lua"
@@ -331,37 +332,96 @@ def extract_message_payload(msg: Message) -> list[str]:
     return list(valid_payloads_set)
 
 
-def parse_for_vote(payload: str) -> str | None:
+def parse_for_vote(
+    payload: str,
+    voter_from_header: str,
+    committer_index: CommitterIndex | None = None,
+) -> str | None:
     """Parses the supplied payload string line by line for voting patterns.
 
     Ignores lines starting with ">" (reply quotes) and checks if the line contains
-    a +1, 0 or -1 voting pattern with "(binding)" suffix. Only binding votes are counted.
+    a +1, 0 or -1 voting pattern. Votes are counted as binding if:
+    1. Explicitly marked with "(binding)", OR
+    2. The voter is identified as a committer via the committer index
 
     Args:
         payload: Email message body text
+        voter_from_header: Email 'From' header to identify voter
+        committer_index: Optional index of project committers for automatic binding detection
 
     Returns:
         Vote string ("+1", "0", "-1") or None if no binding vote found
     """
 
-    # Pattern matches +1, -1, or 0 followed by whitespace and (binding)
-    # This ensures we only count binding votes
-    vote_pattern = re.compile(r"([\+\-]1|0)\s*\(binding\)", re.IGNORECASE)
+    # Pattern for explicit binding votes
+    binding_pattern = re.compile(r"([\+\-]1|0)\s*\(binding\)", re.IGNORECASE)
+
+    # Pattern for non-binding votes (explicitly marked)
+    non_binding_pattern = re.compile(r"([\+\-]1|0)\s*\(non-binding\)", re.IGNORECASE)
+
+    # Pattern for unmarked votes (may be binding if from committer)
+    vote_pattern = re.compile(r"([\+\-]1|0)(?!\s*\()", re.IGNORECASE)
 
     for line in payload.split("\n"):
-        if ">" not in line[:10]:
-            match = vote_pattern.search(line)
-            if match:
-                vote = match.group(1)
-                # Normalize the vote string
-                if vote in ["+1", "1"]:
-                    return "+1"
-                elif vote in ["-1"]:
-                    return "-1"
-                elif vote in ["0"]:
-                    return "0"
+        # Skip quoted lines
+        if ">" in line[:10]:
+            continue
+
+        # Check for explicit binding vote
+        match = binding_pattern.search(line)
+        if match:
+            vote = match.group(1)
+            return _normalize_vote(vote)
+
+        # Check for explicit non-binding vote
+        match = non_binding_pattern.search(line)
+        if match:
+            # Explicitly non-binding, don't count it
+            return None
+
+        # Check for unmarked vote
+        match = vote_pattern.search(line)
+        if match:
+            vote = match.group(1)
+
+            # If we have a committer index, check if voter is a committer
+            if committer_index:
+                voter_name, voter_email = parse_email_from_header(voter_from_header)
+                is_match, confidence, method = committer_index.is_committer(
+                    voter_name, voter_email
+                )
+
+                if is_match:
+                    print(
+                        f"  Detected binding vote from committer: {voter_name} "
+                        f"<{voter_email}> (matched by {method}, confidence: {confidence:.1f}%)"
+                    )
+                    return _normalize_vote(vote)
+                # No match - treat as non-binding per strict approach
+                return None
+
+            # No committer index - treat unmarked votes as non-binding
+            return None
 
     return None
+
+
+def _normalize_vote(vote: str) -> str:
+    """Normalize vote string to standard format.
+
+    Args:
+        vote: Raw vote string ("+1", "1", "-1", "0")
+
+    Returns:
+        Normalized vote string ("+1", "-1", or "0")
+    """
+    if vote in ["+1", "1"]:
+        return "+1"
+    elif vote in ["-1"]:
+        return "-1"
+    elif vote in ["0"]:
+        return "0"
+    return vote
 
 
 def process_mbox_archive(
@@ -371,6 +431,7 @@ def process_mbox_archive(
     mention_columns: list[str],
     vote_keyword: str = "VOTE",
     discuss_keyword: str = "DISCUSS",
+    committer_index: CommitterIndex | None = None,
 ) -> DataFrame:
     """Process the supplied mbox archive, harvest improvement proposal mentions.
 
@@ -381,6 +442,7 @@ def process_mbox_archive(
         mention_columns: List of column names for the output DataFrame
         vote_keyword: Keyword in subject line indicating a vote thread
         discuss_keyword: Keyword in subject line indicating a discussion thread
+        committer_index: Optional index of committers for automatic binding vote detection
 
     Returns:
         DataFrame containing each mention with metadata
@@ -448,7 +510,9 @@ def process_mbox_archive(
 
         for payload in valid_payloads:
             if is_vote:
-                vote_str: str | None = parse_for_vote(payload)
+                vote_str: str | None = parse_for_vote(
+                    payload, str(msg["from"]), committer_index
+                )
                 data.append(
                     [
                         subject_id,

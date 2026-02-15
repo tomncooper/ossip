@@ -1,0 +1,457 @@
+{
+  "last_updated": "2026-02-15T10:00:06.049243+00:00",
+  "source_url": "https://downloads.apache.org/flink/KEYS",
+  "committers": [
+    {
+      "name": "Alan Gates",
+      "emails": [
+        "gates@yahoo-inc.com"
+      ],
+      "raw_uid": "Alan Gates (No comment) <gates@yahoo-inc.com>"
+    },
+    {
+      "name": "Alexander Fedulov",
+      "emails": [
+        "afedulov@apache.org"
+      ],
+      "raw_uid": "Alexander Fedulov (CODE SIGNING KEY) <afedulov@apache.org>"
+    },
+    {
+      "name": "Aljoscha Krettek",
+      "emails": [
+        "aljoscha@apache.org"
+      ],
+      "raw_uid": "Aljoscha Krettek (CODE SIGNING KEY) <aljoscha@apache.org>"
+    },
+    {
+      "name": "Arvid Heise",
+      "emails": [
+        "arvid@apache.org"
+      ],
+      "raw_uid": "Arvid Heise <arvid@apache.org>"
+    },
+    {
+      "name": "Chesnay Schepler",
+      "emails": [
+        "chesnay@apache.org"
+      ],
+      "raw_uid": "Chesnay Schepler (CODE SIGNING KEY) <chesnay@apache.org>"
+    },
+    {
+      "name": "Danny Cranmer",
+      "emails": [
+        "dannycranmer@apache.org"
+      ],
+      "raw_uid": "Danny Cranmer (CODE SIGNING KEY) <dannycranmer@apache.org>"
+    },
+    {
+      "name": "David Anderson",
+      "emails": [
+        "danderson@apache.org"
+      ],
+      "raw_uid": "David Anderson (CODE SIGNING KEY) <danderson@apache.org>"
+    },
+    {
+      "name": "Dawid Wysakowicz",
+      "emails": [
+        "dwysakowicz@apache.org",
+        "wysakowicz.dawid@gmail.com"
+      ],
+      "raw_uid": "Dawid Wysakowicz <wysakowicz.dawid@gmail.com>"
+    },
+    {
+      "name": "Dian Fu",
+      "emails": [
+        "dianfu@apache.org"
+      ],
+      "raw_uid": "Dian Fu (CODE SIGNING KEY) <dianfu@apache.org>"
+    },
+    {
+      "name": "Dong Lin",
+      "emails": [
+        "lindong28@gmail.com"
+      ],
+      "raw_uid": "Dong Lin (CODE SIGNING KEY) <lindong28@gmail.com>"
+    },
+    {
+      "name": "Etienne Chauchot",
+      "emails": [
+        "echauchot@apache.org"
+      ],
+      "raw_uid": "Etienne Chauchot (Apache) <echauchot@apache.org>"
+    },
+    {
+      "name": "Fabian Hueske",
+      "emails": [
+        "fhueske@apache.org"
+      ],
+      "raw_uid": "Fabian Hueske (CODE SIGNING KEY) <fhueske@apache.org>"
+    },
+    {
+      "name": "Fabian Paul",
+      "emails": [
+        "fpaul@apache.org"
+      ],
+      "raw_uid": "Fabian Paul (CODE SIGNING KEY) <fpaul@apache.org>"
+    },
+    {
+      "name": "Ferenc Csaky",
+      "emails": [
+        "fcsaky@apache.org"
+      ],
+      "raw_uid": "Ferenc Csaky (CODE SIGNING KEY) <fcsaky@apache.org>"
+    },
+    {
+      "name": "Gabor Somogyi",
+      "emails": [
+        "gaborgsomogyi@apache.org"
+      ],
+      "raw_uid": "Gabor Somogyi (CODE SIGNING KEY) <gaborgsomogyi@apache.org>"
+    },
+    {
+      "name": "Gary Yao",
+      "emails": [
+        "gary@apache.org"
+      ],
+      "raw_uid": "Gary Yao <gary@apache.org>"
+    },
+    {
+      "name": "Guowei Ma",
+      "emails": [
+        "guoweima@apache.org"
+      ],
+      "raw_uid": "Guowei Ma (CODE SIGNING KEY) <guoweima@apache.org>"
+    },
+    {
+      "name": "Gyula Fora",
+      "emails": [
+        "gyfora@apache.org"
+      ],
+      "raw_uid": "Gyula Fora <gyfora@apache.org>"
+    },
+    {
+      "name": "Henry Saputra",
+      "emails": [
+        "hsaputra@apache.org"
+      ],
+      "raw_uid": "Henry Saputra (CODE SIGNING KEY) <hsaputra@apache.org>"
+    },
+    {
+      "name": "Hequn Cheng",
+      "emails": [
+        "hequn@apache.org"
+      ],
+      "raw_uid": "Hequn Cheng (CODE SIGNING KEY) <hequn@apache.org>"
+    },
+    {
+      "name": "Hong Liang Teoh",
+      "emails": [
+        "hong@apache.org"
+      ],
+      "raw_uid": "Hong Liang Teoh (CODE SIGNING KEY) <hong@apache.org>"
+    },
+    {
+      "name": "Igal Shilman",
+      "emails": [
+        "igal@apache.org"
+      ],
+      "raw_uid": "Igal Shilman <igal@apache.org>"
+    },
+    {
+      "name": "Jark Wu",
+      "emails": [
+        "jark@apache.org"
+      ],
+      "raw_uid": "Jark Wu (CODE SIGNING KEY) <jark@apache.org>"
+    },
+    {
+      "name": "Jiabao Sun",
+      "emails": [
+        "jiabaosun@apache.org"
+      ],
+      "raw_uid": "Jiabao Sun <jiabaosun@apache.org>"
+    },
+    {
+      "name": "Jiangjie  Qin",
+      "emails": [
+        "jqin@apache.org"
+      ],
+      "raw_uid": "Jiangjie (Becket) Qin <jqin@apache.org>"
+    },
+    {
+      "name": "Jing Ge",
+      "emails": [
+        "jingge@apache.org"
+      ],
+      "raw_uid": "Jing Ge (CODE SIGNING KEY) <jingge@apache.org>"
+    },
+    {
+      "name": "Jingsong Lee",
+      "emails": [
+        "lzljs3620320@apache.org"
+      ],
+      "raw_uid": "Jingsong Lee <lzljs3620320@apache.org>"
+    },
+    {
+      "name": "Konstantin Knauf",
+      "emails": [
+        "knaufk@apache.org"
+      ],
+      "raw_uid": "Konstantin Knauf (CODE SIGNING KEY) <knaufk@apache.org>"
+    },
+    {
+      "name": "Kurt Young",
+      "emails": [
+        "kurt@apache.org"
+      ],
+      "raw_uid": "Kurt Young <kurt@apache.org>"
+    },
+    {
+      "name": "Leonard Xu",
+      "emails": [
+        "leonard@apache.org"
+      ],
+      "raw_uid": "Leonard Xu <leonard@apache.org>"
+    },
+    {
+      "name": "Lincoln Lee",
+      "emails": [
+        "lincoln@apache.org"
+      ],
+      "raw_uid": "Lincoln Lee <lincoln@apache.org>"
+    },
+    {
+      "name": "Martijn Visser",
+      "emails": [
+        "martijnvisser@apache.org"
+      ],
+      "raw_uid": "Martijn Visser (CODE SIGNING KEY) <martijnvisser@apache.org>"
+    },
+    {
+      "name": "Matyas Orhidi",
+      "emails": [
+        "morhidi@apache.org"
+      ],
+      "raw_uid": "Matyas Orhidi (CODE SIGNING KEY) <morhidi@apache.org>"
+    },
+    {
+      "name": "Maximilian Michels",
+      "emails": [
+        "mxm@apache.org"
+      ],
+      "raw_uid": "Maximilian Michels <mxm@apache.org>"
+    },
+    {
+      "name": "M\u00c3\u00a1rton Balassi",
+      "emails": [
+        "mbalassi@apache.org"
+      ],
+      "raw_uid": "M\u00c3\u00a1rton Balassi (CODE SIGNING KEY) <mbalassi@apache.org>"
+    },
+    {
+      "name": "Owen O'Malley",
+      "emails": [
+        "omalley@apache.org"
+      ],
+      "raw_uid": "Owen O'Malley (Code signing) <omalley@apache.org>"
+    },
+    {
+      "name": "Qingsheng Ren",
+      "emails": [
+        "renqs@apache.org"
+      ],
+      "raw_uid": "Qingsheng Ren (CODE SIGNING KEY) <renqs@apache.org>"
+    },
+    {
+      "name": "Robert Metzger",
+      "emails": [
+        "rmetzger@apache.org"
+      ],
+      "raw_uid": "Robert Metzger (CODE SIGNING KEY) <rmetzger@apache.org>"
+    },
+    {
+      "name": "Roman Khachatryan",
+      "emails": [
+        "khachatryan.roman@gmail.com",
+        "roman@apache.org"
+      ],
+      "raw_uid": "Roman Khachatryan (CODE SIGNING KEY) <roman@apache.org>"
+    },
+    {
+      "name": "Ron Liu",
+      "emails": [
+        "ron@apache.org"
+      ],
+      "raw_uid": "Ron Liu (CODE SIGNING KEY) <ron@apache.org>"
+    },
+    {
+      "name": "Ruan Hang",
+      "emails": [
+        "ruanhang1993@apache.org"
+      ],
+      "raw_uid": "Ruan Hang <ruanhang1993@apache.org>"
+    },
+    {
+      "name": "Rui Fan",
+      "emails": [
+        "fanrui@apache.org"
+      ],
+      "raw_uid": "Rui Fan <fanrui@apache.org>"
+    },
+    {
+      "name": "Sean Owen",
+      "emails": [
+        "srowen@apache.org"
+      ],
+      "raw_uid": "Sean Owen (CODE SIGNING KEY) <srowen@apache.org>"
+    },
+    {
+      "name": "Sergey Nuyanzin",
+      "emails": [
+        "snuyanzin@apache.org",
+        "snuyanzin@gmail.com"
+      ],
+      "raw_uid": "Sergey Nuyanzin (CODE SIGNING KEY) <snuyanzin@apache.org>"
+    },
+    {
+      "name": "Ted Dunning",
+      "emails": [
+        "ted.dunning@gmail.com"
+      ],
+      "raw_uid": "Ted Dunning (for signing Apache releases) <ted.dunning@gmail.com>"
+    },
+    {
+      "name": "Thomas Weise",
+      "emails": [
+        "thw@apache.org"
+      ],
+      "raw_uid": "Thomas Weise <thw@apache.org>"
+    },
+    {
+      "name": "Till Rohrmann",
+      "emails": [
+        "trohrmann@apache.org"
+      ],
+      "raw_uid": "Till Rohrmann (stsffap) <trohrmann@apache.org>"
+    },
+    {
+      "name": "Tzu-Li Tai",
+      "emails": [
+        "tzulitai@apache.org"
+      ],
+      "raw_uid": "Tzu-Li Tai (CODE SIGNING KEY) <tzulitai@apache.org>"
+    },
+    {
+      "name": "Ufuk Celebi",
+      "emails": [
+        "uce@apache.org"
+      ],
+      "raw_uid": "Ufuk Celebi (CODE SIGNING KEY) <uce@apache.org>"
+    },
+    {
+      "name": "Weijie Guo",
+      "emails": [
+        "guoweijie@apache.org"
+      ],
+      "raw_uid": "Weijie Guo (CODE SIGNING KEY) <guoweijie@apache.org>"
+    },
+    {
+      "name": "Xiaoling He",
+      "emails": [
+        "godfrey@apache.org"
+      ],
+      "raw_uid": "Xiaoling He <godfrey@apache.org>"
+    },
+    {
+      "name": "Xingbo Huang",
+      "emails": [
+        "hxb@apache.org"
+      ],
+      "raw_uid": "Xingbo Huang (CODE SIGNIGNG KEY) <hxb@apache.org>"
+    },
+    {
+      "name": "Xintong Song",
+      "emails": [
+        "xtsong@apache.org"
+      ],
+      "raw_uid": "Xintong Song (CODE SIGNING KEY) <xtsong@apache.org>"
+    },
+    {
+      "name": "Xuannan Su",
+      "emails": [
+        "sxnan@apache.org"
+      ],
+      "raw_uid": "Xuannan Su (CODE SIGNING KEY) <sxnan@apache.org>"
+    },
+    {
+      "name": "Yang Wang",
+      "emails": [
+        "wangyang0918@apache.org"
+      ],
+      "raw_uid": "Yang Wang <wangyang0918@apache.org>"
+    },
+    {
+      "name": "Yu Li",
+      "emails": [
+        "liyu@apache.org"
+      ],
+      "raw_uid": "Yu Li (CODE SIGNING KEY) <liyu@apache.org>"
+    },
+    {
+      "name": "Yun Gao",
+      "emails": [
+        "gaoyunhaii@apache.org"
+      ],
+      "raw_uid": "Yun Gao <gaoyunhaii@apache.org>"
+    },
+    {
+      "name": "Yun Tang",
+      "emails": [
+        "tangyun@apache.org"
+      ],
+      "raw_uid": "Yun Tang <tangyun@apache.org>"
+    },
+    {
+      "name": "Zakelly Lan",
+      "emails": [
+        "zakelly@apache.org"
+      ],
+      "raw_uid": "Zakelly Lan (CODE SIGNING KEY) <zakelly@apache.org>"
+    },
+    {
+      "name": "Zhijiang Wang",
+      "emails": [
+        "zhijiang@apache.org"
+      ],
+      "raw_uid": "Zhijiang Wang (CODE SIGNING KEY) <zhijiang@apache.org>"
+    },
+    {
+      "name": "Zhipeng Zhang",
+      "emails": [
+        "zhangzp@apache.org"
+      ],
+      "raw_uid": "Zhipeng Zhang (CODE SIGNIGNG KEY) <zhangzp@apache.org>"
+    },
+    {
+      "name": "Zhu Zhu",
+      "emails": [
+        "zhuzh@apache.org"
+      ],
+      "raw_uid": "Zhu Zhu <zhuzh@apache.org>"
+    },
+    {
+      "name": "jincheng Sun",
+      "emails": [
+        "jincheng@apache.org"
+      ],
+      "raw_uid": "jincheng Sun (jincheng) <jincheng@apache.org>"
+    },
+    {
+      "name": "kunni",
+      "emails": [
+        "kunni@apache.org"
+      ],
+      "raw_uid": "kunni <kunni@apache.org>"
+    }
+  ]
+}

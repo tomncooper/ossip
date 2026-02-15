@@ -1,9 +1,12 @@
+"""Kafka-specific constants and configuration."""
+
 import re
 from enum import Enum
 from pathlib import Path
 
 from pandas import DataFrame, concat
 
+from ipper.common.keys import get_committer_index
 from ipper.common.mailing_list import (
     get_monthly_mbox_file as generic_get_monthly_mbox_file,
 )
@@ -19,6 +22,8 @@ from ipper.common.mailing_list import (
 
 KIP_PATTERN: re.Pattern = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
 DOMAIN: str = "kafka.apache.org"
+KEYS_URL: str = "https://downloads.apache.org/kafka/KEYS"
+KEYS_CACHE_PATH: Path = Path("cache/keys/kafka_keys.json")
 KIP_MENTION_COLUMNS = [
     "kip",
     "mention_type",
@@ -101,6 +106,11 @@ def process_mbox_archive(filepath: Path) -> DataFrame:
     """Process the supplied mbox archive, harvest the KIP data and
     create a DataFrame containing each mention"""
 
+    # Load committer index (with caching)
+    committer_index = get_committer_index(
+        KEYS_URL, KEYS_CACHE_PATH, force_refresh=False
+    )
+
     return generic_process_mbox_archive(
         filepath,
         KIP_PATTERN,
@@ -108,6 +118,7 @@ def process_mbox_archive(filepath: Path) -> DataFrame:
         KIP_MENTION_COLUMNS,
         vote_keyword="VOTE",
         discuss_keyword="DISCUSS",
+        committer_index=committer_index,
     )
 
 

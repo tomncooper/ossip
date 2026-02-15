@@ -45,15 +45,30 @@ ossip/
    
    - **Mailing List Processor** (`kafka/mailing_list.py`, `common/mailing_list.py`)
      - Downloads Apache mailing list archives (mbox format)
-     - Parses email threads for KIP mentions
+     - Parses email threads for KIP/FLIP mentions
      - Tracks voting patterns and discussion activity
-     - Uses regex patterns to identify KIP references
+     - Uses regex patterns to identify improvement proposal references
+     - **Automatic binding vote detection** using Apache KEYS files
+   
+   - **Committer Identification** (`common/keys.py`)
+     - Downloads and parses Apache KEYS files (PGP keys of project committers)
+     - Extracts committer names and email addresses
+     - Enables automatic detection of binding votes even without "(binding)" marker
+     - Uses exact email matching + fuzzy name matching (70% threshold)
+     - Caches committer data for 7 days to minimize downloads
 
 3. **Data Processing**
    - **Pandas DataFrames** for tabular data manipulation
    - CSV-based main cache files (`kip_mentions.csv`, `flip_mentions.csv`)
    - Status classification using enums (`IPState`)
    - Automatic deduplication on all data operations
+   - **Vote Processing Logic:**
+     - Explicit "(binding)" votes: Always counted as binding
+     - Explicit "(non-binding)" votes: Never counted (ignored)
+     - Unmarked votes: Checked against committer KEYS
+       - If voter email matches committer → binding (100% confidence)
+       - If voter name fuzzy-matches committer → binding (70%+ confidence)
+       - If no match → non-binding (strict approach)
 
 4. **Output Generation**
    - **Jinja2 Templates** for HTML rendering
@@ -75,6 +90,7 @@ ossip/
 - **[Jinja2](https://jinja.palletsprojects.com/)** - Template engine for HTML generation
 - **[Requests](https://requests.readthedocs.io/)** - HTTP client for API/web requests
 - **[Jira](https://jira.readthedocs.io/)** - Jira API integration (common module)
+- **[rapidfuzz](https://maxbachmann.github.io/RapidFuzz/)** - Fast fuzzy string matching for committer name matching
 
 ### Development Tools
 
@@ -94,11 +110,13 @@ ossip/
   - jira@kafka.apache.org
   - commits@kafka.apache.org
 - **Format:** mbox archives from lists.apache.org
+- **KEYS:** https://downloads.apache.org/kafka/KEYS (PGP keys of committers)
 
 ### Apache Flink
 - **Wiki:** Confluence page - "Flink Improvement Proposals"
 - **Status:** Fully implemented with wiki scraping and individual FLIP pages
 - **Output:** Main index page plus individual FLIP detail pages
+- **KEYS:** https://downloads.apache.org/flink/KEYS (PGP keys of committers)
 
 ## Workflow
 
@@ -177,6 +195,7 @@ KIP_PATTERN = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
   - Kafka: `cache/mailbox_files/kip_mentions.csv` (single source of truth)
   - Flink: `cache/flip_wiki_cache.json`
   - Metadata: `cache/kip_mentions_metadata.json`, `cache/flip_mentions_metadata.json`
+  - **Committer KEYS:** `cache/keys/kafka_keys.json`, `cache/keys/flink_keys.json`
 - **Mbox Files:** `cache/mailbox_files/*.mbox` (downloaded archives)
 - **Output:** `site_files/*.html`
 
@@ -191,6 +210,18 @@ uv run python ipper/main.py kafka init --days 365
 
 # Update Kafka data (incremental)
 uv run python ipper/main.py kafka update
+
+# Refresh Kafka committer KEYS file
+uv run python ipper/main.py kafka keys refresh
+
+# View cached committer information
+uv run python ipper/main.py kafka keys info
+
+# Refresh Flink committer KEYS file
+uv run python ipper/main.py flink keys refresh
+
+# View Flink cached committer information
+uv run python ipper/main.py flink keys info
 
 # Download Flink wiki data (initial or full refresh)
 uv run python ipper/main.py flink wiki download
@@ -213,10 +244,11 @@ uv run ruff check .
 ## Testing & Quality
 
 The project includes:
+- **84 comprehensive tests** covering all core functionality
 - Type hints throughout (checked with MyPy)
 - Code formatting with Black
 - Linting with Pylint and Ruff
-- No explicit test suite currently present
+- Test coverage for KEYS parsing, fuzzy matching, and vote detection
 
 **Always run `uv run ruff check .` after making code changes to ensure code quality.**
 
@@ -259,25 +291,38 @@ The project includes:
 ```
 Confluence Wiki API → BeautifulSoup → Pandas → JSON Cache (wiki data)
 Mailing List API → mbox Parser → Pandas → CSV Cache (mentions)
+Apache KEYS API → PGP Parser → JSON Cache (committers)
+  ↓
+Committer Index + Vote Detection → Enhanced vote counting
   ↓
 CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 ```
 
 **Caching Architecture:**
 - Single source of truth: `kip_mentions.csv` / `flip_mentions.csv`
+- Committer KEYS cached for 7 days (configurable)
 - No intermediate per-file caches (removed for simplicity)
 - Automatic deduplication on all append operations
 - `kafka update` re-downloads current month to catch late-arriving emails
 
+**Vote Counting Architecture:**
+1. Email parsed for vote pattern (`+1`, `-1`, `0`)
+2. Check for explicit `(binding)` or `(non-binding)` marker
+3. If unmarked: Check committer index
+   - Exact email match → binding (highest confidence)
+   - Fuzzy name match (70%+) → binding
+   - No match → non-binding
+4. Log all automatic detections for auditing
+
 ## Known Limitations
 
-1. Flink does not process mailing lists (only wiki data)
+1. Flink does not process mailing lists (only wiki data) - but has KEYS integration ready
 2. No rate limiting on API calls
 3. Limited error recovery in data collection
 4. `kafka refresh` takes 2-5 minutes (reprocesses ~182 mbox files)
-5. No automated integration tests
-6. Status keyword matching is English-only
-7. Large table sizes (1000+ KIPs) may impact page load performance
+5. Status keyword matching is English-only
+6. Large table sizes (1000+ KIPs) may impact page load performance
+7. Fuzzy name matching may occasionally miss committers with very different email names
 
 ## Future Considerations
 
@@ -289,6 +334,62 @@ CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 - Internationalization support
 - Database backend instead of CSV/JSON caching
 - Better rate limiting and error handling for API calls
+- Machine learning for improved vote detection confidence scoring
+- Historical vote pattern analysis and committer activity tracking
+
+---
+
+**Last Updated:** 2026-02-15
+**Maintainer:** Thomas Cooper
+
+## Recent Changes (2026-02-15)
+
+### Robust Vote Binding Detection with KEYS Files
+
+**What Changed:**
+- Added automatic detection of binding votes from committers, even when they don't explicitly mark votes as "(binding)"
+- Implemented Apache KEYS file parsing to extract committer names and email addresses
+- Integrated fuzzy matching (rapidfuzz) for flexible name matching with 70% similarity threshold
+- Added exact email matching for highest confidence committer identification
+- Created comprehensive test suite (84 tests total, 27 for KEYS functionality)
+
+**New Files:**
+- `ipper/common/keys.py` - KEYS file parsing and committer matching
+- `tests/common/test_keys.py` - Comprehensive KEYS parsing tests
+- `cache/keys/` - Directory for cached committer data (JSON format)
+
+**Modified Files:**
+- `ipper/common/mailing_list.py` - Enhanced `parse_for_vote()` with committer checking
+- `ipper/kafka/mailing_list.py` - Integrated KEYS loading for Kafka
+- `ipper/flink/mailing_list.py` - Integrated KEYS loading for Flink  
+- `ipper/kafka/main.py` - Added `kafka keys refresh` and `kafka keys info` CLI commands
+- `pyproject.toml` - Added rapidfuzz dependency
+
+**Vote Detection Logic:**
+1. **Explicit "(binding)"** → Always counted (unchanged)
+2. **Explicit "(non-binding)"** → Never counted (unchanged)
+3. **Unmarked votes (NEW):**
+   - Email exact match → binding (100% confidence)
+   - Name fuzzy match (≥70%) → binding
+   - No match → non-binding (strict approach)
+
+**CLI Commands:**
+```bash
+# Kafka: Force refresh committer KEYS
+uv run python ipper/main.py kafka keys refresh
+uv run python ipper/main.py kafka keys info
+
+# Flink: Force refresh committer KEYS
+uv run python ipper/main.py flink keys refresh
+uv run python ipper/main.py flink keys info
+```
+
+**Benefits:**
+- More accurate binding vote counts (catches unmarked committer votes)
+- Automatic cache management (7-day refresh cycle)
+- Full backward compatibility (explicit binding/non-binding still works)
+- Detailed logging for auditing automatic detections
+- Fast performance (O(1) email lookup, fuzzy matching only as fallback)
 
 ---
 

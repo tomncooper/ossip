@@ -82,19 +82,19 @@ class TestParseForVote:
     def test_binding_plus_one_vote(self):
         """Test parsing +1 binding vote."""
         payload = "+1 (binding)"
-        result = parse_for_vote(payload)
+        result = parse_for_vote(payload, "voter@example.com")
         assert result == "+1"
 
     def test_binding_minus_one_vote(self):
         """Test parsing -1 binding vote."""
         payload = "-1 (binding)"
-        result = parse_for_vote(payload)
+        result = parse_for_vote(payload, "voter@example.com")
         assert result == "-1"
 
     def test_binding_zero_vote(self):
         """Test parsing 0 binding vote."""
         payload = "0 (binding)"
-        result = parse_for_vote(payload)
+        result = parse_for_vote(payload, "voter@example.com")
         assert result == "0"
 
     def test_case_insensitive_binding(self):
@@ -106,7 +106,7 @@ class TestParseForVote:
         ]
 
         for payload in payloads:
-            result = parse_for_vote(payload)
+            result = parse_for_vote(payload, "voter@example.com")
             assert result == "+1", f"Failed for: {payload}"
 
     def test_non_binding_vote_returns_none(self):
@@ -118,7 +118,7 @@ class TestParseForVote:
         ]
 
         for payload in payloads:
-            result = parse_for_vote(payload)
+            result = parse_for_vote(payload, "voter@example.com")
             assert result is None, f"Should be None for: {payload}"
 
     def test_vote_with_extra_whitespace(self):
@@ -130,7 +130,7 @@ class TestParseForVote:
         ]
 
         for payload in payloads:
-            result = parse_for_vote(payload)
+            result = parse_for_vote(payload, "voter@example.com")
             assert result == "+1", f"Failed for: {payload}"
 
     def test_vote_in_multiline_message(self):
@@ -145,7 +145,7 @@ I'm voting on this proposal.
 Thanks,
 John
 """
-        result = parse_for_vote(payload)
+        result = parse_for_vote(payload, "voter@example.com")
         assert result == "+1"
 
     def test_ignores_quoted_votes(self):
@@ -155,7 +155,7 @@ John
 Actually, I vote differently:
 -1 (binding)
 """
-        result = parse_for_vote(payload)
+        result = parse_for_vote(payload, "voter@example.com")
         assert result == "-1"
 
     def test_no_vote_found(self):
@@ -167,13 +167,13 @@ Actually, I vote differently:
         ]
 
         for payload in payloads:
-            result = parse_for_vote(payload)
+            result = parse_for_vote(payload, "voter@example.com")
             assert result is None
 
     def test_plus_one_without_plus_sign(self):
         """Test parsing '1 (binding)' - currently not supported."""
         payload = "1 (binding)"
-        result = parse_for_vote(payload)
+        result = parse_for_vote(payload, "voter@example.com")
         # The regex requires +1 or -1, plain "1" is not matched
         assert result is None
 
@@ -306,3 +306,112 @@ class TestGetMonthsToDownload:
 
         # Should only return ~1-2 months, not from January 2025
         assert len(result) <= 2
+
+
+class TestParseForVoteWithCommitters:
+    """Tests for parse_for_vote with committer index integration."""
+
+    @pytest.fixture
+    def sample_committer_index(self):
+        """Create a sample committer index for testing."""
+        import datetime as dt
+
+        from ipper.common.keys import CommitterIndex, CommitterInfo
+
+        committers = [
+            CommitterInfo(
+                name="Alice Johnson",
+                emails=["alice@apache.org"],
+                raw_uid="Alice Johnson <alice@apache.org>",
+            ),
+            CommitterInfo(
+                name="Bob Smith",
+                emails=["bob@apache.org", "bob.smith@company.com"],
+                raw_uid="Bob Smith <bob@apache.org>",
+            ),
+        ]
+        return CommitterIndex(
+            committers=committers,
+            last_updated=dt.datetime.now(dt.UTC),
+            source_url="https://example.com/KEYS",
+        )
+
+    def test_unmarked_vote_from_committer_by_email(
+        self, sample_committer_index, capsys
+    ):
+        """Test that unmarked vote from committer (matched by email) is counted as binding."""
+        payload = "+1"
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result == "+1"
+
+        # Check that detection was logged
+        captured = capsys.readouterr()
+        assert "binding vote from committer" in captured.out
+        assert "Alice Johnson" in captured.out
+        assert "email" in captured.out
+
+    def test_unmarked_vote_from_committer_by_name(self, sample_committer_index, capsys):
+        """Test that unmarked vote from committer (matched by name) is counted as binding."""
+        payload = "+1"
+        # Different email but same name
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@different.com>", sample_committer_index
+        )
+        assert result == "+1"
+
+        # Check that detection was logged
+        captured = capsys.readouterr()
+        assert "binding vote from committer" in captured.out
+        assert "Alice Johnson" in captured.out
+        assert "name" in captured.out
+
+    def test_unmarked_vote_from_non_committer(self, sample_committer_index):
+        """Test that unmarked vote from non-committer is not counted."""
+        payload = "+1"
+        result = parse_for_vote(
+            payload, "Charlie Brown <charlie@example.com>", sample_committer_index
+        )
+        assert result is None
+
+    def test_explicit_binding_always_counted(self, sample_committer_index):
+        """Test that explicit (binding) votes are always counted, even from non-committers."""
+        payload = "+1 (binding)"
+        result = parse_for_vote(
+            payload, "Charlie Brown <charlie@example.com>", sample_committer_index
+        )
+        assert result == "+1"
+
+    def test_explicit_non_binding_never_counted(self, sample_committer_index):
+        """Test that explicit (non-binding) votes are never counted, even from committers."""
+        payload = "+1 (non-binding)"
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result is None
+
+    def test_committer_with_secondary_email(self, sample_committer_index, capsys):
+        """Test that committer is matched by secondary email."""
+        payload = "-1"
+        result = parse_for_vote(
+            payload, "Bob Smith <bob.smith@company.com>", sample_committer_index
+        )
+        assert result == "-1"
+
+        # Check email match
+        captured = capsys.readouterr()
+        assert "binding vote from committer" in captured.out
+        assert "email" in captured.out
+
+    def test_no_committer_index_treats_unmarked_as_non_binding(self):
+        """Test that without committer index, unmarked votes are treated as non-binding."""
+        payload = "+1"
+        result = parse_for_vote(payload, "Alice Johnson <alice@apache.org>", None)
+        assert result is None
+
+    def test_backward_compatibility_explicit_binding(self):
+        """Test backward compatibility: explicit (binding) works without committer index."""
+        payload = "+1 (binding)"
+        result = parse_for_vote(payload, "anyone@example.com", None)
+        assert result == "+1"
