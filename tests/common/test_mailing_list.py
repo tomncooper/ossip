@@ -638,6 +638,53 @@ class TestParseForVoteWithCommitters:
         result = parse_for_vote(payload, "anyone@example.com", None)
         assert result == "+1"
 
+    def test_summary_email_with_multiple_vote_types_skipped(
+        self, sample_committer_index, capsys
+    ):
+        """Test that summary/tally emails mentioning multiple vote types are skipped.
+
+        Regression test for KIP-1230 where Matthias J. Sax's summary email
+        mentioned "no 0 and no -1 votes" and was incorrectly parsed as a 0 vote.
+        """
+        payload = (
+            "The vote for KIP-1230 has passed with 5 binding votes "
+            "and no 0 and no -1 votes."
+        )
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result is None
+
+        captured = capsys.readouterr()
+        assert "Skipping summary/tally email" in captured.out
+
+    def test_single_vote_type_from_committer_still_works(
+        self, sample_committer_index, capsys
+    ):
+        """Test that a committer email with a single vote type is still detected."""
+        payload = "+1"
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result == "+1"
+
+        captured = capsys.readouterr()
+        assert "binding vote from committer" in captured.out
+
+    def test_explicit_binding_with_incidental_zero_unchanged(
+        self, sample_committer_index
+    ):
+        """Test that explicit binding marker in first pass is not affected by multi-type check.
+
+        An email like "0 concerns... +1 (binding)" should still return "+1"
+        via the first pass (explicit marker), regardless of multi-type detection.
+        """
+        payload = "0 concerns about this proposal.\n+1 (binding)"
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result == "+1"
+
 
 class TestExtractMessagePayload:
     """Tests for the extract_message_payload function."""

@@ -547,6 +547,24 @@ def parse_for_vote(
         )
 
         if is_match:
+            # Pre-scan: collect all distinct vote types across non-quoted lines.
+            # Summary/tally emails mention multiple vote types descriptively
+            # (e.g., "no 0 and no -1 votes"), which would be misdetected as
+            # actual votes. If 2+ distinct types appear, skip the email.
+            distinct_vote_types: set[str] = set()
+            for line in payload.split("\n"):
+                if line.lstrip().startswith(">"):
+                    continue
+                for m in VOTE_PATTERN.finditer(line):
+                    distinct_vote_types.add(_normalize_vote(m.group(1)))
+            if len(distinct_vote_types) >= 2:
+                print(
+                    f"  Skipping summary/tally email from committer: {voter_name} "
+                    f"<{voter_email}> (found {len(distinct_vote_types)} distinct vote types: "
+                    f"{', '.join(sorted(distinct_vote_types))})"
+                )
+                return None
+
             # Single pass: collect all vote candidates, prefer +1/-1 over 0
             zero_vote: str | None = None
             for line in payload.split("\n"):
