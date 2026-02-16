@@ -770,3 +770,41 @@ class TestVotePatternBoundary:
         for payload, expected in test_cases:
             result = parse_for_vote(payload, "voter@example.com")
             assert result == expected, f"Failed for: {payload}"
+
+    def test_version_string_not_matched(self):
+        """Test that version strings like 'v4.0', '3.0', '4.0.1' don't produce false votes."""
+        payloads = [
+            "This requires v4.0 (binding)",
+            "Compatible with 3.0 (binding)",
+            "Tested on 4.0.1 (binding)",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result is None, f"Should not match vote in version string: {payload}"
+
+    def test_standalone_zero_still_works_after_dot_fix(self):
+        """Test that '0 (binding)' still returns '0' after adding dot lookbehind."""
+        payload = "0 (binding)"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "0"
+
+    def test_vote_with_period_after_still_works(self):
+        """Test that '+1. I think... (binding)' still returns '+1'."""
+        payload = "+1. I think this is great (binding)"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "+1"
+
+    def test_kip_1252_exact_scenario(self):
+        """Test the exact KIP-1252 scenario: message with 'v4.0' should not produce a false vote."""
+        # Message containing version string but no explicit vote
+        payload_no_vote = """Thanks for the KIP! I tested this with v4.0 and it works great.
+Looking forward to seeing this merged."""
+        result = parse_for_vote(payload_no_vote, "Luke Chen <luke@example.com>")
+        assert result is None, "Version string 'v4.0' should not produce a vote"
+
+        # Message containing version string AND a real vote
+        payload_with_vote = """Thanks for the KIP! I tested this with v4.0 and it works great.
+
++1 (binding)"""
+        result = parse_for_vote(payload_with_vote, "Luke Chen <luke@example.com>")
+        assert result == "+1", "Real +1 vote should still be detected"

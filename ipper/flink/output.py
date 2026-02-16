@@ -1,11 +1,11 @@
 import datetime as dt
 from pathlib import Path
-from typing import cast
 
 from jinja2 import Environment, FileSystemLoader, Template
 from pandas import DataFrame
 
 from ipper.common.constants import DATE_FORMAT, DEFAULT_TEMPLATES_DIR
+from ipper.common.mailing_list import create_vote_dict as _create_vote_dict
 
 FLINK_MAIN_PAGE_TEMPLATE = "flink-index.html.jinja"
 FLIP_RAW_INFO_PAGE_TEMPLATE = "flip-more-info.html.jinja"
@@ -27,52 +27,8 @@ def get_template(template_dir: str, template_filename) -> Template:
 def create_vote_dict(
     flip_mentions: DataFrame,
 ) -> dict[int, dict[str, list[dict[str, str]]]]:
-    """Creates a dictionary mapping from FLIP ID to a dict mapping
-    from vote type to list of voter info (name and timestamp).
-
-    Args:
-        flip_mentions: DataFrame containing FLIP mentions from mailing lists
-
-    Returns:
-        Dictionary mapping FLIP ID to vote info by type
-    """
-
-    vote_dict: dict[int, dict[str, list[dict[str, str]]]] = {}
-    flip_votes: DataFrame
-    for flip_id, flip_votes in flip_mentions[~flip_mentions["vote"].isna()][
-        ["flip", "from", "vote", "timestamp"]
-    ].groupby("flip"):
-        flip_dict = {}
-        for vote in ["+1", "0", "-1"]:
-            vote_rows = flip_votes[flip_votes["vote"] == vote]
-
-            # Keep only the most recent vote per voter
-            voter_map: dict[str, dict[str, str]] = {}
-            for _, row in vote_rows.iterrows():
-                voter_name = row["from"].replace('"', "")
-                timestamp = row["timestamp"]
-
-                if (
-                    voter_name not in voter_map
-                    or timestamp > voter_map[voter_name]["raw_timestamp"]
-                ):
-                    voter_map[voter_name] = {
-                        "name": voter_name,
-                        "timestamp": timestamp.strftime("%b %d, %Y %H:%M UTC"),
-                        "raw_timestamp": timestamp,
-                    }
-
-            # Sort by timestamp descending (newest first) and remove raw_timestamp
-            sorted_voters = sorted(
-                voter_map.values(), key=lambda x: x["raw_timestamp"], reverse=True
-            )
-            flip_dict[f"{vote}"] = [
-                {"name": v["name"], "timestamp": v["timestamp"]} for v in sorted_voters
-            ]
-
-        vote_dict[cast(int, flip_id)] = flip_dict
-
-    return vote_dict
+    """Creates a dictionary mapping from FLIP ID to vote info by type."""
+    return _create_vote_dict(flip_mentions, "flip")
 
 
 def enrich_flip_wiki_info_with_votes(

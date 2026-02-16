@@ -26,7 +26,7 @@ APACHE_MAILING_LIST_BASE_URL: str = "https://lists.apache.org/api/mbox.lua"
 MAIL_DATE_FORMAT = "%a, %d %b %Y %H:%M:%S %z"
 MAIL_DATE_FORMAT_ZONE = "%a, %d %b %Y %H:%M:%S %z (%Z)"
 PARENTS_PATTERN = re.compile(r"\(([^)]+)\)")
-VOTE_PATTERN = re.compile(r"(?<!\d)([\+\-]1|0)(?!\d)", re.IGNORECASE)
+VOTE_PATTERN = re.compile(r"(?<!\d)(?<!\.)([\+\-]1|0)(?!\d)", re.IGNORECASE)
 
 
 def get_monthly_mbox_file(
@@ -814,3 +814,50 @@ def process_all_mbox_in_directory(
     all_mentions = all_mentions.drop_duplicates()
 
     return all_mentions, errors
+
+
+def create_vote_dict(
+    mentions: DataFrame,
+    id_column: str,
+) -> dict[int, dict[str, list[dict[str, str]]]]:
+    """Creates a dict mapping proposal ID to vote info by type.
+
+    For each proposal, determines each voter's latest vote across all
+    vote types (+1, 0, -1), so a voter only appears under their most
+    recent vote.
+    """
+    vote_dict: dict[int, dict[str, list[dict[str, str]]]] = {}
+    for proposal_id, proposal_votes in mentions[~mentions["vote"].isna()][
+        [id_column, "from", "vote", "timestamp"]
+    ].groupby(id_column):
+        # First pass: determine each voter's latest vote across all types
+        latest_votes: dict[str, dict] = {}
+        for _, row in proposal_votes.iterrows():
+            voter_name = row["from"].replace('"', "")
+            timestamp = row["timestamp"]
+            if (
+                voter_name not in latest_votes
+                or timestamp > latest_votes[voter_name]["raw_timestamp"]
+            ):
+                latest_votes[voter_name] = {
+                    "name": voter_name,
+                    "vote": row["vote"],
+                    "timestamp": timestamp.strftime("%b %d, %Y %H:%M UTC"),
+                    "raw_timestamp": timestamp,
+                }
+
+        # Second pass: group by vote type
+        proposal_dict = {}
+        for vote in ["+1", "0", "-1"]:
+            voters = [v for v in latest_votes.values() if v["vote"] == vote]
+            sorted_voters = sorted(
+                voters, key=lambda x: x["raw_timestamp"], reverse=True
+            )
+            proposal_dict[vote] = [
+                {"name": v["name"], "timestamp": v["timestamp"]}
+                for v in sorted_voters
+            ]
+
+        vote_dict[cast(int, proposal_id)] = proposal_dict
+
+    return vote_dict

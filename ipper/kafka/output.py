@@ -8,6 +8,7 @@ from jinja2 import Environment, FileSystemLoader, Template
 from pandas import DataFrame, Series, Timedelta, Timestamp, to_datetime
 
 from ipper.common.constants import DATE_FORMAT, DEFAULT_TEMPLATES_DIR, IPState
+from ipper.common.mailing_list import create_vote_dict as _create_vote_dict
 from ipper.common.utils import calculate_age
 from ipper.common.wiki import APACHE_CONFLUENCE_DATE_FORMAT
 from ipper.kafka.mailing_list import get_most_recent_mention_by_type
@@ -88,45 +89,8 @@ def clean_description(description: str):
 def create_vote_dict(
     kip_mentions: DataFrame,
 ) -> dict[int, dict[str, list[dict[str, str]]]]:
-    """Creates a dictionary mapping from KIP ID to a dict mapping
-    from vote type to list of voter info (name and timestamp)"""
-
-    vote_dict: dict[int, dict[str, list[dict[str, str]]]] = {}
-    kip_votes: DataFrame
-    for kip_id, kip_votes in kip_mentions[~kip_mentions["vote"].isna()][
-        ["kip", "from", "vote", "timestamp"]
-    ].groupby("kip"):
-        kip_dict = {}
-        for vote in ["+1", "0", "-1"]:
-            vote_rows = kip_votes[kip_votes["vote"] == vote]
-
-            # Keep only the most recent vote per voter
-            voter_map: dict[str, dict[str, str]] = {}
-            for _, row in vote_rows.iterrows():
-                voter_name = row["from"].replace('"', "")
-                timestamp = row["timestamp"]
-
-                if (
-                    voter_name not in voter_map
-                    or timestamp > voter_map[voter_name]["raw_timestamp"]
-                ):
-                    voter_map[voter_name] = {
-                        "name": voter_name,
-                        "timestamp": timestamp.strftime("%b %d, %Y %H:%M UTC"),
-                        "raw_timestamp": timestamp,
-                    }
-
-            # Sort by timestamp descending (newest first) and remove raw_timestamp
-            sorted_voters = sorted(
-                voter_map.values(), key=lambda x: x["raw_timestamp"], reverse=True
-            )
-            kip_dict[f"{vote}"] = [
-                {"name": v["name"], "timestamp": v["timestamp"]} for v in sorted_voters
-            ]
-
-        vote_dict[cast(int, kip_id)] = kip_dict
-
-    return vote_dict
+    """Creates a dictionary mapping from KIP ID to vote info by type."""
+    return _create_vote_dict(kip_mentions, "kip")
 
 
 def create_status_dict(
