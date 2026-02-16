@@ -25,7 +25,7 @@ APACHE_MAILING_LIST_BASE_URL: str = "https://lists.apache.org/api/mbox.lua"
 MAIL_DATE_FORMAT = "%a, %d %b %Y %H:%M:%S %z"
 MAIL_DATE_FORMAT_ZONE = "%a, %d %b %Y %H:%M:%S %z (%Z)"
 PARENTS_PATTERN = re.compile(r"\(([^)]+)\)")
-VOTE_PATTERN = re.compile(r"([\+\-]1|0)", re.IGNORECASE)
+VOTE_PATTERN = re.compile(r"(?<!\d)([\+\-]1|0)(?!\d)", re.IGNORECASE)
 
 
 def get_monthly_mbox_file(
@@ -292,19 +292,19 @@ def extract_message_payload(msg: Message) -> list[str]:
 
     valid_payloads: list[str] = []
 
-    for message in msg.walk():
-        temp_payload: list[Message | str] | Message | str = message.get_payload()
-        if isinstance(temp_payload, list):
-            if isinstance(temp_payload[0], Message):
-                payload: str = cast(str, temp_payload[0].get_payload())
-            elif isinstance(temp_payload[0], str):
-                payload = cast(str, message.get_payload())
-        elif isinstance(temp_payload, str):
-            payload = cast(str, message.get_payload())
-        else:
-            err_msg: str = f"Expected payload to be list or str no {type(temp_payload)}"
-            print(err_msg)
-            raise ValueError(err_msg)
+    for part in msg.walk():
+        if part.is_multipart():
+            continue
+
+        raw_bytes = part.get_payload(decode=True)
+        if raw_bytes is None:
+            continue
+
+        charset = part.get_content_charset() or "utf-8"
+        try:
+            payload: str = raw_bytes.decode(charset)
+        except (UnicodeDecodeError, LookupError):
+            payload = raw_bytes.decode("utf-8", errors="replace")
 
         if (
             ("<html>" in payload)

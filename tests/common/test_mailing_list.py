@@ -5,6 +5,7 @@ import json
 import pytest
 
 from ipper.common.mailing_list import (
+    extract_message_payload,
     get_months_to_download,
     load_metadata,
     parse_for_vote,
@@ -631,3 +632,117 @@ class TestParseForVoteWithCommitters:
         payload = "+1 (binding)"
         result = parse_for_vote(payload, "anyone@example.com", None)
         assert result == "+1"
+
+
+class TestExtractMessagePayload:
+    """Tests for the extract_message_payload function."""
+
+    def _make_message(self, body, content_type="text/plain", charset="utf-8", encoding=None):
+        """Helper to create an email Message with the given body and encoding."""
+        from email.message import Message
+
+        msg = Message()
+        msg.set_type(content_type)
+        msg.set_param("charset", charset)
+        if encoding:
+            msg["Content-Transfer-Encoding"] = encoding
+            msg.set_payload(body)
+        else:
+            msg.set_payload(body)
+        return msg
+
+    def test_quoted_printable_decoded(self):
+        """Test that quoted-printable encoded payload is properly decoded.
+
+        Regression test for KIP-927 bug where John Roesler's vote was
+        misclassified because QP-encoded =E2=80=99 introduced spurious digits.
+        """
+        # This is the QP-encoded form of "I\u2019m +1 (binding)"
+        qp_body = "I=E2=80=99m +1 (binding)"
+        msg = self._make_message(qp_body, encoding="quoted-printable")
+
+        payloads = extract_message_payload(msg)
+        assert len(payloads) == 1
+        assert "\u2019" in payloads[0]  # Right single quotation mark decoded
+        assert "+1 (binding)" in payloads[0]
+        # Must NOT contain raw QP sequences
+        assert "=E2=80=99" not in payloads[0]
+
+    def test_qp_decoded_payload_yields_correct_vote(self):
+        """End-to-end test: QP-decoded payload produces the correct +1 vote."""
+        qp_body = "I=E2=80=99m +1 (binding)"
+        msg = self._make_message(qp_body, encoding="quoted-printable")
+
+        payloads = extract_message_payload(msg)
+        assert len(payloads) == 1
+
+        result = parse_for_vote(payloads[0], "voter@example.com")
+        assert result == "+1"
+
+    def test_base64_decoded(self):
+        """Test that base64 encoded payload is properly decoded."""
+        import base64
+
+        original = "I vote +1 (binding) on this proposal."
+        b64_body = base64.b64encode(original.encode("utf-8")).decode("ascii")
+        msg = self._make_message(b64_body, encoding="base64")
+
+        payloads = extract_message_payload(msg)
+        assert len(payloads) == 1
+        assert payloads[0] == original
+
+    def test_plain_text_unchanged(self):
+        """Test that plain text without encoding is returned as-is."""
+        body = "I vote +1 (binding)"
+        msg = self._make_message(body)
+
+        payloads = extract_message_payload(msg)
+        assert len(payloads) == 1
+        assert payloads[0] == body
+
+
+class TestVotePatternBoundary:
+    """Tests for VOTE_PATTERN digit boundary assertions."""
+
+    def test_digits_within_numbers_not_matched(self):
+        """Test that digits within larger numbers don't match as votes.
+
+        The '0' in '80' or '99' should not be matched by the vote regex.
+        """
+        payloads = [
+            "=80= some text (binding)",
+            "code 99 stuff (binding)",
+            "error 10 occurred (binding)",
+        ]
+        for payload in payloads:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result is None, f"Should not match vote in: {payload}"
+
+    def test_raw_qp_text_with_regex_fix(self):
+        """Test that raw QP text with =E2=80=99 doesn't produce a false '0' vote.
+
+        Even if QP decoding fails, the regex boundary assertions should prevent
+        matching the '0' in '=80='.
+        """
+        payload = "I=E2=80=99m +1 (binding)"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "+1", (
+            "Should match the actual +1, not the 0 in =80="
+        )
+
+    def test_standalone_zero_still_matches(self):
+        """Test that a standalone 0 vote still works correctly."""
+        payload = "0 (binding)"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "0"
+
+    def test_standalone_votes_unaffected(self):
+        """Test that normal standalone votes are unaffected by boundary assertions."""
+        test_cases = [
+            ("+1 (binding)", "+1"),
+            ("-1 (binding)", "-1"),
+            ("0 (binding)", "0"),
+        ]
+        for payload, expected in test_cases:
+            result = parse_for_vote(payload, "voter@example.com")
+            assert result == expected, f"Failed for: {payload}"
