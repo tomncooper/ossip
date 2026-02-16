@@ -7,7 +7,6 @@ to track improvement proposal mentions and votes.
 
 import datetime as dt
 import json
-import os
 import re
 from email.message import Message
 from mailbox import mbox
@@ -17,6 +16,8 @@ from typing import cast
 import requests
 from pandas import DataFrame, concat, read_csv, to_datetime
 from rapidfuzz import fuzz
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from ipper.common.keys import CommitterIndex, parse_email_from_header
 from ipper.common.utils import generate_month_list
@@ -68,7 +69,7 @@ def get_monthly_mbox_file(
             )
             return filepath
 
-        print(f"Overwritting existing mbox file: {filepath}")
+        print(f"Overwriting existing mbox file: {filepath}")
 
     options: dict[str, str] = {
         "list": mailing_list,
@@ -76,7 +77,16 @@ def get_monthly_mbox_file(
         "d": f"{year}-{month}",
     }
 
-    with requests.get(
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=3,
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504],
+    )
+    session.mount("https://", HTTPAdapter(max_retries=retry_strategy))
+    session.mount("http://", HTTPAdapter(max_retries=retry_strategy))
+
+    with session.get(
         APACHE_MAILING_LIST_BASE_URL, params=options, stream=True, timeout=timeout
     ) as response:
         response.raise_for_status()
@@ -117,7 +127,7 @@ def get_multiple_mbox(
     output_dir: Path = Path(output_directory)
 
     if not output_dir.exists():
-        os.mkdir(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     metadata_path: Path = output_dir.parent.joinpath(metadata_file)
 
@@ -140,14 +150,19 @@ def get_multiple_mbox(
 
     for year, month in month_list:
         print(f"Downloading {mailing_list} archive for {month}/{year}")
-        filepath = get_monthly_mbox_file(
-            mailing_list,
-            domain,
-            year,
-            month,
-            output_directory=output_directory,
-            overwrite=overwrite,
-        )
+        try:
+            filepath = get_monthly_mbox_file(
+                mailing_list,
+                domain,
+                year,
+                month,
+                output_directory=output_directory,
+                overwrite=overwrite,
+            )
+        except requests.RequestException as ex:
+            print(f"ERROR downloading {mailing_list} archive for {month}/{year}: {ex}")
+            continue
+
         filepaths.append(filepath)
 
         # Track the most recent month
@@ -300,21 +315,16 @@ def extract_message_payload(msg: Message) -> list[str]:
         if raw_bytes is None:
             continue
 
+        # Skip HTML parts since they often contain the same text as the plain text part
+        # but with HTML tags, which can interfere with regex matching.
+        if part.get_content_type() == "text/html":
+            continue
+
         charset = part.get_content_charset() or "utf-8"
         try:
             payload: str = raw_bytes.decode(charset)
         except (UnicodeDecodeError, LookupError):
             payload = raw_bytes.decode("utf-8", errors="replace")
-
-        if (
-            ("<html>" in payload)
-            or ("</html>" in payload)
-            or ("<div>" in payload)
-            or ("</div>" in payload)
-        ):
-            # Sometimes the message will contain an additional html copy of the
-            # main message
-            continue
 
         if (" " not in payload) or ("PGP SIGNATURE" in payload):
             # If the message doesn't contain a single space the it is probably
@@ -493,7 +503,7 @@ def parse_for_vote(
     # First pass: Look for explicit binding/non-binding votes
     for line in payload.split("\n"):
         # Skip quoted lines
-        if ">" in line[:10]:
+        if line.lstrip().startswith(">"):
             continue
 
         # Check if line contains a vote
@@ -537,20 +547,21 @@ def parse_for_vote(
         )
 
         if is_match:
-            # Look for +1 or -1 votes first (skip 0 to avoid false matches like "0 concerns")
+            # Single pass: collect all vote candidates, prefer +1/-1 over 0
+            zero_vote: str | None = None
             for line in payload.split("\n"):
-                # Skip quoted lines
-                if ">" in line[:10]:
+                if line.lstrip().startswith(">"):
                     continue
 
-                # Check if line contains a +1 or -1 vote
                 vote_match = VOTE_PATTERN.search(line)
                 if not vote_match:
                     continue
 
                 vote = vote_match.group(1)
-                # Skip standalone 0 - only accept +1 or -1 from committers without explicit binding
                 if vote == "0":
+                    # Remember the first 0 vote but keep looking for +1/-1
+                    if zero_vote is None:
+                        zero_vote = vote
                     continue
 
                 print(
@@ -559,22 +570,13 @@ def parse_for_vote(
                 )
                 return _normalize_vote(vote)
 
-            # If no +1/-1 found, check for 0 votes (less common but valid)
-            for line in payload.split("\n"):
-                if ">" in line[:10]:
-                    continue
-
-                vote_match = VOTE_PATTERN.search(line)
-                if not vote_match:
-                    continue
-
-                vote = vote_match.group(1)
-                if vote == "0":
-                    print(
-                        f"  Detected binding vote from committer: {voter_name} "
-                        f"<{voter_email}> (matched by {method}, confidence: {confidence:.1f}%)"
-                    )
-                    return _normalize_vote(vote)
+            # No +1/-1 found, fall back to 0 vote if one was seen
+            if zero_vote is not None:
+                print(
+                    f"  Detected binding vote from committer: {voter_name} "
+                    f"<{voter_email}> (matched by {method}, confidence: {confidence:.1f}%)"
+                )
+                return _normalize_vote(zero_vote)
 
     return None
 
@@ -627,7 +629,7 @@ def process_mbox_archive(
     mbox_year: int = int(year_month[-2])
     mbox_month: int = int(year_month[-1])
 
-    data: list[list[str | int | dt.datetime | None]] = []
+    data: list[dict[str, str | int | dt.datetime | None]] = []
 
     for key, msg in mail_box.items():
         subject_match: re.Match | None = re.search(pattern, msg["subject"])
@@ -638,21 +640,22 @@ def process_mbox_archive(
             continue
 
         is_vote: bool = False
+        from_header: str = str(msg["from"])
 
         if subject_match:
             # Extract the ID from the first capturing group
             subject_id: int = int(subject_match.group(1))
             data.append(
-                [
-                    subject_id,
-                    "subject",
-                    key,
-                    mbox_year,
-                    mbox_month,
-                    timestamp,
-                    str(msg["from"]),
-                    None,
-                ]
+                {
+                    id_column_name: subject_id,
+                    "mention_type": "subject",
+                    "message_id": key,
+                    "mbox_year": mbox_year,
+                    "mbox_month": mbox_month,
+                    "timestamp": timestamp,
+                    "from": from_header,
+                    "vote": None,
+                }
             )
 
             if vote_keyword in msg["subject"]:
@@ -660,16 +663,16 @@ def process_mbox_archive(
 
             elif discuss_keyword in msg["subject"]:
                 data.append(
-                    [
-                        subject_id,
-                        "discuss",
-                        key,
-                        mbox_year,
-                        mbox_month,
-                        timestamp,
-                        str(msg["from"]),
-                        None,
-                    ]
+                    {
+                        id_column_name: subject_id,
+                        "mention_type": "discuss",
+                        "message_id": key,
+                        "mbox_year": mbox_year,
+                        "mbox_month": mbox_month,
+                        "timestamp": timestamp,
+                        "from": from_header,
+                        "vote": None,
+                    }
                 )
 
         try:
@@ -682,21 +685,21 @@ def process_mbox_archive(
             continue
 
         for payload in valid_payloads:
-            if is_vote:
+            if is_vote and subject_match:
                 vote_str: str | None = parse_for_vote(
-                    payload, str(msg["from"]), committer_index
+                    payload, from_header, committer_index
                 )
                 data.append(
-                    [
-                        subject_id,
-                        "vote",
-                        key,
-                        mbox_year,
-                        mbox_month,
-                        timestamp,
-                        str(msg["from"]),
-                        vote_str,
-                    ]
+                    {
+                        id_column_name: subject_id,
+                        "mention_type": "vote",
+                        "message_id": key,
+                        "mbox_year": mbox_year,
+                        "mbox_month": mbox_month,
+                        "timestamp": timestamp,
+                        "from": from_header,
+                        "vote": vote_str,
+                    }
                 )
 
             try:
@@ -709,16 +712,16 @@ def process_mbox_archive(
                 for body_id_str in body_matches:
                     body_id: int = int(body_id_str)
                     data.append(
-                        [
-                            body_id,
-                            "body",
-                            key,
-                            mbox_year,
-                            mbox_month,
-                            timestamp,
-                            str(msg["from"]),
-                            None,
-                        ]
+                        {
+                            id_column_name: body_id,
+                            "mention_type": "body",
+                            "message_id": key,
+                            "mbox_year": mbox_year,
+                            "mbox_month": mbox_month,
+                            "timestamp": timestamp,
+                            "from": from_header,
+                            "vote": None,
+                        }
                     )
 
     output = DataFrame(data, columns=mention_columns)
@@ -738,7 +741,12 @@ def vote_converter(vote: str | None) -> str | None:
     """
 
     if vote != "":
-        vote_num: float = float(cast(str, vote))
+        try:
+            vote_num: float = float(cast(str, vote))
+        except (ValueError, TypeError):
+            print(f"Warning: could not convert vote value to float: {vote!r}")
+            return None
+
         if vote_num >= 1.0:
             return "+1"
 
@@ -771,24 +779,23 @@ def process_all_mbox_in_directory(
     directory: Path,
     process_func,
     mention_columns: list[str],
-    overwrite_cache: bool = False,
-) -> DataFrame:
+) -> tuple[DataFrame, list[str]]:
     """Process all mbox files in a directory and return combined DataFrame.
 
     Args:
         directory: Directory containing mbox files
         process_func: Function to process individual mbox files
         mention_columns: List of column names for the resulting DataFrame
-        overwrite_cache: Whether to reprocess files (currently ignored)
 
     Returns:
-        DataFrame containing all mentions from all mbox files
+        Tuple of (DataFrame containing all mentions, list of error messages for failed files)
     """
 
     mbox_files: list[Path] = sorted(directory.glob("*.mbox"))
 
     print(f"Found {len(mbox_files)} mbox files to process")
     all_mentions: DataFrame = DataFrame(columns=mention_columns)
+    errors: list[str] = []
 
     for mbox_file in mbox_files:
         print(f"Processing {mbox_file.name}")
@@ -796,9 +803,14 @@ def process_all_mbox_in_directory(
             file_data = process_func(mbox_file)
             all_mentions = concat((all_mentions, file_data), ignore_index=True)
         except Exception as ex:
-            print(f"ERROR processing file {mbox_file.name}: {ex}")
+            error_msg = f"ERROR processing file {mbox_file.name}: {ex}"
+            print(error_msg)
+            errors.append(error_msg)
+
+    if errors:
+        print(f"WARNING: {len(errors)} of {len(mbox_files)} files failed to process")
 
     # Deduplicate before returning
     all_mentions = all_mentions.drop_duplicates()
 
-    return all_mentions
+    return all_mentions, errors

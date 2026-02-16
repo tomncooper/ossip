@@ -342,11 +342,10 @@ def process_mail_archives(args: Namespace) -> None:
     """Run the mail archive processing command"""
 
     out_dir: Path = Path(args.directory)
-    flip_mentions: DataFrame = process_all_mbox_in_directory(
+    flip_mentions, errors = process_all_mbox_in_directory(
         out_dir,
         process_mbox_archive,
         FLIP_MENTION_COLUMNS,
-        overwrite_cache=args.overwrite_cache,
     )
     output_file: Path = out_dir.joinpath("flip_mentions.csv")
     flip_mentions.to_csv(output_file, index=False)

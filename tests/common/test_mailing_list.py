@@ -419,9 +419,14 @@ class TestVoteConverter:
         assert result is None
 
     def test_none_input_returns_none(self):
-        """Test that None input causes TypeError (as expected by pandas)."""
-        with pytest.raises(TypeError):
-            vote_converter(None)
+        """Test that None input returns None."""
+        result = vote_converter(None)
+        assert result is None
+
+    def test_non_numeric_string_returns_none(self):
+        """Test that non-numeric string returns None instead of crashing."""
+        result = vote_converter("not_a_number")
+        assert result is None
 
 
 class TestMetadataFunctions:
@@ -637,7 +642,9 @@ class TestParseForVoteWithCommitters:
 class TestExtractMessagePayload:
     """Tests for the extract_message_payload function."""
 
-    def _make_message(self, body, content_type="text/plain", charset="utf-8", encoding=None):
+    def _make_message(
+        self, body, content_type="text/plain", charset="utf-8", encoding=None
+    ):
         """Helper to create an email Message with the given body and encoding."""
         from email.message import Message
 
@@ -700,6 +707,25 @@ class TestExtractMessagePayload:
         assert len(payloads) == 1
         assert payloads[0] == body
 
+    def test_html_content_type_filtered(self):
+        """Test that text/html parts are filtered by MIME type."""
+        msg = self._make_message(
+            "<html><body>I vote +1 (binding)</body></html>",
+            content_type="text/html",
+        )
+
+        payloads = extract_message_payload(msg)
+        assert len(payloads) == 0
+
+    def test_plain_text_mentioning_html_not_filtered(self):
+        """Test that plain text mentioning HTML tags is not filtered."""
+        body = "Use <div> tags for layout in your email template"
+        msg = self._make_message(body)
+
+        payloads = extract_message_payload(msg)
+        assert len(payloads) == 1
+        assert payloads[0] == body
+
 
 class TestVotePatternBoundary:
     """Tests for VOTE_PATTERN digit boundary assertions."""
@@ -726,9 +752,7 @@ class TestVotePatternBoundary:
         """
         payload = "I=E2=80=99m +1 (binding)"
         result = parse_for_vote(payload, "voter@example.com")
-        assert result == "+1", (
-            "Should match the actual +1, not the 0 in =80="
-        )
+        assert result == "+1", "Should match the actual +1, not the 0 in =80="
 
     def test_standalone_zero_still_matches(self):
         """Test that a standalone 0 vote still works correctly."""
