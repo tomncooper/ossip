@@ -1,0 +1,40 @@
+name: Update committer KEYS cache
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+jobs:
+  update-keys:
+    runs-on: ubuntu-latest
+    name: Refresh KEYS Cache
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v6
+
+      - name: Setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Refresh Kafka KEYS cache
+        run: uv run python ipper/main.py kafka keys refresh
+
+      - name: Refresh Flink KEYS cache
+        run: uv run python ipper/main.py flink keys refresh
+
+      - name: Commit updated cache files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cache/
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update KEYS caches [skip ci]" && git push)
