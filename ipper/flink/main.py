@@ -1,4 +1,5 @@
 import json
+import logging
 import sys
 from argparse import Namespace
 from pathlib import Path
@@ -29,6 +30,8 @@ from ipper.flink.wiki import (
 )
 
 FLIP_CACHE_FILENAME = "flip_wiki_cache.json"
+
+logger = logging.getLogger(__name__)
 
 
 def setup_flink_parser(top_level_subparsers) -> None:
@@ -62,12 +65,14 @@ def process_wiki(args: Namespace) -> None:
     existing_flips = {}
     if flip_cache_path.exists() and not args.overwrite:
         if not args.update:
-            print(
-                f"Cache file {flip_cache_path} already exists. Add --overwrite to redownload or --update for incremental update"
+            logger.error(
+                "Cache file %s already exists. Add --overwrite to redownload "
+                "or --update for incremental update",
+                flip_cache_path,
             )
             sys.exit(1)
 
-        print(f"Loading existing FLIP cache from {flip_cache_path}")
+        logger.info("Loading existing FLIP cache from %s", flip_cache_path)
         with open(flip_cache_path, encoding="utf8") as flip_cache_file:
             existing_flips = {int(k): v for k, v in json.load(flip_cache_file).items()}
 
@@ -96,10 +101,10 @@ def process_output(args: Namespace) -> None:
     flip_mentions = None
     mentions_file = Path("cache/flink_mailbox_files/flip_mentions.csv")
     if mentions_file.exists():
-        print(f"Loading FLIP mentions from {mentions_file}")
+        logger.info("Loading FLIP mentions from %s", mentions_file)
         flip_mentions = load_mbox_cache_file(mentions_file)
     else:
-        print("No FLIP mentions file found, rendering without vote data")
+        logger.info("No FLIP mentions file found, rendering without vote data")
 
     render_flink_main_page(
         wiki_cache_data,
@@ -349,18 +354,18 @@ def process_mail_archives(args: Namespace) -> None:
     )
     output_file: Path = out_dir.joinpath("flip_mentions.csv")
     flip_mentions.to_csv(output_file, index=False)
-    print(f"Saved {len(flip_mentions)} FLIP mentions to {output_file}")
+    logger.info("Saved %s FLIP mentions to %s", len(flip_mentions), output_file)
 
 
 def run_init_cmd(args: Namespace) -> None:
-    print("Initializing all data caches")
-    print("Downloading FLIP Wiki Information")
+    logger.info("Initializing all data caches")
+    logger.info("Downloading FLIP Wiki Information")
     args.update = False
     args.overwrite = True
     args.cache = "cache"
     args.refresh_days = 30
     process_wiki(args)
-    print("Downloading Developer Mailing List Archives")
+    logger.info("Downloading Developer Mailing List Archives")
     args.mailing_list = "dev"
     args.output_dir = "cache/flink_mailbox_files"
     args.use_metadata = True  # Enable metadata tracking even for init
@@ -371,8 +376,8 @@ def run_init_cmd(args: Namespace) -> None:
 
 
 def run_update_cmd(args: Namespace) -> None:
-    print("Updating all data caches (incremental mode)")
-    print("Updating FLIP Wiki Information")
+    logger.info("Updating all data caches (incremental mode)")
+    logger.info("Updating FLIP Wiki Information")
     args.update = True
     args.overwrite = False
     args.cache = "cache"
@@ -380,7 +385,7 @@ def run_update_cmd(args: Namespace) -> None:
     args.refresh_days = 60  # Refresh FLIPs created in last 60 days
     process_wiki(args)
 
-    print("Updating Developer Mailing List Archives")
+    logger.info("Updating Developer Mailing List Archives")
     # Use metadata to download only new months
     args.mailing_list = "dev"
     args.output_dir = "cache/flink_mailbox_files"
@@ -397,34 +402,35 @@ def run_update_cmd(args: Namespace) -> None:
 
 
 def run_refresh_cmd(args: Namespace) -> None:
-    print("Refreshing by reprocessing all mbox files")
+    logger.info("Refreshing by reprocessing all mbox files")
     mbox_directory = Path("cache/flink_mailbox_files")
 
     if not mbox_directory.exists():
-        print(
-            f"Mbox directory {mbox_directory} does not exist. Skipping mailing list refresh."
+        logger.warning(
+            "Mbox directory %s does not exist. Skipping mailing list refresh.",
+            mbox_directory,
         )
         return
 
     mbox_files: list[Path] = sorted(mbox_directory.glob("*.mbox"))
 
-    print(f"Found {len(mbox_files)} mbox files to process")
+    logger.info("Found %s mbox files to process", len(mbox_files))
     all_mentions: DataFrame = DataFrame(columns=FLIP_MENTION_COLUMNS)
 
     for mbox_file in mbox_files:
-        print(f"Processing {mbox_file.name}")
+        logger.info("Processing %s", mbox_file.name)
         try:
             file_data = process_mbox_archive(mbox_file)
             all_mentions = concat((all_mentions, file_data), ignore_index=True)
         except Exception as ex:
-            print(f"ERROR processing file {mbox_file.name}: {ex}")
+            logger.error("Processing file %s: %s", mbox_file.name, ex)
 
     # Deduplicate before saving
     all_mentions = all_mentions.drop_duplicates()
 
     output_file = mbox_directory / "flip_mentions.csv"
     all_mentions.to_csv(output_file, index=False)
-    print(f"Saved {len(all_mentions)} FLIP mentions to {output_file}")
+    logger.info("Saved %s FLIP mentions to %s", len(all_mentions), output_file)
 
 
 def setup_output_command(main_subparser):
@@ -474,10 +480,10 @@ def setup_output_command(main_subparser):
 
 def run_keys_refresh_cmd(args: Namespace) -> None:
     """Force refresh of the Flink committer KEYS file."""
-    print(f"Force refreshing Flink committer KEYS from {KEYS_URL}")
+    logger.info("Force refreshing Flink committer KEYS from %s", KEYS_URL)
     index = get_committer_index(KEYS_URL, KEYS_CACHE_PATH, force_refresh=True)
-    print(f"Successfully loaded {len(index.committers)} committers")
-    print(f"Cache saved to: {KEYS_CACHE_PATH}")
+    logger.info("Successfully loaded %s committers", len(index.committers))
+    logger.info("Cache saved to: %s", KEYS_CACHE_PATH)
 
 
 def run_keys_info_cmd(args: Namespace) -> None:

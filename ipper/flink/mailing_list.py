@@ -4,6 +4,7 @@ This module provides Flink-specific functions for downloading, parsing, and proc
 mbox archives from Apache Flink mailing lists to track FLIP mentions and votes.
 """
 
+import logging
 import re
 from pathlib import Path
 
@@ -38,6 +39,8 @@ FLIP_MENTION_COLUMNS = [
     "vote",
 ]
 METADATA_FILE = "flip_mentions_metadata.json"
+
+logger = logging.getLogger(__name__)
 
 
 def get_monthly_mbox_file(
@@ -150,23 +153,23 @@ def update_flip_mentions_cache(
 
     # Load existing flip_mentions.csv if it exists
     if output_file.exists():
-        print(f"Loading existing FLIP mentions from {output_file}")
+        logger.info("Loading existing FLIP mentions from %s", output_file)
         existing_mentions: DataFrame = load_mbox_cache_file(output_file)
     else:
-        print("No existing FLIP mentions file found, starting fresh")
+        logger.info("No existing FLIP mentions file found, starting fresh")
         existing_mentions = DataFrame(columns=FLIP_MENTION_COLUMNS)
 
     # Process new mbox files directly (no intermediate cache)
-    print(f"Processing {len(new_mbox_files)} new mbox file(s)")
+    logger.info("Processing %s new mbox file(s)", len(new_mbox_files))
     new_mentions: DataFrame = DataFrame(columns=FLIP_MENTION_COLUMNS)
 
     for mbox_file in new_mbox_files:
-        print(f"Processing {mbox_file.name}")
+        logger.info("Processing %s", mbox_file.name)
         try:
             file_data = process_mbox_archive(mbox_file)
             new_mentions = concat((new_mentions, file_data), ignore_index=True)
         except Exception as ex:
-            print(f"ERROR processing file {mbox_file.name}: {ex}")
+            logger.error("Processing file %s: %s", mbox_file.name, ex)
 
     # Combine and deduplicate
     combined: DataFrame = concat((existing_mentions, new_mentions), ignore_index=True)
@@ -174,8 +177,10 @@ def update_flip_mentions_cache(
 
     # Save updated cache
     combined.to_csv(output_file, index=False)
-    print(
-        f"Saved updated FLIP mentions to {output_file} ({len(combined)} total mentions)"
+    logger.info(
+        "Saved updated FLIP mentions to %s (%s total mentions)",
+        output_file,
+        len(combined),
     )
 
     return combined

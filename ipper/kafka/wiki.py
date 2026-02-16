@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Any, cast
@@ -13,6 +14,8 @@ from ipper.common.wiki import (
     get_wiki_page_body,
     get_wiki_page_info,
 )
+
+logger = logging.getLogger(__name__)
 
 KIP_PATTERN: re.Pattern = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
 
@@ -136,7 +139,7 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
             if state:
                 kip_dict["state"] = state
             else:
-                print(f"Could not discern KIP state from {para}")
+                logger.warning("Could not discern KIP state from %s", para)
                 kip_dict["state"] = IPState.UNKNOWN
 
             state_processed = True
@@ -148,7 +151,7 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
             if href and not is_template_default_url(href, "jira"):
                 kip_dict["jira"] = href
             else:
-                print("JIRA link is template default or missing for KIP")
+                logger.warning("JIRA link is template default or missing for KIP")
                 kip_dict["jira"] = NOT_SET_STR
 
             jira_processed = True
@@ -160,7 +163,9 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
             if href and not is_template_default_url(href, "discussion"):
                 kip_dict["discussion_thread"] = href
             else:
-                print("Discussion thread link is template default or missing for KIP")
+                logger.warning(
+                    "Discussion thread link is template default or missing for KIP"
+                )
                 kip_dict["discussion_thread"] = NOT_SET_STR
 
             discussion_processed = True
@@ -172,7 +177,9 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
             if href and not is_template_default_url(href, "vote"):
                 kip_dict["vote_thread"] = href
             else:
-                print("Voting thread link is template default or missing for KIP")
+                logger.warning(
+                    "Voting thread link is template default or missing for KIP"
+                )
                 kip_dict["vote_thread"] = NOT_SET_STR
 
             vote_processed = True
@@ -193,7 +200,7 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
 def process_child_kip(kip_id: int, child: dict):
     """Process and enrich the KIP child page dictionary"""
 
-    print(f"Processing KIP {kip_id} wiki page")
+    logger.info("Processing KIP %s wiki page", kip_id)
     child_dict: dict[str, list[str] | str | int] = {}
     child_dict["kip_id"] = kip_id
     child_dict["title"] = child["title"]
@@ -226,7 +233,7 @@ def get_kip_information(
 
     cache_file_path: Path = Path(cache_filepath)
     if cache_file_path.exists() and not overwrite_cache:
-        print(f"Loading KIP Wiki information from cache file: {cache_file_path}")
+        logger.info("Loading KIP Wiki information from cache file: %s", cache_file_path)
         with open(cache_file_path, encoding="utf8") as cache_file:
             output: dict[int, dict[str, int | str]] = {
                 int(k): v for k, v in json.load(cache_file).items()
@@ -238,9 +245,9 @@ def get_kip_information(
         output = {}
 
     if cache_file_path.exists() and update:
-        print("Updating KIP Wiki information with new KIPs")
+        logger.info("Updating KIP Wiki information with new KIPs")
     else:
-        print("Downloading KIP Wiki information for all KIPS")
+        logger.info("Downloading KIP Wiki information for all KIPS")
 
     for child in child_page_generator(kip_main_info, chunk, timeout):
         kip_match: re.Match | None = re.search(KIP_PATTERN, child["title"])

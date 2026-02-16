@@ -1,6 +1,7 @@
 """Tests for ipper.common.mailing_list module."""
 
 import json
+import logging
 
 import pytest
 
@@ -560,35 +561,35 @@ class TestParseForVoteWithCommitters:
         )
 
     def test_unmarked_vote_from_committer_by_email(
-        self, sample_committer_index, capsys
+        self, sample_committer_index, caplog
     ):
         """Test that unmarked vote from committer (matched by email) is counted as binding."""
         payload = "+1"
-        result = parse_for_vote(
-            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
-        )
+        with caplog.at_level(logging.DEBUG, logger="ipper.common.mailing_list"):
+            result = parse_for_vote(
+                payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+            )
         assert result == "+1"
 
         # Check that detection was logged
-        captured = capsys.readouterr()
-        assert "binding vote from committer" in captured.out
-        assert "Alice Johnson" in captured.out
-        assert "email" in captured.out
+        assert "binding vote from committer" in caplog.text
+        assert "Alice Johnson" in caplog.text
+        assert "email" in caplog.text
 
-    def test_unmarked_vote_from_committer_by_name(self, sample_committer_index, capsys):
+    def test_unmarked_vote_from_committer_by_name(self, sample_committer_index, caplog):
         """Test that unmarked vote from committer (matched by name) is counted as binding."""
         payload = "+1"
         # Different email but same name
-        result = parse_for_vote(
-            payload, "Alice Johnson <alice@different.com>", sample_committer_index
-        )
+        with caplog.at_level(logging.DEBUG, logger="ipper.common.mailing_list"):
+            result = parse_for_vote(
+                payload, "Alice Johnson <alice@different.com>", sample_committer_index
+            )
         assert result == "+1"
 
         # Check that detection was logged
-        captured = capsys.readouterr()
-        assert "binding vote from committer" in captured.out
-        assert "Alice Johnson" in captured.out
-        assert "name" in captured.out
+        assert "binding vote from committer" in caplog.text
+        assert "Alice Johnson" in caplog.text
+        assert "name" in caplog.text
 
     def test_unmarked_vote_from_non_committer(self, sample_committer_index):
         """Test that unmarked vote from non-committer is not counted."""
@@ -614,18 +615,18 @@ class TestParseForVoteWithCommitters:
         )
         assert result is None
 
-    def test_committer_with_secondary_email(self, sample_committer_index, capsys):
+    def test_committer_with_secondary_email(self, sample_committer_index, caplog):
         """Test that committer is matched by secondary email."""
         payload = "-1"
-        result = parse_for_vote(
-            payload, "Bob Smith <bob.smith@company.com>", sample_committer_index
-        )
+        with caplog.at_level(logging.DEBUG, logger="ipper.common.mailing_list"):
+            result = parse_for_vote(
+                payload, "Bob Smith <bob.smith@company.com>", sample_committer_index
+            )
         assert result == "-1"
 
         # Check email match
-        captured = capsys.readouterr()
-        assert "binding vote from committer" in captured.out
-        assert "email" in captured.out
+        assert "binding vote from committer" in caplog.text
+        assert "email" in caplog.text
 
     def test_no_committer_index_treats_unmarked_as_non_binding(self):
         """Test that without committer index, unmarked votes are treated as non-binding."""
@@ -640,7 +641,7 @@ class TestParseForVoteWithCommitters:
         assert result == "+1"
 
     def test_summary_email_with_multiple_vote_types_skipped(
-        self, sample_committer_index, capsys
+        self, sample_committer_index, caplog
     ):
         """Test that summary/tally emails mentioning multiple vote types are skipped.
 
@@ -651,26 +652,26 @@ class TestParseForVoteWithCommitters:
             "The vote for KIP-1230 has passed with 5 binding votes "
             "and no 0 and no -1 votes."
         )
-        result = parse_for_vote(
-            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
-        )
+        with caplog.at_level(logging.DEBUG, logger="ipper.common.mailing_list"):
+            result = parse_for_vote(
+                payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+            )
         assert result is None
 
-        captured = capsys.readouterr()
-        assert "Skipping summary/tally email" in captured.out
+        assert "Skipping summary/tally email" in caplog.text
 
     def test_single_vote_type_from_committer_still_works(
-        self, sample_committer_index, capsys
+        self, sample_committer_index, caplog
     ):
         """Test that a committer email with a single vote type is still detected."""
         payload = "+1"
-        result = parse_for_vote(
-            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
-        )
+        with caplog.at_level(logging.DEBUG, logger="ipper.common.mailing_list"):
+            result = parse_for_vote(
+                payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+            )
         assert result == "+1"
 
-        captured = capsys.readouterr()
-        assert "binding vote from committer" in captured.out
+        assert "binding vote from committer" in caplog.text
 
     def test_explicit_binding_with_incidental_zero_unchanged(
         self, sample_committer_index
@@ -686,32 +687,32 @@ class TestParseForVoteWithCommitters:
         )
         assert result == "+1"
 
-    def test_tally_pattern_summary_skipped(self, sample_committer_index, capsys):
+    def test_tally_pattern_summary_skipped(self, sample_committer_index, caplog):
         """Test that tally count patterns like '3 binding +1' are skipped."""
         payload = (
             "The KIP-1142 has been accepted with 3 binding +1 from "
             "Andrew Schofield, TengYao Chi, and Chia-Ping Tsai."
         )
-        result = parse_for_vote(
-            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
-        )
+        with caplog.at_level(logging.DEBUG, logger="ipper.common.mailing_list"):
+            result = parse_for_vote(
+                payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+            )
         assert result is None
 
-        captured = capsys.readouterr()
-        assert "tally count pattern" in captured.out
+        assert "tally count pattern" in caplog.text
 
     def test_tally_pattern_does_not_affect_real_votes(
-        self, sample_committer_index, capsys
+        self, sample_committer_index, caplog
     ):
         """Test that a plain '+1' from committer still returns '+1'."""
         payload = "+1"
-        result = parse_for_vote(
-            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
-        )
+        with caplog.at_level(logging.DEBUG, logger="ipper.common.mailing_list"):
+            result = parse_for_vote(
+                payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+            )
         assert result == "+1"
 
-        captured = capsys.readouterr()
-        assert "binding vote from committer" in captured.out
+        assert "binding vote from committer" in caplog.text
 
     def test_committer_prose_zero_not_false_positive(self, sample_committer_index):
         """Test that a committer message with '0' in prose does not produce a false zero vote.
@@ -767,39 +768,39 @@ class TestParseForVoteThreadStarter:
         )
 
     def test_thread_starter_committer_gets_auto_plus_one(
-        self, sample_committer_index, capsys
+        self, sample_committer_index, caplog
     ):
         """Test that a thread-starter committer's summary email returns +1."""
         payload = (
             "The KIP-1142 has been accepted with 3 binding +1 from "
             "Andrew Schofield, TengYao Chi, and Chia-Ping Tsai."
         )
-        result = parse_for_vote(
-            payload,
-            "Alice Johnson <alice@apache.org>",
-            sample_committer_index,
-            is_thread_starter=True,
-        )
+        with caplog.at_level(logging.DEBUG, logger="ipper.common.mailing_list"):
+            result = parse_for_vote(
+                payload,
+                "Alice Johnson <alice@apache.org>",
+                sample_committer_index,
+                is_thread_starter=True,
+            )
         assert result == "+1"
 
-        captured = capsys.readouterr()
-        assert "Thread-starter auto-vote" in captured.out
+        assert "Thread-starter auto-vote" in caplog.text
 
     def test_thread_starter_summary_no_vote_pattern(
-        self, sample_committer_index, capsys
+        self, sample_committer_index, caplog
     ):
         """Test that thread starter with no vote patterns still gets +1."""
         payload = "The vote passed, thanks for your votes everyone!"
-        result = parse_for_vote(
-            payload,
-            "Alice Johnson <alice@apache.org>",
-            sample_committer_index,
-            is_thread_starter=True,
-        )
+        with caplog.at_level(logging.DEBUG, logger="ipper.common.mailing_list"):
+            result = parse_for_vote(
+                payload,
+                "Alice Johnson <alice@apache.org>",
+                sample_committer_index,
+                is_thread_starter=True,
+            )
         assert result == "+1"
 
-        captured = capsys.readouterr()
-        assert "Thread-starter auto-vote" in captured.out
+        assert "Thread-starter auto-vote" in caplog.text
 
     def test_thread_starter_explicit_binding_respected(self, sample_committer_index):
         """Test that explicit +1 (binding) from thread starter returns +1 via first pass."""

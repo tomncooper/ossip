@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
@@ -12,6 +13,8 @@ from ipper.common.wiki import (
     child_page_generator,
     get_wiki_page_info,
 )
+
+logger = logging.getLogger(__name__)
 
 FLIP_PATTERN: re.Pattern = re.compile(r"FLIP-(?P<flip>\d+)", re.IGNORECASE)
 FLINK_JIRA_PATTERN: re.Pattern = re.compile(r"FLINK-\d+")
@@ -132,9 +135,9 @@ def _add_row_data(
     if "release" in header:
         component, version = _get_release_version(row_data.text)
 
-        print("\tTarget Release:")
-        print(f"\t\tComponent:\t\t{component}")
-        print(f"\t\tVersion:\t\t{version}")
+        logger.debug("\tTarget Release:")
+        logger.debug("\t\tComponent:\t\t%s", component)
+        logger.debug("\t\tVersion:\t\t%s", version)
 
         if component:
             flip_dict[RELEASE_COMPONENT_KEY] = component
@@ -184,14 +187,14 @@ def _determine_state(flip_dict) -> IPState:
     has_jira = check_if_set(flip_dict, JIRA_LINK_KEY)
     has_target_release = check_if_set(flip_dict, RELEASE_VERSION_KEY)
 
-    print("\tDetermining state:")
-    print(f"\t\tDiscussion Thread:\t{has_discussion_thread}")
-    print(f"\t\tVote Thread:\t\t{has_vote_thread}")
-    print(f"\t\tJIRA:\t\t\t{has_jira}")
-    print(f"\t\tTarget Release:\t\t{has_target_release}")
+    logger.debug("\tDetermining state:")
+    logger.debug("\t\tDiscussion Thread:\t%s", has_discussion_thread)
+    logger.debug("\t\tVote Thread:\t\t%s", has_vote_thread)
+    logger.debug("\t\tJIRA:\t\t\t%s", has_jira)
+    logger.debug("\t\tTarget Release:\t\t%s", has_target_release)
 
     if has_discussion_thread and not has_jira and not has_target_release:
-        print(f"\t\tFLIP State:\t\t{IPState.UNDER_DISCUSSION}")
+        logger.debug("\t\tFLIP State:\t\t%s", IPState.UNDER_DISCUSSION)
         return IPState.UNDER_DISCUSSION
 
     if has_jira:
@@ -201,29 +204,29 @@ def _determine_state(flip_dict) -> IPState:
         if jira_id_match:
             jira_id = jira_id_match.group()
         else:
-            print(
-                "WARNING: Could not find JIRA ID from url: " + flip_dict[JIRA_LINK_KEY]
+            logger.warning(
+                "Could not find JIRA ID from url: %s", flip_dict[JIRA_LINK_KEY]
             )
-            print(f"\t\tFLIP State:\t\t{IPState.UNKNOWN}")
+            logger.debug("\t\tFLIP State:\t\t%s", IPState.UNKNOWN)
             return IPState.UNKNOWN
 
         jira_state: JiraStatus = get_apache_jira_status(jira_id)
-        print(f"\t\tJIRA State:\t\t{jira_state}")
+        logger.debug("\t\tJIRA State:\t\t%s", jira_state)
 
         if jira_state == JiraStatus.RESOLVED:
-            print(f"\t\tFLIP State:\t\t{IPState.COMPLETED}")
+            logger.debug("\t\tFLIP State:\t\t%s", IPState.COMPLETED)
             return IPState.COMPLETED
 
         if jira_state == JiraStatus.CLOSED:
             if has_target_release:
-                print(f"\t\tFLIP State:\t\t{IPState.COMPLETED}")
+                logger.debug("\t\tFLIP State:\t\t%s", IPState.COMPLETED)
                 return IPState.COMPLETED
 
-            print(f"\t\tFLIP State:\t\t{IPState.NOT_ACCEPTED}")
+            logger.debug("\t\tFLIP State:\t\t%s", IPState.NOT_ACCEPTED)
             return IPState.NOT_ACCEPTED
 
         if jira_state in (JiraStatus.OPEN, JiraStatus.IN_PROGRESS):
-            print(f"\t\tFLIP State:\t\t{IPState.IN_PROGRESS}")
+            logger.debug("\t\tFLIP State:\t\t%s", IPState.IN_PROGRESS)
             return IPState.IN_PROGRESS
 
     return IPState.UNKNOWN
@@ -256,9 +259,10 @@ def _enrich_flip_info(
     flip_dict["state"] = IPState.UNKNOWN
 
     if not tables:
-        print(
-            f"WARNING: no summary table in FLIP-{flip_id}. "
-            + f"This FLIP state will be set to {UNKNOWN_STR}."
+        logger.warning(
+            "No summary table in FLIP-%s. This FLIP state will be set to %s.",
+            flip_id,
+            UNKNOWN_STR,
         )
         return
 
@@ -266,9 +270,11 @@ def _enrich_flip_info(
     summary_table = tables[0]
     summary_rows = summary_table.findAll("tr")
     if not summary_rows:
-        print(
-            f"WARNING: no information in summary table in FLIP-{flip_id}. "
-            + f"This FLIP state will be set to {UNKNOWN_STR}."
+        logger.warning(
+            "No information in summary table in FLIP-%s. "
+            "This FLIP state will be set to %s.",
+            flip_id,
+            UNKNOWN_STR,
         )
         return
 
@@ -290,7 +296,7 @@ def _enrich_flip_info(
 def process_child_kip(flip_id: int, child: dict):
     """Process and enrich the KIP child page dictionary"""
 
-    print(f"Processing FLIP {flip_id} wiki page")
+    logger.info("Processing FLIP %s wiki page", flip_id)
     child_dict: dict[str, int | str | list[str]] = {}
     child_dict["id"] = flip_id
     child_dict["title"] = child["title"]
@@ -321,11 +327,13 @@ def get_flip_information(
     refresh_cutoff = datetime.now(UTC) - timedelta(days=refresh_days)
 
     if existing_cache:
-        print(
-            f"Updating FLIP Wiki information with new FLIPs and refreshing FLIPs created within {refresh_days} days"
+        logger.info(
+            "Updating FLIP Wiki information with new FLIPs and refreshing FLIPs "
+            "created within %s days",
+            refresh_days,
         )
     else:
-        print("Downloading FLIP Wiki information for all FLIPs")
+        logger.info("Downloading FLIP Wiki information for all FLIPs")
 
     for child in child_page_generator(flip_main_info, chunk, timeout):
         flip_match: re.Match | None = re.search(FLIP_PATTERN, child["title"])
@@ -344,22 +352,31 @@ def get_flip_information(
 
                     # Skip if FLIP was created outside the refresh window
                     if created_date < refresh_cutoff:
-                        print(
-                            f"Skipping FLIP-{flip_id} (created {created_on_str}, outside {refresh_days}-day refresh window)"
+                        logger.info(
+                            "Skipping FLIP-%s (created %s, outside %s-day "
+                            "refresh window)",
+                            flip_id,
+                            created_on_str,
+                            refresh_days,
                         )
                         continue
                     else:
-                        print(
-                            f"Refreshing FLIP-{flip_id} (created recently: {created_on_str})"
+                        logger.info(
+                            "Refreshing FLIP-%s (created recently: %s)",
+                            flip_id,
+                            created_on_str,
                         )
                 except (KeyError, ValueError) as e:
-                    print(
-                        f"WARNING: Could not parse created_on date for FLIP-{flip_id}, refreshing anyway: {e}"
+                    logger.warning(
+                        "Could not parse created_on date for FLIP-%s, "
+                        "refreshing anyway: %s",
+                        flip_id,
+                        e,
                     )
 
             output[flip_id] = process_child_kip(flip_id, child)
 
             if flip_id not in (existing_cache or {}):
-                print(f"Added new FLIP-{flip_id} to cache")
+                logger.info("Added new FLIP-%s to cache", flip_id)
 
     return output

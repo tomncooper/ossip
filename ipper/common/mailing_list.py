@@ -7,6 +7,7 @@ to track improvement proposal mentions and votes.
 
 import datetime as dt
 import json
+import logging
 import re
 from email.message import Message
 from mailbox import mbox
@@ -21,6 +22,8 @@ from urllib3.util.retry import Retry
 
 from ipper.common.keys import CommitterIndex, parse_email_from_header
 from ipper.common.utils import generate_month_list
+
+logger = logging.getLogger(__name__)
 
 APACHE_MAILING_LIST_BASE_URL: str = "https://lists.apache.org/api/mbox.lua"
 MAIL_DATE_FORMAT = "%a, %d %b %Y %H:%M:%S %z"
@@ -68,13 +71,14 @@ def get_monthly_mbox_file(
 
     if filepath.exists():
         if not overwrite:
-            print(
-                f"Mbox file {filepath} already exists. "
-                + "Skipping download (set overwrite to True to re-download)."
+            logger.info(
+                "Mbox file %s already exists. "
+                "Skipping download (set overwrite to True to re-download).",
+                filepath,
             )
             return filepath
 
-        print(f"Overwriting existing mbox file: {filepath}")
+        logger.info("Overwriting existing mbox file: %s", filepath)
 
     options: dict[str, str] = {
         "list": mailing_list,
@@ -144,8 +148,11 @@ def get_multiple_mbox(
             days_back = 365
         now: dt.datetime = dt.datetime.now(dt.UTC)
         then: dt.datetime = now - dt.timedelta(days=days_back)
-        print(
-            f"Downloading mail archives for mailing list {mailing_list} between {then.isoformat()} and {now.isoformat()}"
+        logger.info(
+            "Downloading mail archives for mailing list %s between %s and %s",
+            mailing_list,
+            then.isoformat(),
+            now.isoformat(),
         )
         month_list = generate_month_list(now, then)
 
@@ -154,7 +161,7 @@ def get_multiple_mbox(
     latest_month = 0
 
     for year, month in month_list:
-        print(f"Downloading {mailing_list} archive for {month}/{year}")
+        logger.info("Downloading %s archive for %s/%s", mailing_list, month, year)
         try:
             filepath = get_monthly_mbox_file(
                 mailing_list,
@@ -165,7 +172,9 @@ def get_multiple_mbox(
                 overwrite=overwrite,
             )
         except requests.RequestException as ex:
-            print(f"ERROR downloading {mailing_list} archive for {month}/{year}: {ex}")
+            logger.error(
+                "Downloading %s archive for %s/%s: %s", mailing_list, month, year, ex
+            )
             continue
 
         filepaths.append(filepath)
@@ -201,7 +210,7 @@ def save_metadata(metadata_path: Path, year: int, month: int) -> None:
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
 
-    print(f"Updated metadata: {metadata}")
+    logger.info("Updated metadata: %s", metadata)
 
 
 def load_metadata(metadata_path: Path) -> dict[str, str | int] | None:
@@ -253,13 +262,15 @@ def get_months_to_download(
 
         # Start from the last processed month (re-download it to catch any late emails)
         then = dt.datetime(last_year, last_month, 1, tzinfo=dt.UTC)
-        print(f"Incremental update from {then.isoformat()} to {now.isoformat()}")
+        logger.info(
+            "Incremental update from %s to %s", then.isoformat(), now.isoformat()
+        )
     else:
         # Full download: use days_back
         if days_back is None:
             days_back = 365
         then = now - dt.timedelta(days=days_back)
-        print(f"Full download for last {days_back} days")
+        logger.info("Full download for last %s days", days_back)
 
     return generate_month_list(now, then)
 
@@ -295,7 +306,7 @@ def parse_message_timestamp(date_str: str) -> dt.datetime | None:
     try:
         timestamp = dt.datetime.strptime(date_str.split(" (")[0], MAIL_DATE_FORMAT)
     except ValueError:
-        print(f"Could not parse timestamp: {date_str}")
+        logger.warning("Could not parse timestamp: %s", date_str)
 
     return timestamp
 
@@ -343,8 +354,8 @@ def extract_message_payload(msg: Message) -> list[str]:
     valid_payloads_set: set[str] = set(valid_payloads)
 
     if len(valid_payloads_set) > 1:
-        print(
-            f"Warning: more than 1 message ({len(valid_payloads)}) in the message payload"
+        logger.warning(
+            "More than 1 message (%s) in the message payload", len(valid_payloads)
         )
 
     return list(valid_payloads_set)
@@ -581,9 +592,10 @@ def parse_for_vote(
             # thread, they are the proposer and implicitly vote +1. Skip body
             # scanning to avoid misreading summary/result emails as votes.
             if is_thread_starter:
-                print(
-                    f"  Thread-starter auto-vote +1 from committer: {voter_name} "
-                    f"<{voter_email}>"
+                logger.debug(
+                    "  Thread-starter auto-vote +1 from committer: %s <%s>",
+                    voter_name,
+                    voter_email,
                 )
                 return "+1"
 
@@ -599,10 +611,13 @@ def parse_for_vote(
                 for m in VOTE_PATTERN.finditer(line_no_urls):
                     distinct_vote_types.add(_normalize_vote(m.group(1)))
             if len(distinct_vote_types) >= 2:
-                print(
-                    f"  Skipping summary/tally email from committer: {voter_name} "
-                    f"<{voter_email}> (found {len(distinct_vote_types)} distinct vote types: "
-                    f"{', '.join(sorted(distinct_vote_types))})"
+                logger.debug(
+                    "  Skipping summary/tally email from committer: %s <%s> "
+                    "(found %s distinct vote types: %s)",
+                    voter_name,
+                    voter_email,
+                    len(distinct_vote_types),
+                    ", ".join(sorted(distinct_vote_types)),
                 )
                 return None
 
@@ -613,9 +628,11 @@ def parse_for_vote(
                 if line.lstrip().startswith(">"):
                     continue
                 if TALLY_PATTERN.search(URL_PATTERN.sub("", line)):
-                    print(
-                        f"  Skipping tally/summary email from committer: {voter_name} "
-                        f"<{voter_email}> (found tally count pattern)"
+                    logger.debug(
+                        "  Skipping tally/summary email from committer: %s <%s> "
+                        "(found tally count pattern)",
+                        voter_name,
+                        voter_email,
                     )
                     return None
 
@@ -637,9 +654,13 @@ def parse_for_vote(
                 if vote == "0":
                     continue
 
-                print(
-                    f"  Detected binding vote from committer: {voter_name} "
-                    f"<{voter_email}> (matched by {method}, confidence: {confidence:.1f}%)"
+                logger.debug(
+                    "  Detected binding vote from committer: %s <%s> "
+                    "(matched by %s, confidence: %.1f%%)",
+                    voter_name,
+                    voter_email,
+                    method,
+                    confidence,
                 )
                 return _normalize_vote(vote)
 
@@ -702,7 +723,7 @@ def process_mbox_archive(
 
         timestamp: dt.datetime | None = parse_message_timestamp(msg["Date"])
         if not timestamp:
-            print(f"Could not parse timestamp for message {key}")
+            logger.warning("Could not parse timestamp for message %s", key)
             continue
 
         is_vote: bool = False
@@ -746,7 +767,9 @@ def process_mbox_archive(
         try:
             valid_payloads: list[str] = extract_message_payload(msg)
         except ValueError:
-            print(f"Error processing payload for message {key} in file {filepath}")
+            logger.error(
+                "Error processing payload for message %s in file %s", key, filepath
+            )
             continue
 
         if not valid_payloads:
@@ -777,7 +800,7 @@ def process_mbox_archive(
             try:
                 body_matches: list[str] = re.findall(pattern, payload)
             except TypeError:
-                print(f"Unable to parse payload of type {type(payload)}")
+                logger.error("Unable to parse payload of type %s", type(payload))
                 continue
 
             if body_matches:
@@ -816,7 +839,7 @@ def vote_converter(vote: str | None) -> str | None:
         try:
             vote_num: float = float(cast(str, vote))
         except (ValueError, TypeError):
-            print(f"Warning: could not convert vote value to float: {vote!r}")
+            logger.warning("Could not convert vote value to float: %r", vote)
             return None
 
         if vote_num >= 1.0:
@@ -865,22 +888,22 @@ def process_all_mbox_in_directory(
 
     mbox_files: list[Path] = sorted(directory.glob("*.mbox"))
 
-    print(f"Found {len(mbox_files)} mbox files to process")
+    logger.info("Found %s mbox files to process", len(mbox_files))
     all_mentions: DataFrame = DataFrame(columns=mention_columns)
     errors: list[str] = []
 
     for mbox_file in mbox_files:
-        print(f"Processing {mbox_file.name}")
+        logger.info("Processing %s", mbox_file.name)
         try:
             file_data = process_func(mbox_file)
             all_mentions = concat((all_mentions, file_data), ignore_index=True)
         except Exception as ex:
             error_msg = f"ERROR processing file {mbox_file.name}: {ex}"
-            print(error_msg)
+            logger.error("Processing file %s: %s", mbox_file.name, ex)
             errors.append(error_msg)
 
     if errors:
-        print(f"WARNING: {len(errors)} of {len(mbox_files)} files failed to process")
+        logger.warning("%s of %s files failed to process", len(errors), len(mbox_files))
 
     # Deduplicate before returning
     all_mentions = all_mentions.drop_duplicates()

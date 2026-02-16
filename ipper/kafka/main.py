@@ -1,3 +1,4 @@
+import logging
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
@@ -19,6 +20,8 @@ from ipper.kafka.output import (
     render_standalone_status_page,
 )
 from ipper.kafka.wiki import get_kip_information, get_kip_main_page_info
+
+logger = logging.getLogger(__name__)
 
 
 def setup_kafka_parser(top_level_subparsers) -> None:
@@ -225,45 +228,45 @@ def setup_wiki_download(args: Namespace) -> None:
 
 
 def run_init_cmd(args: Namespace) -> None:
-    print("Initializing all data caches")
-    print("Downloading KIP Wiki Information")
+    logger.info("Initializing all data caches")
+    logger.info("Downloading KIP Wiki Information")
     args.update = False
     args.overwrite = True
     setup_wiki_download(args)
-    print("Downloading Developer Mailing List Archives")
+    logger.info("Downloading Developer Mailing List Archives")
     args.mailing_list = "dev"
     args.output_dir = "cache/mailbox_files"
     args.use_metadata = True  # Enable metadata tracking even for init
     mbox_files: list[Path] = setup_mail_download(args)
 
     # Process all mbox files directly (no intermediate cache)
-    print("Processing mbox files")
+    logger.info("Processing mbox files")
     all_mentions: DataFrame = DataFrame(columns=KIP_MENTION_COLUMNS)
 
     for mbox_file in mbox_files:
-        print(f"Processing {mbox_file.name}")
+        logger.info("Processing %s", mbox_file.name)
         try:
             file_data = process_mbox_archive(mbox_file)
             all_mentions = concat((all_mentions, file_data), ignore_index=True)
         except Exception as ex:
-            print(f"ERROR processing file {mbox_file.name}: {ex}")
+            logger.error("Processing file %s: %s", mbox_file.name, ex)
 
     # Deduplicate and save
     all_mentions = all_mentions.drop_duplicates()
     output_file = Path("cache/mailbox_files/kip_mentions.csv")
     all_mentions.to_csv(output_file, index=False)
-    print(f"Saved {len(all_mentions)} KIP mentions to {output_file}")
+    logger.info("Saved %s KIP mentions to %s", len(all_mentions), output_file)
 
 
 def run_update_cmd(args: Namespace) -> None:
-    print("Updating all data caches (incremental mode)")
-    print("Updating KIP Wiki Information")
+    logger.info("Updating all data caches (incremental mode)")
+    logger.info("Updating KIP Wiki Information")
     args.update = True
     args.overwrite = False
     args.chunk = 100  # Default chunk size for wiki download
     setup_wiki_download(args)
 
-    print("Updating Developer Mailing List Archives")
+    logger.info("Updating Developer Mailing List Archives")
     # Use metadata to download only new months
     args.mailing_list = "dev"
     args.output_dir = "cache/mailbox_files"
@@ -280,27 +283,27 @@ def run_update_cmd(args: Namespace) -> None:
 
 
 def run_refresh_cmd(args: Namespace) -> None:
-    print("Refreshing by reprocessing all mbox files")
+    logger.info("Refreshing by reprocessing all mbox files")
     mbox_directory = Path("cache/mailbox_files")
     mbox_files: list[Path] = sorted(mbox_directory.glob("*.mbox"))
 
-    print(f"Found {len(mbox_files)} mbox files to process")
+    logger.info("Found %s mbox files to process", len(mbox_files))
     all_mentions: DataFrame = DataFrame(columns=KIP_MENTION_COLUMNS)
 
     for mbox_file in mbox_files:
-        print(f"Processing {mbox_file.name}")
+        logger.info("Processing %s", mbox_file.name)
         try:
             file_data = process_mbox_archive(mbox_file)
             all_mentions = concat((all_mentions, file_data), ignore_index=True)
         except Exception as ex:
-            print(f"ERROR processing file {mbox_file.name}: {ex}")
+            logger.error("Processing file %s: %s", mbox_file.name, ex)
 
     # Deduplicate before saving (important!)
     all_mentions = all_mentions.drop_duplicates()
 
     output_file = mbox_directory / "kip_mentions.csv"
     all_mentions.to_csv(output_file, index=False)
-    print(f"Saved {len(all_mentions)} KIP mentions to {output_file}")
+    logger.info("Saved %s KIP mentions to %s", len(all_mentions), output_file)
 
 
 def run_output_standalone_cmd(args: Namespace) -> None:
@@ -322,10 +325,10 @@ def run_output_standalone_cmd(args: Namespace) -> None:
 
 def run_keys_refresh_cmd(args: Namespace) -> None:
     """Force refresh of the Kafka committer KEYS file."""
-    print(f"Force refreshing Kafka committer KEYS from {KEYS_URL}")
+    logger.info("Force refreshing Kafka committer KEYS from %s", KEYS_URL)
     index = get_committer_index(KEYS_URL, KEYS_CACHE_PATH, force_refresh=True)
-    print(f"Successfully loaded {len(index.committers)} committers")
-    print(f"Cache saved to: {KEYS_CACHE_PATH}")
+    logger.info("Successfully loaded %s committers", len(index.committers))
+    logger.info("Cache saved to: %s", KEYS_CACHE_PATH)
 
 
 def run_keys_info_cmd(args: Namespace) -> None:

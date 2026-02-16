@@ -8,6 +8,7 @@ binding votes from committers even when they don't explicitly mark their vote as
 
 import datetime as dt
 import json
+import logging
 import re
 from dataclasses import dataclass, field
 from email.utils import parseaddr
@@ -15,6 +16,8 @@ from pathlib import Path
 
 import requests
 from rapidfuzz import fuzz
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -287,7 +290,7 @@ def load_committer_index(cache_path: Path) -> CommitterIndex | None:
             source_url=data["source_url"],
         )
     except (json.JSONDecodeError, KeyError, ValueError) as e:
-        print(f"Error loading cache from {cache_path}: {e}")
+        logger.error("Error loading cache from %s: %s", cache_path, e)
         return None
 
 
@@ -343,21 +346,22 @@ def get_committer_index(
         if index:
             age = dt.datetime.now(dt.UTC) - index.last_updated.replace(tzinfo=dt.UTC)
             if age.days < max_age_days:
-                print(
-                    f"Using cached committer data from {cache_path} "
-                    f"(age: {age.days} days)"
+                logger.info(
+                    "Using cached committer data from %s (age: %s days)",
+                    cache_path,
+                    age.days,
                 )
                 return index
-            print(f"Cache is stale (age: {age.days} days), refreshing...")
+            logger.info("Cache is stale (age: %s days), refreshing...", age.days)
 
     # Download and parse KEYS file
-    print(f"Downloading KEYS file from {keys_url}")
+    logger.info("Downloading KEYS file from %s", keys_url)
     keys_content = download_keys_file(keys_url)
 
-    print("Parsing KEYS file...")
+    logger.info("Parsing KEYS file...")
     committers = parse_keys_file(keys_content)
 
-    print(f"Found {len(committers)} committers")
+    logger.info("Found %s committers", len(committers))
 
     # Create index and save to cache
     index = CommitterIndex(
@@ -367,6 +371,6 @@ def get_committer_index(
     )
 
     save_committer_index(index, cache_path)
-    print(f"Saved committer index to {cache_path}")
+    logger.info("Saved committer index to %s", cache_path)
 
     return index

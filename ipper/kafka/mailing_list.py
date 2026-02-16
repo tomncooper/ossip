@@ -1,5 +1,6 @@
 """Kafka-specific constants and configuration."""
 
+import logging
 import re
 from enum import Enum
 from pathlib import Path
@@ -35,6 +36,8 @@ KIP_MENTION_COLUMNS = [
     "vote",
 ]
 METADATA_FILE = "kip_mentions_metadata.json"
+
+logger = logging.getLogger(__name__)
 
 
 class KIPMentionType(Enum):
@@ -138,23 +141,23 @@ def update_kip_mentions_cache(
 
     # Load existing kip_mentions.csv if it exists
     if output_file.exists():
-        print(f"Loading existing KIP mentions from {output_file}")
+        logger.info("Loading existing KIP mentions from %s", output_file)
         existing_mentions: DataFrame = load_mbox_cache_file(output_file)
     else:
-        print("No existing KIP mentions file found, starting fresh")
+        logger.info("No existing KIP mentions file found, starting fresh")
         existing_mentions = DataFrame(columns=KIP_MENTION_COLUMNS)
 
     # Process new mbox files directly (no intermediate cache)
-    print(f"Processing {len(new_mbox_files)} new mbox file(s)")
+    logger.info("Processing %s new mbox file(s)", len(new_mbox_files))
     new_mentions: DataFrame = DataFrame(columns=KIP_MENTION_COLUMNS)
 
     for mbox_file in new_mbox_files:
-        print(f"Processing {mbox_file.name}")
+        logger.info("Processing %s", mbox_file.name)
         try:
             file_data = process_mbox_archive(mbox_file)
             new_mentions = concat((new_mentions, file_data), ignore_index=True)
         except Exception as ex:
-            print(f"ERROR processing file {mbox_file.name}: {ex}")
+            logger.error("Processing file %s: %s", mbox_file.name, ex)
 
     # Combine and deduplicate
     combined: DataFrame = concat((existing_mentions, new_mentions), ignore_index=True)
@@ -162,8 +165,10 @@ def update_kip_mentions_cache(
 
     # Save updated cache
     combined.to_csv(output_file, index=False)
-    print(
-        f"Saved updated KIP mentions to {output_file} ({len(combined)} total mentions)"
+    logger.info(
+        "Saved updated KIP mentions to %s (%s total mentions)",
+        output_file,
+        len(combined),
     )
 
     return combined
