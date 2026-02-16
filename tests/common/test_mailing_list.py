@@ -5,6 +5,7 @@ import json
 import pytest
 
 from ipper.common.mailing_list import (
+    _email_headers_match,
     extract_message_payload,
     get_months_to_download,
     load_metadata,
@@ -685,6 +686,227 @@ class TestParseForVoteWithCommitters:
         )
         assert result == "+1"
 
+    def test_tally_pattern_summary_skipped(self, sample_committer_index, capsys):
+        """Test that tally count patterns like '3 binding +1' are skipped."""
+        payload = (
+            "The KIP-1142 has been accepted with 3 binding +1 from "
+            "Andrew Schofield, TengYao Chi, and Chia-Ping Tsai."
+        )
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result is None
+
+        captured = capsys.readouterr()
+        assert "tally count pattern" in captured.out
+
+    def test_tally_pattern_does_not_affect_real_votes(
+        self, sample_committer_index, capsys
+    ):
+        """Test that a plain '+1' from committer still returns '+1'."""
+        payload = "+1"
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result == "+1"
+
+        captured = capsys.readouterr()
+        assert "binding vote from committer" in captured.out
+
+    def test_committer_prose_zero_not_false_positive(self, sample_committer_index):
+        """Test that a committer message with '0' in prose does not produce a false zero vote.
+
+        Regression test for Jun Rao's KIP-1022 message where prose like
+        "maxVersion of 0" was incorrectly matched as a zero vote.
+        """
+        payload = (
+            "I took a pass at the KIP. A few comments:\n"
+            "1. Could we set the maxVersion of 0 for now until we figure out "
+            "the consensus protocol?\n"
+            "2. The config name seems a bit long."
+        )
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result is None, (
+            "Prose containing '0' should not produce a false zero vote"
+        )
+
+    def test_explicit_binding_zero_still_works(self):
+        """Test that an explicit '0 (binding)' vote is still detected.
+
+        Verifies no regression: the first pass (explicit binding marker) still
+        handles zero votes correctly even though the committer fallback ignores them.
+        """
+        payload = "0 (binding)"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "0"
+
+
+class TestParseForVoteThreadStarter:
+    """Tests for the is_thread_starter parameter of parse_for_vote."""
+
+    @pytest.fixture
+    def sample_committer_index(self):
+        """Create a sample committer index for testing."""
+        import datetime as dt
+
+        from ipper.common.keys import CommitterIndex, CommitterInfo
+
+        committers = [
+            CommitterInfo(
+                name="Alice Johnson",
+                emails=["alice@apache.org"],
+                raw_uid="Alice Johnson <alice@apache.org>",
+            ),
+        ]
+        return CommitterIndex(
+            committers=committers,
+            last_updated=dt.datetime.now(dt.UTC),
+            source_url="https://example.com/KEYS",
+        )
+
+    def test_thread_starter_committer_gets_auto_plus_one(
+        self, sample_committer_index, capsys
+    ):
+        """Test that a thread-starter committer's summary email returns +1."""
+        payload = (
+            "The KIP-1142 has been accepted with 3 binding +1 from "
+            "Andrew Schofield, TengYao Chi, and Chia-Ping Tsai."
+        )
+        result = parse_for_vote(
+            payload,
+            "Alice Johnson <alice@apache.org>",
+            sample_committer_index,
+            is_thread_starter=True,
+        )
+        assert result == "+1"
+
+        captured = capsys.readouterr()
+        assert "Thread-starter auto-vote" in captured.out
+
+    def test_thread_starter_summary_no_vote_pattern(
+        self, sample_committer_index, capsys
+    ):
+        """Test that thread starter with no vote patterns still gets +1."""
+        payload = "The vote passed, thanks for your votes everyone!"
+        result = parse_for_vote(
+            payload,
+            "Alice Johnson <alice@apache.org>",
+            sample_committer_index,
+            is_thread_starter=True,
+        )
+        assert result == "+1"
+
+        captured = capsys.readouterr()
+        assert "Thread-starter auto-vote" in captured.out
+
+    def test_thread_starter_explicit_binding_respected(self, sample_committer_index):
+        """Test that explicit +1 (binding) from thread starter returns +1 via first pass."""
+        payload = "+1 (binding)"
+        result = parse_for_vote(
+            payload,
+            "Alice Johnson <alice@apache.org>",
+            sample_committer_index,
+            is_thread_starter=True,
+        )
+        assert result == "+1"
+
+    def test_thread_starter_explicit_non_binding_respected(
+        self, sample_committer_index
+    ):
+        """Test that explicit (non-binding) from thread starter returns None."""
+        payload = "+1 (non-binding)"
+        result = parse_for_vote(
+            payload,
+            "Alice Johnson <alice@apache.org>",
+            sample_committer_index,
+            is_thread_starter=True,
+        )
+        assert result is None
+
+    def test_thread_starter_explicit_minus_one_respected(self, sample_committer_index):
+        """Test that explicit -1 (binding) from thread starter returns -1."""
+        payload = "-1 (binding)"
+        result = parse_for_vote(
+            payload,
+            "Alice Johnson <alice@apache.org>",
+            sample_committer_index,
+            is_thread_starter=True,
+        )
+        assert result == "-1"
+
+    def test_thread_starter_non_committer_no_effect(self):
+        """Test that is_thread_starter has no effect for non-committers."""
+        import datetime as dt
+
+        from ipper.common.keys import CommitterIndex, CommitterInfo
+
+        committers = [
+            CommitterInfo(
+                name="Other Person",
+                emails=["other@apache.org"],
+                raw_uid="Other Person <other@apache.org>",
+            ),
+        ]
+        ci = CommitterIndex(
+            committers=committers,
+            last_updated=dt.datetime.now(dt.UTC),
+            source_url="https://example.com/KEYS",
+        )
+        payload = "The vote passed, thanks everyone!"
+        result = parse_for_vote(
+            payload,
+            "Non Committer <noncommitter@example.com>",
+            ci,
+            is_thread_starter=True,
+        )
+        assert result is None
+
+    def test_thread_starter_false_normal_behavior(self, sample_committer_index):
+        """Test that is_thread_starter=False preserves existing behavior."""
+        payload = "+1"
+        result = parse_for_vote(
+            payload,
+            "Alice Johnson <alice@apache.org>",
+            sample_committer_index,
+            is_thread_starter=False,
+        )
+        assert result == "+1"
+
+
+class TestEmailHeadersMatch:
+    """Tests for the _email_headers_match helper function."""
+
+    def test_same_email_matches(self):
+        """Test that identical headers match."""
+        assert _email_headers_match(
+            "Alice <alice@apache.org>", "Alice <alice@apache.org>"
+        )
+
+    def test_different_names_same_email_matches(self):
+        """Test that different display names with same email match."""
+        assert _email_headers_match(
+            "Alice Johnson <alice@apache.org>", "A. Johnson <alice@apache.org>"
+        )
+
+    def test_case_insensitive_email(self):
+        """Test that email comparison is case-insensitive."""
+        assert _email_headers_match(
+            "Alice <Alice@Apache.Org>", "alice <alice@apache.org>"
+        )
+
+    def test_different_emails_do_not_match(self):
+        """Test that different email addresses do not match."""
+        assert not _email_headers_match(
+            "Alice <alice@apache.org>", "Bob <bob@apache.org>"
+        )
+
+    def test_empty_header_does_not_match(self):
+        """Test that empty headers do not match."""
+        assert not _email_headers_match("", "Alice <alice@apache.org>")
+        assert not _email_headers_match("Alice <alice@apache.org>", "")
+
 
 class TestExtractMessagePayload:
     """Tests for the extract_message_payload function."""
@@ -855,3 +1077,76 @@ Looking forward to seeing this merged."""
 +1 (binding)"""
         result = parse_for_vote(payload_with_vote, "Luke Chen <luke@example.com>")
         assert result == "+1", "Real +1 vote should still be detected"
+
+
+class TestUrlStripping:
+    """Tests that URLs are stripped before vote pattern matching."""
+
+    @pytest.fixture
+    def sample_committer_index(self):
+        """Create a sample committer index for testing."""
+        import datetime as dt
+
+        from ipper.common.keys import CommitterIndex, CommitterInfo
+
+        committers = [
+            CommitterInfo(
+                name="Alice Johnson",
+                emails=["alice@apache.org"],
+                raw_uid="Alice Johnson <alice@apache.org>",
+            ),
+        ]
+        return CommitterIndex(
+            committers=committers,
+            last_updated=dt.datetime.now(dt.UTC),
+            source_url="https://example.com/KEYS",
+        )
+
+    def test_url_with_hex_hash_no_false_zero(self, sample_committer_index):
+        """Test that a URL containing hex characters doesn't produce a false 0 vote.
+
+        Regression test: commit hash URLs like 'https://...1d22b0d7...' contain '0'
+        flanked by non-digits, which VOTE_PATTERN would match as a zero vote.
+        """
+        payload = (
+            "I've merged the fix in "
+            "https://github.com/apache/kafka/commit/1d22b0d7abc123"
+        )
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result is None, "URL hex hash should not produce a false 0 vote"
+
+    def test_url_with_hex_hash_and_real_vote(self, sample_committer_index):
+        """Test that a URL with hex hash doesn't interfere with a real vote."""
+        payload = (
+            "I've reviewed the fix at "
+            "https://github.com/apache/kafka/commit/1d22b0d7abc123\n\n"
+            "+1"
+        )
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result == "+1", "Real vote should still be detected alongside URL"
+
+    def test_url_with_zero_in_path_no_false_vote(self, sample_committer_index):
+        """Test that URLs with '0' in path segments don't produce false votes."""
+        payload = "See https://issues.apache.org/jira/browse/KAFKA-10234"
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result is None, "URL path containing 0 should not produce a vote"
+
+    def test_url_with_zero_no_false_vote_first_pass(self):
+        """Test URL stripping in first pass (explicit binding markers)."""
+        payload = "See https://github.com/apache/kafka/commit/a0b1c2d3\n0 (binding)"
+        result = parse_for_vote(payload, "voter@example.com")
+        assert result == "0", "Real 0 (binding) vote should still be detected"
+
+    def test_multiple_urls_stripped(self, sample_committer_index):
+        """Test that multiple URLs on the same line are all stripped."""
+        payload = "Compare https://example.com/a0b and https://example.com/c0d"
+        result = parse_for_vote(
+            payload, "Alice Johnson <alice@apache.org>", sample_committer_index
+        )
+        assert result is None, "Multiple URLs with 0s should not produce false votes"

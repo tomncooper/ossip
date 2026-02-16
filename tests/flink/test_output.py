@@ -1,7 +1,6 @@
 """Tests for ipper.flink.output.create_vote_dict cross-type deduplication."""
 
 import pandas as pd
-import pytest
 
 from ipper.flink.output import create_vote_dict
 
@@ -18,35 +17,80 @@ class TestCreateVoteDictCrossTypeDedup:
 
     def test_voter_changes_vote_keeps_latest_only(self):
         """Voter casts '0' at T1 then '+1' at T2 -- only '+1' should appear."""
-        mentions = _make_mentions([
-            {"flip": 1, "from": "Luke Chen", "vote": "0", "timestamp": "2025-01-01 10:00"},
-            {"flip": 1, "from": "Luke Chen", "vote": "+1", "timestamp": "2025-01-02 10:00"},
-        ])
+        mentions = _make_mentions(
+            [
+                {
+                    "flip": 1,
+                    "from": "Luke Chen",
+                    "vote": "0",
+                    "timestamp": "2025-01-01 10:00",
+                },
+                {
+                    "flip": 1,
+                    "from": "Luke Chen",
+                    "vote": "+1",
+                    "timestamp": "2025-01-02 10:00",
+                },
+            ]
+        )
         result = create_vote_dict(mentions)
 
-        assert result[1]["+1"] == [{"name": "Luke Chen", "timestamp": "Jan 02, 2025 10:00 UTC"}]
+        assert result[1]["+1"] == [
+            {"name": "Luke Chen", "timestamp": "Jan 02, 2025 10:00 UTC"}
+        ]
         assert result[1]["0"] == []
         assert result[1]["-1"] == []
 
     def test_voter_changes_vote_from_plus_to_minus(self):
         """Voter casts '+1' at T1 then '-1' at T2 -- only '-1' should appear."""
-        mentions = _make_mentions([
-            {"flip": 2, "from": "Alice", "vote": "+1", "timestamp": "2025-03-01 08:00"},
-            {"flip": 2, "from": "Alice", "vote": "-1", "timestamp": "2025-03-02 08:00"},
-        ])
+        mentions = _make_mentions(
+            [
+                {
+                    "flip": 2,
+                    "from": "Alice",
+                    "vote": "+1",
+                    "timestamp": "2025-03-01 08:00",
+                },
+                {
+                    "flip": 2,
+                    "from": "Alice",
+                    "vote": "-1",
+                    "timestamp": "2025-03-02 08:00",
+                },
+            ]
+        )
         result = create_vote_dict(mentions)
 
         assert result[2]["+1"] == []
-        assert result[2]["-1"] == [{"name": "Alice", "timestamp": "Mar 02, 2025 08:00 UTC"}]
+        assert result[2]["-1"] == [
+            {"name": "Alice", "timestamp": "Mar 02, 2025 08:00 UTC"}
+        ]
         assert result[2]["0"] == []
 
     def test_multiple_voters_different_votes(self):
         """Distinct voters with different vote types are all kept."""
-        mentions = _make_mentions([
-            {"flip": 3, "from": "Alice", "vote": "+1", "timestamp": "2025-01-01 10:00"},
-            {"flip": 3, "from": "Bob", "vote": "-1", "timestamp": "2025-01-01 11:00"},
-            {"flip": 3, "from": "Charlie", "vote": "0", "timestamp": "2025-01-01 12:00"},
-        ])
+        mentions = _make_mentions(
+            [
+                {
+                    "flip": 3,
+                    "from": "Alice",
+                    "vote": "+1",
+                    "timestamp": "2025-01-01 10:00",
+                },
+                {
+                    "flip": 3,
+                    "from": "Bob",
+                    "vote": "-1",
+                    "timestamp": "2025-01-01 11:00",
+                },
+                {
+                    "flip": 3,
+                    "from": "Charlie",
+                    "vote": "0",
+                    "timestamp": "2025-01-01 12:00",
+                },
+            ]
+        )
         result = create_vote_dict(mentions)
 
         assert len(result[3]["+1"]) == 1
@@ -58,10 +102,22 @@ class TestCreateVoteDictCrossTypeDedup:
 
     def test_duplicate_same_vote_type_keeps_latest(self):
         """Same voter, same vote type twice -- keeps the latest timestamp."""
-        mentions = _make_mentions([
-            {"flip": 4, "from": "Alice", "vote": "+1", "timestamp": "2025-01-01 10:00"},
-            {"flip": 4, "from": "Alice", "vote": "+1", "timestamp": "2025-01-05 10:00"},
-        ])
+        mentions = _make_mentions(
+            [
+                {
+                    "flip": 4,
+                    "from": "Alice",
+                    "vote": "+1",
+                    "timestamp": "2025-01-01 10:00",
+                },
+                {
+                    "flip": 4,
+                    "from": "Alice",
+                    "vote": "+1",
+                    "timestamp": "2025-01-05 10:00",
+                },
+            ]
+        )
         result = create_vote_dict(mentions)
 
         assert len(result[4]["+1"]) == 1
@@ -69,11 +125,28 @@ class TestCreateVoteDictCrossTypeDedup:
 
     def test_voters_sorted_by_timestamp_descending(self):
         """Multiple voters under the same vote type are sorted newest first."""
-        mentions = _make_mentions([
-            {"flip": 5, "from": "Alice", "vote": "+1", "timestamp": "2025-01-01 10:00"},
-            {"flip": 5, "from": "Bob", "vote": "+1", "timestamp": "2025-01-03 10:00"},
-            {"flip": 5, "from": "Charlie", "vote": "+1", "timestamp": "2025-01-02 10:00"},
-        ])
+        mentions = _make_mentions(
+            [
+                {
+                    "flip": 5,
+                    "from": "Alice",
+                    "vote": "+1",
+                    "timestamp": "2025-01-01 10:00",
+                },
+                {
+                    "flip": 5,
+                    "from": "Bob",
+                    "vote": "+1",
+                    "timestamp": "2025-01-03 10:00",
+                },
+                {
+                    "flip": 5,
+                    "from": "Charlie",
+                    "vote": "+1",
+                    "timestamp": "2025-01-02 10:00",
+                },
+            ]
+        )
         result = create_vote_dict(mentions)
 
         names = [v["name"] for v in result[5]["+1"]]

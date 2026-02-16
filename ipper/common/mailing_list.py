@@ -27,6 +27,11 @@ MAIL_DATE_FORMAT = "%a, %d %b %Y %H:%M:%S %z"
 MAIL_DATE_FORMAT_ZONE = "%a, %d %b %Y %H:%M:%S %z (%Z)"
 PARENTS_PATTERN = re.compile(r"\(([^)]+)\)")
 VOTE_PATTERN = re.compile(r"(?<!\d)(?<!\.)([\+\-]1|0)(?!\d)", re.IGNORECASE)
+URL_PATTERN = re.compile(r"https?://\S+")
+TALLY_PATTERN = re.compile(
+    r"\b([2-9]|\d{2,})\s+(?:binding\s+)?(?:[\+\-]1|0)(?!\d)",
+    re.IGNORECASE,
+)
 
 
 def get_monthly_mbox_file(
@@ -469,10 +474,30 @@ def _check_line_for_binding_marker(line: str, vote_position: int) -> str | None:
     return None
 
 
+def _email_headers_match(header_a: str, header_b: str) -> bool:
+    """Check if two email From headers refer to the same sender.
+
+    Extracts the email address from each header and compares case-insensitively.
+
+    Args:
+        header_a: First From header
+        header_b: Second From header
+
+    Returns:
+        True if both headers contain the same email address
+    """
+    _, email_a = parse_email_from_header(header_a)
+    _, email_b = parse_email_from_header(header_b)
+    if not email_a or not email_b:
+        return False
+    return email_a.lower() == email_b.lower()
+
+
 def parse_for_vote(
     payload: str,
     voter_from_header: str,
     committer_index: CommitterIndex | None = None,
+    is_thread_starter: bool = False,
 ) -> str | None:
     """Parses the supplied payload string line by line for voting patterns.
 
@@ -506,15 +531,18 @@ def parse_for_vote(
         if line.lstrip().startswith(">"):
             continue
 
+        # Strip URLs to avoid false vote matches from hex in URLs
+        line_no_urls = URL_PATTERN.sub("", line)
+
         # Check if line contains a vote
-        vote_match = VOTE_PATTERN.search(line)
+        vote_match = VOTE_PATTERN.search(line_no_urls)
         if not vote_match:
             continue
 
         vote = vote_match.group(1)
 
         # Extract any parenthetical text from the line
-        parenthetical_texts = _extract_parenthetical_text(line)
+        parenthetical_texts = _extract_parenthetical_text(line_no_urls)
 
         # Check for non-binding first (highest priority - prevents counting as binding)
         for text in parenthetical_texts:
@@ -529,7 +557,9 @@ def parse_for_vote(
 
         # If no parenthetical markers found, check for non-parenthetical markers
         # e.g., "+1 binding" or "+1 non-binding" without parentheses
-        binding_marker = _check_line_for_binding_marker(line, vote_match.start())
+        binding_marker = _check_line_for_binding_marker(
+            line_no_urls, vote_match.start()
+        )
 
         if binding_marker == "non-binding":
             # Explicitly non-binding, don't count it
@@ -547,6 +577,16 @@ def parse_for_vote(
         )
 
         if is_match:
+            # Thread-starter auto-vote: if this committer started the vote
+            # thread, they are the proposer and implicitly vote +1. Skip body
+            # scanning to avoid misreading summary/result emails as votes.
+            if is_thread_starter:
+                print(
+                    f"  Thread-starter auto-vote +1 from committer: {voter_name} "
+                    f"<{voter_email}>"
+                )
+                return "+1"
+
             # Pre-scan: collect all distinct vote types across non-quoted lines.
             # Summary/tally emails mention multiple vote types descriptively
             # (e.g., "no 0 and no -1 votes"), which would be misdetected as
@@ -555,7 +595,8 @@ def parse_for_vote(
             for line in payload.split("\n"):
                 if line.lstrip().startswith(">"):
                     continue
-                for m in VOTE_PATTERN.finditer(line):
+                line_no_urls = URL_PATTERN.sub("", line)
+                for m in VOTE_PATTERN.finditer(line_no_urls):
                     distinct_vote_types.add(_normalize_vote(m.group(1)))
             if len(distinct_vote_types) >= 2:
                 print(
@@ -565,21 +606,35 @@ def parse_for_vote(
                 )
                 return None
 
-            # Single pass: collect all vote candidates, prefer +1/-1 over 0
-            zero_vote: str | None = None
+            # Tally count detection: skip emails containing patterns like
+            # "3 binding +1" or "5 +1" which indicate a summary/tally rather
+            # than an actual vote. Only counts >= 2 trigger this.
+            for line in payload.split("\n"):
+                if line.lstrip().startswith(">"):
+                    continue
+                if TALLY_PATTERN.search(URL_PATTERN.sub("", line)):
+                    print(
+                        f"  Skipping tally/summary email from committer: {voter_name} "
+                        f"<{voter_email}> (found tally count pattern)"
+                    )
+                    return None
+
+            # Look for +1/-1 votes only. Zero votes are intentionally ignored
+            # in this committer fallback path because standalone '0' appears too
+            # frequently in prose (e.g., "maxVersion of 0", "0 concerns") to be
+            # reliably detected without an explicit binding marker. Real zero
+            # votes are extremely rare and will still be counted if they include
+            # an explicit marker like "0 (binding)" (handled by the first pass).
             for line in payload.split("\n"):
                 if line.lstrip().startswith(">"):
                     continue
 
-                vote_match = VOTE_PATTERN.search(line)
+                vote_match = VOTE_PATTERN.search(URL_PATTERN.sub("", line))
                 if not vote_match:
                     continue
 
                 vote = vote_match.group(1)
                 if vote == "0":
-                    # Remember the first 0 vote but keep looking for +1/-1
-                    if zero_vote is None:
-                        zero_vote = vote
                     continue
 
                 print(
@@ -587,14 +642,6 @@ def parse_for_vote(
                     f"<{voter_email}> (matched by {method}, confidence: {confidence:.1f}%)"
                 )
                 return _normalize_vote(vote)
-
-            # No +1/-1 found, fall back to 0 vote if one was seen
-            if zero_vote is not None:
-                print(
-                    f"  Detected binding vote from committer: {voter_name} "
-                    f"<{voter_email}> (matched by {method}, confidence: {confidence:.1f}%)"
-                )
-                return _normalize_vote(zero_vote)
 
     return None
 
@@ -648,6 +695,7 @@ def process_mbox_archive(
     mbox_month: int = int(year_month[-1])
 
     data: list[dict[str, str | int | dt.datetime | None]] = []
+    vote_thread_starters: dict[int, str] = {}
 
     for key, msg in mail_box.items():
         subject_match: re.Match | None = re.search(pattern, msg["subject"])
@@ -678,6 +726,8 @@ def process_mbox_archive(
 
             if vote_keyword in msg["subject"]:
                 is_vote = True
+                if subject_id not in vote_thread_starters:
+                    vote_thread_starters[subject_id] = from_header
 
             elif discuss_keyword in msg["subject"]:
                 data.append(
@@ -704,8 +754,12 @@ def process_mbox_archive(
 
         for payload in valid_payloads:
             if is_vote and subject_match:
+                starter_header = vote_thread_starters.get(subject_id, "")
+                is_starter = bool(
+                    starter_header and _email_headers_match(from_header, starter_header)
+                )
                 vote_str: str | None = parse_for_vote(
-                    payload, from_header, committer_index
+                    payload, from_header, committer_index, is_starter
                 )
                 data.append(
                     {
@@ -872,8 +926,7 @@ def create_vote_dict(
                 voters, key=lambda x: x["raw_timestamp"], reverse=True
             )
             proposal_dict[vote] = [
-                {"name": v["name"], "timestamp": v["timestamp"]}
-                for v in sorted_voters
+                {"name": v["name"], "timestamp": v["timestamp"]} for v in sorted_voters
             ]
 
         vote_dict[cast(int, proposal_id)] = proposal_dict
