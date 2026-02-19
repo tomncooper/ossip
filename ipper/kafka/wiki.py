@@ -25,6 +25,9 @@ KIP_TEMPLATE_DEFAULT_DISCUSSION_URL = (
     "%3CCAOeJiJh6Vkkca85bWYgkeOZ8rC6%2BKDh7zzq8vMKECL_7PNExTA%40mail.gmail.com%3E"
 )
 KIP_TEMPLATE_DEFAULT_JIRA_URL = "https://issues.apache.org/jira/browse/KAFKA-1"
+KIP_TEMPLATE_DEFAULT_STATE_PATTERN: re.Pattern = re.compile(
+    r'\[one of\s+"', re.IGNORECASE
+)
 ACCEPTED_TERMS: list[str] = [
     "accepted",
     "approved",
@@ -79,6 +82,9 @@ def get_kip_main_page_body(kip_main_info: dict[str, Any], timeout: int = 30) -> 
 
 def get_current_state(html: str) -> str | None:
     """Discerns the state of the kip from the supplied current state html paragraph"""
+
+    if KIP_TEMPLATE_DEFAULT_STATE_PATTERN.search(html):
+        return None
 
     if any(option in html.lower() for option in ACCEPTED_TERMS):
         return IPState.ACCEPTED
@@ -255,8 +261,12 @@ def get_kip_information(
             kip_id: int = int(kip_match.groupdict()["kip"])
             if kip_id not in output:
                 output[kip_id] = process_child_kip(kip_id, child)
-            # TODO: Add check of last modified versus the stored one
-            # to indicate an update is needed.
+            elif update:
+                cached_modified = output[kip_id].get("last_modified_on")
+                api_modified = child["history"]["lastUpdated"]["when"]
+                if cached_modified != api_modified:
+                    logger.info("KIP %s has been modified, refreshing", kip_id)
+                    output[kip_id] = process_child_kip(kip_id, child)
 
     with open(cache_file_path, "w", encoding="utf8") as cache_file:
         json.dump(output, cache_file)
