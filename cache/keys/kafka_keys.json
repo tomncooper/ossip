@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-02-15T10:00:06.043770+00:00",
+  "last_updated": "2026-02-23T01:16:57.115581+00:00",
   "source_url": "https://downloads.apache.org/kafka/KEYS",
   "committers": [
     {
@@ -29,6 +29,13 @@
         "cshapi@gmail.com"
       ],
       "raw_uid": "Chen (Gwen) Shapira <cshapi@gmail.com>"
+    },
+    {
+      "name": "Chia-Ping Tsai",
+      "emails": [
+        "chia7712@gmail.com"
+      ],
+      "raw_uid": "Chia-Ping Tsai (CODE SIGNING KEY) <chia7712@gmail.com>"
     },
     {
       "name": "Chris Egerton",

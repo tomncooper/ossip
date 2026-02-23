@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-02-15T10:00:06.049243+00:00",
+  "last_updated": "2026-02-23T01:16:58.381127+00:00",
   "source_url": "https://downloads.apache.org/flink/KEYS",
   "committers": [
     {
@@ -50,6 +50,13 @@
         "danderson@apache.org"
       ],
       "raw_uid": "David Anderson (CODE SIGNING KEY) <danderson@apache.org>"
+    },
+    {
+      "name": "David Radley",
+      "emails": [
+        "davidrad@apache.org"
+      ],
+      "raw_uid": "David Radley () <davidrad@apache.org>"
     },
     {
       "name": "Dawid Wysakowicz",
