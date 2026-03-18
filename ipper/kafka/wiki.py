@@ -176,7 +176,7 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
 
             discussion_processed = True
 
-        elif not vote_processed and "voting thread" in para.text.lower():
+        elif not vote_processed and "vote thread" in para.text.lower():
             link = para.find("a")
             href = link.get("href") if link else None
 
