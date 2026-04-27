@@ -85,7 +85,7 @@ const TableFilter = (function() {
         html += `
             <div class="filter-group">
                 <label for="search-input">Search:</label>
-                <input type="text" id="search-input" placeholder="Search descriptions..." />
+                <input type="text" id="search-input" placeholder="Search by ID or description..." />
             </div>
         `;
 
@@ -165,16 +165,6 @@ const TableFilter = (function() {
                 applyFilters();
             });
         }
-
-        window.addEventListener('pageshow', (e) => {
-            if (e.persisted) {
-                const searchInput = document.getElementById('search-input');
-                if (searchInput) {
-                    filterState['search'] = searchInput.value.toLowerCase().trim();
-                }
-                applyFilters();
-            }
-        });
 
         // Attach click listener to clear button
         const clearBtn = document.getElementById('clear-filters');
