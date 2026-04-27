@@ -29,6 +29,8 @@ const TableFilter = (function() {
             filterState[col.id] = 'all';
         });
 
+        filterState['search'] = '';
+
         // Build the filter UI
         buildFilterUI();
         
@@ -53,6 +55,17 @@ const TableFilter = (function() {
         }
 
         let html = '<div class="filter-controls">';
+
+        config.columns.forEach(col => {
+            html += `
+                <div class="filter-group">
+                    <label for="${col.id}-filter">${col.label}:</label>
+                    <select id="${col.id}-filter" class="filter-dropdown">
+                        <option value="all">All</option>
+                    </select>
+                </div>
+            `;
+        });
         
         // Create a dropdown for each configured column
         config.columns.forEach(col => {
@@ -67,6 +80,15 @@ const TableFilter = (function() {
         });
 
         // Add clear filters button and row counter
+
+        // Search Button
+        html += `
+            <div class="filter-group">
+                <label for="search-input">Search:</label>
+                <input type="text" id="search-input" placeholder="Search descriptions..." />
+            </div>
+        `;
+
         html += `
             <div class="filter-group">
                 <button id="clear-filters" class="clear-filters-btn">Clear Filters</button>
@@ -136,6 +158,24 @@ const TableFilter = (function() {
             }
         });
 
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                filterState['search'] = e.target.value.toLowerCase().trim();
+                applyFilters();
+            });
+        }
+
+        window.addEventListener('pageshow', (e) => {
+            if (e.persisted) {
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) {
+                    filterState['search'] = searchInput.value.toLowerCase().trim();
+                }
+                applyFilters();
+            }
+        });
+
         // Attach click listener to clear button
         const clearBtn = document.getElementById('clear-filters');
         if (clearBtn) {
@@ -163,7 +203,12 @@ const TableFilter = (function() {
                 return rowValue === filterValue;
             });
 
-            if (matches) {
+            const searchTerm = filterState['search'];
+            const searchableTerm = row.cells[0].textContent.toLowerCase() + row.cells[1].textContent.toLowerCase();
+            const matchesSearch = !searchTerm || searchableTerm.includes(searchTerm);
+
+
+            if (matches && matchesSearch) {
                 row.classList.remove('filtered-out');
                 visibleCount++;
             } else {
@@ -186,6 +231,10 @@ const TableFilter = (function() {
             }
             filterState[col.id] = 'all';
         });
+
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.value = '';
+        filterState['search'] = '';
 
         // Remove all filtered-out classes
         const table = document.querySelector(config.tableSelector);
