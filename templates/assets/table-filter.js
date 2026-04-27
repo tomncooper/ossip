@@ -68,16 +68,15 @@ const TableFilter = (function() {
             `;
         });
 
-        // Add clear filters button and row counter
-
         // Search Button
         html += `
-            <div class="filter-group">
-                <label for="search-input">Search:</label>
-                <input type="text" id="search-input" placeholder="Search by ID or description..." />
-            </div>
-        `;
+        <div class="filter-group">
+            <label for="search-input">Search:</label>
+            <input type="text" id="search-input" placeholder="Search by ID or description..." />
+        </div>`
+        ;
 
+        // Add clear filters button and row counter
         html += `
             <div class="filter-group">
                 <button id="clear-filters" class="clear-filters-btn">Clear Filters</button>
@@ -147,6 +146,7 @@ const TableFilter = (function() {
             }
         });
 
+        // Attach change listeners for the search box
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
@@ -182,6 +182,7 @@ const TableFilter = (function() {
                 return rowValue === filterValue;
             });
 
+            // Check if description or Id matchesthe searchTerm
             const searchTerm = filterState['search'];
             const searchableTerm = row.cells[0].textContent.toLowerCase() + row.cells[1].textContent.toLowerCase();
             const matchesSearch = !searchTerm || searchableTerm.includes(searchTerm);
@@ -211,6 +212,7 @@ const TableFilter = (function() {
             filterState[col.id] = 'all';
         });
 
+        // Reset search box to empty
         const searchInput = document.getElementById('search-input');
         if (searchInput) searchInput.value = '';
         filterState['search'] = '';
