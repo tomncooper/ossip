@@ -55,17 +55,6 @@ const TableFilter = (function() {
         }
 
         let html = '<div class="filter-controls">';
-
-        config.columns.forEach(col => {
-            html += `
-                <div class="filter-group">
-                    <label for="${col.id}-filter">${col.label}:</label>
-                    <select id="${col.id}-filter" class="filter-dropdown">
-                        <option value="all">All</option>
-                    </select>
-                </div>
-            `;
-        });
         
         // Create a dropdown for each configured column
         config.columns.forEach(col => {
