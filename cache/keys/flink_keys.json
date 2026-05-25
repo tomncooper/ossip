@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-05-18T02:29:22.417493+00:00",
+  "last_updated": "2026-05-25T02:34:44.504679+00:00",
   "source_url": "https://downloads.apache.org/flink/KEYS",
   "committers": [
     {
@@ -459,6 +459,13 @@
         "kunni@apache.org"
       ],
       "raw_uid": "kunni <kunni@apache.org>"
+    },
+    {
+      "name": "panyuepeng",
+      "emails": [
+        "panyuepeng@apache.org"
+      ],
+      "raw_uid": "panyuepeng <panyuepeng@apache.org>"
     }
   ]
 }
