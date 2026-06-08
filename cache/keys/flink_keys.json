@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-01T02:44:40.819797+00:00",
+  "last_updated": "2026-06-08T02:42:44.364283+00:00",
   "source_url": "https://downloads.apache.org/flink/KEYS",
   "committers": [
     {
@@ -417,6 +417,13 @@
         "tangyun@apache.org"
       ],
       "raw_uid": "Yun Tang <tangyun@apache.org>"
+    },
+    {
+      "name": "Yunfeng Zhou",
+      "emails": [
+        "yunfengzhou@apache.org"
+      ],
+      "raw_uid": "Yunfeng Zhou (Apache Release) <yunfengzhou@apache.org>"
     },
     {
       "name": "Zakelly Lan",
