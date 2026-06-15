@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-08T02:42:44.364283+00:00",
+  "last_updated": "2026-06-15T02:47:56.808097+00:00",
   "source_url": "https://downloads.apache.org/flink/KEYS",
   "committers": [
     {
@@ -361,6 +361,13 @@
         "guoweijie@apache.org"
       ],
       "raw_uid": "Weijie Guo (CODE SIGNING KEY) <guoweijie@apache.org>"
+    },
+    {
+      "name": "Wenjin Xie",
+      "emails": [
+        "wenjin@apache.org"
+      ],
+      "raw_uid": "Wenjin Xie (CODE SIGNING KEY) <wenjin@apache.org>"
     },
     {
       "name": "Xiaoling He",
