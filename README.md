@@ -9,6 +9,40 @@ Currently supported projects are:
 - [Apache Kafka](https://kafka.apache.org/) project's [Kafka Improvement Proposals (KIPs)](https://cwiki.apache.org/confluence/display/kafka/kafka+improvement+proposals)
 - [Apache Flink](https://flink.apache.org/) project's [Flink Improvement Proposals (FLIPs)](https://cwiki.apache.org/confluence/display/FLINK/Flink+Improvement+Proposals)
 
+## JSON API and OSSIP Skill
+
+The OSSIP project provides a JSON API for programmatic access to KIP and FLIP data. The API is:
+- **Refreshed daily** from wiki and mailing list archives (approximately 09:30 UTC)
+- **CORS-enabled** for direct browser access
+- **Versioned** under `/api/v1/` for stable integration
+
+### API Endpoints
+
+- `https://ossip.dev/api/v1/index.json` — API entry point
+- `https://ossip.dev/api/v1/kafka/kips.json` — All Kafka KIPs (summary)
+- `https://ossip.dev/api/v1/kafka/kips/{id}.json` — Individual KIP detail
+- `https://ossip.dev/api/v1/flink/flips.json` — All Flink FLIPs (summary)
+- `https://ossip.dev/api/v1/flink/flips/{id}.json` — Individual FLIP detail
+- `https://ossip.dev/api/v1/schemas/` — JSON Schema definitions
+
+### OSSIP Skill for AI Agents
+
+The OSSIP skill enables AI agents (Claude Code, Claude Desktop, etc.) to query the JSON API directly. Install it by downloading `https://ossip.dev/skill/ossip/SKILL.md` to your agent's skills directory:
+
+**Claude Code (project-scoped):**
+```bash
+mkdir -p .claude/skills/ossip
+curl -o .claude/skills/ossip/SKILL.md https://ossip.dev/skill/ossip/SKILL.md
+```
+
+**Claude Code (personal/global):**
+```bash
+mkdir -p ~/.claude/skills/ossip
+curl -o ~/.claude/skills/ossip/SKILL.md https://ossip.dev/skill/ossip/SKILL.md
+```
+
+For full documentation, see [ossip.dev/api.html](https://ossip.dev/api.html).
+
 ## Development
 
 ### Installation

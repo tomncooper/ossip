@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSSIP JSON API - Documentation</title>
+    <link rel="stylesheet" href="style.css">
+    <script>(function(){var t=localStorage.getItem('ossip-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+    <style>
+        body.api-page {
+            padding: 40px 20px;
+        }
+        .api-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .section {
+            margin: 40px 0;
+        }
+        .endpoint-table {
+            width: 100%;
+            margin: 20px 0;
+        }
+        .endpoint-table th {
+            text-align: left;
+        }
+        .code-block {
+            background: var(--sol-bg-highlight);
+            border: 1px solid var(--sol-secondary);
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+        .field-list {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .field-list li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        .install-step {
+            margin: 15px 0;
+            padding: 15px;
+            background: var(--sol-bg-highlight);
+            border-left: 4px solid var(--sol-blue);
+            border-radius: 5px;
+        }
+        .install-step h4 {
+            margin: 0 0 10px 0;
+            color: var(--sol-blue);
+        }
+    </style>
+</head>
+
+<body class="api-page">
+    <div class="api-container">
+        <h1>OSSIP JSON API</h1>
+        <p class="subtitle">Programmatic access to Apache Kafka and Flink improvement proposals</p>
+
+        <div class="nav-bar">
+            <div class="nav-item"><a href="index.html">Home</a></div>
+            <div class="nav-item"><a href="kafka.html">Kafka KIPs</a></div>
+            <div class="nav-item"><a href="flink.html">Flink FLIPs</a></div>
+            <div class="nav-item"><a href="api.html">API Docs</a></div>
+        </div>
+
+        <!-- JSON API Overview -->
+        <div class="section">
+            <h2>Overview</h2>
+            <p>
+                The OSSIP JSON API provides structured, machine-readable access to Apache Kafka Improvement Proposals (KIPs)
+                and Flink Improvement Proposals (FLIPs). All endpoints are:
+            </p>
+            <ul>
+                <li><strong>Refreshed daily</strong> from wiki and mailing list data (approximately 09:30 UTC)</li>
+                <li><strong>CORS-enabled</strong> for direct browser access</li>
+                <li><strong>Versioned</strong> under <code>/api/v1/</code> for stable integration</li>
+                <li><strong>Hosted on GitHub Pages</strong> at <code>https://ossip.dev/</code></li>
+            </ul>
+            <p>
+                Use the JSON API for status dashboards, automated monitoring, cross-proposal analysis, and integration
+                with AI agents via the OSSIP skill.
+            </p>
+        </div>
+
+        <!-- Endpoints -->
+        <div class="section">
+            <h2>Endpoints</h2>
+            <p>All endpoints return JSON. Base URL: <code>https://ossip.dev/api/v1/</code></p>
+
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>index.json</code></td>
+                        <td>API entry point listing available projects, proposal counts, and last updated timestamp</td>
+                    </tr>
+                    <tr>
+                        <td><code>kafka/kips.json</code></td>
+                        <td>Kafka KIP summary list (~1,284 proposals with compact metadata, ~230KB)</td>
+                    </tr>
+                    <tr>
+                        <td><code>kafka/kips/{id}.json</code></td>
+                        <td>Individual KIP detail with full vote history (voter names and timestamps)</td>
+                    </tr>
+                    <tr>
+                        <td><code>flink/flips.json</code></td>
+                        <td>Flink FLIP summary list (~570 proposals with compact metadata, ~100KB)</td>
+                    </tr>
+                    <tr>
+                        <td><code>flink/flips/{id}.json</code></td>
+                        <td>Individual FLIP detail with full vote history and Flink-specific metadata (release version, JIRA links)</td>
+                    </tr>
+                    <tr>
+                        <td><code>schemas/</code></td>
+                        <td>JSON Schema files for all response types (ApiIndex.schema.json, KipSummary.schema.json, etc.)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>Example:</strong> Fetch all Kafka KIPs</p>
+            <div class="code-block">GET https://ossip.dev/api/v1/kafka/kips.json</div>
+
+            <p><strong>Example:</strong> Fetch KIP-123 detail</p>
+            <div class="code-block">GET https://ossip.dev/api/v1/kafka/kips/123.json</div>
+        </div>
+
+        <!-- Field Reference -->
+        <div class="section">
+            <h2>Field Reference</h2>
+
+            <h3>State Values</h3>
+            <p>The <code>state</code> field represents the current status of a proposal:</p>
+            <ul class="field-list">
+                <li><code>"accepted"</code> — Proposal has been approved but not yet implemented</li>
+                <li><code>"under discussion"</code> — Proposal is being discussed by the community</li>
+                <li><code>"not accepted"</code> — Proposal was rejected</li>
+                <li><code>"completed"</code> — Proposal has been implemented and released</li>
+                <li><code>"in progress"</code> — Proposal is being implemented</li>
+                <li><code>"unknown"</code> — State could not be determined</li>
+            </ul>
+
+            <h3>Activity Status Colors (KIPs only)</h3>
+            <p>The <code>activity_status</code> field indicates discussion recency for proposals in "under discussion" state:</p>
+            <ul class="field-list">
+                <li><code>"blue"</code> — New proposal, created in the last 4 weeks</li>
+                <li><code>"green"</code> — Active discussion, mentioned in the last 4 weeks</li>
+                <li><code>"yellow"</code> — Slow discussion, mentioned in the last 12 weeks</li>
+                <li><code>"red"</code> — Stale discussion, mentioned in the last year</li>
+                <li><code>"black"</code> — No discussion, never mentioned or last mentioned over a year ago</li>
+                <li><code>null</code> — Not applicable (proposal is not in "under discussion" state)</li>
+            </ul>
+            <p><em>Note: Activity status is currently only available for Kafka KIPs.</em></p>
+
+            <h3>Date Formats</h3>
+            <ul class="field-list">
+                <li><strong>Calendar dates</strong> (<code>created_on</code>): <code>YYYY-MM-DD</code> format</li>
+                <li><strong>Timestamps</strong> (<code>last_modified_on</code>, vote timestamps): ISO 8601 with seconds and UTC timezone (<code>YYYY-MM-DDTHH:MM:SSZ</code>)</li>
+            </ul>
+
+            <h3>Null Values</h3>
+            <p>Fields with unavailable or non-applicable data are set to <code>null</code>. Never empty strings or sentinel values like "unknown" or "not set".</p>
+        </div>
+
+        <!-- Using the OSSIP Skill -->
+        <div class="section">
+            <h2>Using the OSSIP Skill</h2>
+            <p>
+                The OSSIP skill is a pre-built <a href="https://agentskills.io">Agent Skill</a> that allows AI agents to
+                query the JSON API programmatically. It's optimized for:
+            </p>
+            <ul>
+                <li>Status lookups ("Is KIP-123 approved?")</li>
+                <li>Activity queries ("Which proposals are stale?")</li>
+                <li>Vote analysis ("Who voted against this proposal?")</li>
+                <li>Cross-referencing ("Find KIPs related to consumer groups")</li>
+                <li>Author-based queries ("Show all proposals by a specific author")</li>
+            </ul>
+            <p>
+                The skill works with any agent supporting the Agent Skills standard, including:
+            </p>
+            <ul>
+                <li><strong>Claude Code</strong> (Anthropic's official CLI)</li>
+                <li><strong>Claude Desktop</strong> (when Agent Skills support is available)</li>
+                <li><strong>Custom agents</strong> built with the Agent Skills framework</li>
+            </ul>
+        </div>
+
+        <!-- Installation -->
+        <div class="section">
+            <h2>Installation</h2>
+            <p>
+                Download the skill file from <code>https://ossip.dev/skill/ossip/SKILL.md</code> and place it in your
+                agent's skills directory. The installation location depends on whether you want project-scoped or
+                personal (global) access.
+            </p>
+
+            <div class="install-step">
+                <h4>Claude Code (Project-Scoped)</h4>
+                <p>Install the skill for a specific project:</p>
+                <div class="code-block">mkdir -p .claude/skills/ossip
+curl -o .claude/skills/ossip/SKILL.md https://ossip.dev/skill/ossip/SKILL.md</div>
+                <p>The skill will be available only when working in that project directory.</p>
+            </div>
+
+            <div class="install-step">
+                <h4>Claude Code (Personal)</h4>
+                <p>Install the skill globally for all projects:</p>
+                <div class="code-block">mkdir -p ~/.claude/skills/ossip
+curl -o ~/.claude/skills/ossip/SKILL.md https://ossip.dev/skill/ossip/SKILL.md</div>
+                <p>The skill will be available in all Claude Code sessions.</p>
+            </div>
+
+            <div class="install-step">
+                <h4>Other Agents</h4>
+                <p>
+                    For Claude Desktop or custom agents, consult your agent's documentation for where to place skill files.
+                    Most agents following the <a href="https://agentskills.io">Agent Skills</a> standard use a similar
+                    directory structure (<code>~/.config/&lt;agent-name&gt;/skills/ossip/SKILL.md</code>).
+                </p>
+            </div>
+        </div>
+
+        <!-- Schemas -->
+        <div class="section">
+            <h2>Schemas</h2>
+            <p>
+                JSON Schema definitions are available for all response types at
+                <a href="api/v1/schemas/">https://ossip.dev/api/v1/schemas/</a>. Use these to validate responses
+                or generate client code.
+            </p>
+            <p>Available schemas:</p>
+            <ul>
+                <li><code>ApiIndex.schema.json</code> — API entry point structure</li>
+                <li><code>KipSummary.schema.json</code> — Kafka KIP summary list</li>
+                <li><code>KipDetail.schema.json</code> — Individual Kafka KIP detail</li>
+                <li><code>FlipSummary.schema.json</code> — Flink FLIP summary list</li>
+                <li><code>FlipDetail.schema.json</code> — Individual Flink FLIP detail</li>
+            </ul>
+        </div>
+
+        <!-- Trademark footer (sync with templates/_footer.html for Jinja2 templates) -->
+        <div class="trademark-footer">
+            <p>Apache Kafka&reg;, Apache Flink&reg;, Kafka&reg;, Flink&reg;, Apache&reg;, the Apache feather logo, and the Apache Kafka and Apache Flink project logos are either registered trademarks or trademarks of The Apache Software Foundation in the United States and/or other countries. No endorsement by The Apache Software Foundation is implied by the use of these marks.</p>
+            <p>This site is not affiliated with, endorsed by, or part of The Apache Software Foundation. It is an independent community resource created by <a href="https://tomcooper.dev">Tom Cooper</a>.</p>
+            <p>Official project pages: <a href="https://kafka.apache.org">kafka.apache.org</a> | <a href="https://flink.apache.org">flink.apache.org</a></p>
+            <p>GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></p>
+        </div>
+    </div>
+    <script src="assets/theme-toggle.js"></script>
+</body>
+
+</html>
