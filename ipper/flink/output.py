@@ -1,11 +1,30 @@
 import datetime as dt
+import logging
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, Template
 from pandas import DataFrame
 
-from ipper.common.constants import DATE_FORMAT, DEFAULT_TEMPLATES_DIR
+from ipper.common.constants import DATE_FORMAT, DEFAULT_TEMPLATES_DIR, NOT_SET_STR
 from ipper.common.mailing_list import create_vote_dict as _create_vote_dict
+from ipper.common.models import (
+    FlipDetail,
+    ProposalSummary,
+    ProjectSummary,
+    VoteCount,
+    VoterInfo,
+    VoteSummary,
+)
+from ipper.common.api_output import (
+    confluence_date_to_iso_date,
+    confluence_date_to_iso_datetime,
+    vote_timestamp_to_iso,
+    sentinel_to_none,
+    write_proposal_details,
+    write_project_summary,
+)
+
+logger = logging.getLogger(__name__)
 
 FLINK_MAIN_PAGE_TEMPLATE = "flink-index.html.jinja"
 FLIP_RAW_INFO_PAGE_TEMPLATE = "flip-more-info.html.jinja"
@@ -146,3 +165,129 @@ def render_raw_info_pages(
 
         with open(output_filepath, "w", encoding="utf8") as out_file:
             out_file.write(output)
+
+
+def flip_to_detail(flip_data: dict) -> FlipDetail:
+    """Convert enriched FLIP data to FlipDetail model.
+
+    Args:
+        flip_data: Enriched FLIP dict (already contains votes from enrich_flip_wiki_info_with_votes)
+
+    Returns:
+        FlipDetail model instance
+    """
+    # Convert vote lists
+    plus_one_votes = [
+        VoterInfo(name=v["name"], timestamp=vote_timestamp_to_iso(v["timestamp"]))
+        for v in flip_data["+1"]
+    ]
+    zero_votes = [
+        VoterInfo(name=v["name"], timestamp=vote_timestamp_to_iso(v["timestamp"]))
+        for v in flip_data["0"]
+    ]
+    minus_one_votes = [
+        VoterInfo(name=v["name"], timestamp=vote_timestamp_to_iso(v["timestamp"]))
+        for v in flip_data["-1"]
+    ]
+
+    votes = VoteSummary(
+        plus_one=plus_one_votes,
+        zero=zero_votes,
+        minus_one=minus_one_votes,
+    )
+
+    return FlipDetail(
+        id=int(flip_data["id"]),
+        title=flip_data["title"],
+        state=flip_data["state"],
+        created_by=flip_data["created_by"],
+        created_on=confluence_date_to_iso_date(flip_data["created_on"]),
+        last_modified_on=confluence_date_to_iso_datetime(flip_data["last_modified_on"]),
+        last_modified_by=flip_data["last_modified_by"],
+        discussion_thread=sentinel_to_none(flip_data.get("discussion_thread", NOT_SET_STR)),
+        vote_thread=sentinel_to_none(flip_data.get("vote_thread", NOT_SET_STR)),
+        jira=sentinel_to_none(flip_data.get("jira_link", NOT_SET_STR)),
+        web_url=flip_data["web_url"],
+        activity_status=None,
+        votes=votes,
+        release_version=sentinel_to_none(flip_data.get("release_version", NOT_SET_STR)),
+        release_component=sentinel_to_none(flip_data.get("release_component", NOT_SET_STR)),
+        jira_id=sentinel_to_none(flip_data.get("jira_id", NOT_SET_STR)),
+        jira_link=sentinel_to_none(flip_data.get("jira_link", NOT_SET_STR)),
+    )
+
+
+def flip_to_summary(flip_data: dict) -> ProposalSummary:
+    """Convert enriched FLIP data to ProposalSummary model.
+
+    Args:
+        flip_data: Enriched FLIP dict (already contains votes from enrich_flip_wiki_info_with_votes)
+
+    Returns:
+        ProposalSummary model instance
+    """
+    # Count votes
+    vote_count = VoteCount(
+        plus_one=len(flip_data["+1"]),
+        zero=len(flip_data["0"]),
+        minus_one=len(flip_data["-1"]),
+    )
+
+    flip_id = int(flip_data["id"])
+
+    return ProposalSummary(
+        id=flip_id,
+        title=flip_data["title"],
+        state=flip_data["state"],
+        created_by=flip_data["created_by"],
+        created_on=confluence_date_to_iso_date(flip_data["created_on"]),
+        vote_count=vote_count,
+        activity_status=None,
+        detail_url=f"flips/{flip_id}.json",
+        web_url=flip_data["web_url"],
+    )
+
+
+def generate_flink_json_api(enriched_wiki_cache: dict, api_dir: Path) -> None:
+    """Generate JSON API files for Flink FLIPs.
+
+    Creates:
+    - flips.json: Summary file with all FLIPs
+    - flips/{id}.json: Individual detail files for each FLIP
+
+    Args:
+        enriched_wiki_cache: Dict mapping FLIP ID strings to enriched FLIP dicts
+        api_dir: Base directory for API output
+    """
+    details = []
+    summaries = []
+
+    # Sort FLIP IDs numerically in descending order
+    # Cache keys are strings, so we need to convert to int for sorting
+    sorted_flip_ids = sorted([int(key) for key in enriched_wiki_cache.keys()], reverse=True)
+
+    # Process each FLIP
+    for flip_id in sorted_flip_ids:
+        flip_id_str = str(flip_id)
+        flip_data = enriched_wiki_cache[flip_id_str]
+
+        # Build detail and summary
+        detail = flip_to_detail(flip_data)
+        summary = flip_to_summary(flip_data)
+
+        details.append(detail)
+        summaries.append(summary)
+
+    # Write individual detail files
+    write_proposal_details(details, api_dir / "flips")
+
+    # Build and write project summary
+    project_summary = ProjectSummary(
+        project="flink",
+        proposal_type="FLIP",
+        last_updated=dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        count=len(summaries),
+        proposals=summaries,
+    )
+
+    write_project_summary(project_summary, api_dir / "flips.json")
