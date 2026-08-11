@@ -150,7 +150,7 @@ All responses are JSON objects or arrays conforming to the schemas at `ossip.dev
     "minus_one": 0
   },
   "activity_status": "blue",
-  "detail_url": "https://ossip.dev/api/v1/kafka/kips/123.json",
+  "detail_url": "kips/123.json",
   "web_url": "https://cwiki.apache.org/..."
 }
 ```

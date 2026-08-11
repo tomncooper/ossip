@@ -8,23 +8,27 @@ from typing import cast
 from jinja2 import Environment, FileSystemLoader, Template
 from pandas import DataFrame, Series, Timedelta, Timestamp, to_datetime
 
-from ipper.common.constants import DATE_FORMAT, DEFAULT_TEMPLATES_DIR, IPState, NOT_SET_STR, UNKNOWN_STR
-from ipper.common.mailing_list import create_vote_dict as _create_vote_dict
-from ipper.common.models import (
-    KipDetail,
-    ProposalSummary,
-    ProjectSummary,
-    VoteCount,
-    VoterInfo,
-    VoteSummary,
-)
 from ipper.common.api_output import (
     confluence_date_to_iso_date,
     confluence_date_to_iso_datetime,
-    vote_timestamp_to_iso,
     sentinel_to_none,
-    write_proposal_details,
+    vote_timestamp_to_iso,
     write_project_summary,
+    write_proposal_details,
+)
+from ipper.common.constants import (
+    DATE_FORMAT,
+    DEFAULT_TEMPLATES_DIR,
+    IPState,
+)
+from ipper.common.mailing_list import create_vote_dict as _create_vote_dict
+from ipper.common.models import (
+    KipDetail,
+    ProjectSummary,
+    ProposalSummary,
+    VoteCount,
+    VoterInfo,
+    VoteSummary,
 )
 from ipper.common.utils import calculate_age
 from ipper.common.wiki import APACHE_CONFLUENCE_DATE_FORMAT
@@ -295,7 +299,9 @@ def kip_to_detail(wiki_entry: dict, status_entry: dict) -> KipDetail:
         state=wiki_entry["state"],
         created_by=wiki_entry["created_by"],
         created_on=confluence_date_to_iso_date(wiki_entry["created_on"]),
-        last_modified_on=confluence_date_to_iso_datetime(wiki_entry["last_modified_on"]),
+        last_modified_on=confluence_date_to_iso_datetime(
+            wiki_entry["last_modified_on"]
+        ),
         last_modified_by=wiki_entry["last_modified_by"],
         discussion_thread=sentinel_to_none(wiki_entry["discussion_thread"]),
         vote_thread=sentinel_to_none(wiki_entry["vote_thread"]),
@@ -340,7 +346,9 @@ def kip_to_summary(status_entry: dict, wiki_entry: dict) -> ProposalSummary:
     )
 
 
-def generate_kafka_json_api(kip_status: list, kip_wiki_info: dict, api_dir: Path) -> None:
+def generate_kafka_json_api(
+    kip_status: list, kip_wiki_info: dict, api_dir: Path
+) -> None:
     """Generate JSON API files for Kafka KIPs.
 
     Creates:
@@ -361,7 +369,7 @@ def generate_kafka_json_api(kip_status: list, kip_wiki_info: dict, api_dir: Path
 
         # Skip KIPs not in wiki_info
         if kip_id not in kip_wiki_info:
-            logger.warning(f"Skipping KIP-{kip_id}: not found in wiki info")
+            logger.warning("Skipping KIP-%s: not found in wiki info", kip_id)
             continue
 
         wiki_entry = kip_wiki_info[kip_id]

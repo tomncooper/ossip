@@ -1,11 +1,11 @@
 """Tests for Kafka JSON API conversion functions."""
 
-import datetime as dt
-from pathlib import Path
-
-import pytest
-
-from ipper.kafka.output import KIPStatus, kip_to_detail, kip_to_summary, generate_kafka_json_api
+from ipper.kafka.output import (
+    KIPStatus,
+    generate_kafka_json_api,
+    kip_to_detail,
+    kip_to_summary,
+)
 
 
 def _make_kip_wiki_info_entry(kip_id=100):
@@ -64,7 +64,9 @@ class TestKipToDetail:
         assert result.discussion_thread == "https://lists.apache.org/thread/abc123"
         assert result.vote_thread is None
         assert result.jira == "https://issues.apache.org/jira/browse/KAFKA-12345"
-        assert result.web_url == f"https://wiki.apache.org/confluence/display/KAFKA/KIP-100"
+        assert (
+            result.web_url == "https://wiki.apache.org/confluence/display/KAFKA/KIP-100"
+        )
         assert result.activity_status == "green"
 
     def test_sentinel_fields_to_none(self):
@@ -89,9 +91,7 @@ class TestKipToDetail:
             {"name": "Charlie", "timestamp": "Feb 10, 2025 09:00 UTC"},
             {"name": "David", "timestamp": "Jan 05, 2025 14:30 UTC"},
         ]
-        status_entry["-1"] = [
-            {"name": "Eve", "timestamp": "Feb 09, 2025 11:00 UTC"}
-        ]
+        status_entry["-1"] = [{"name": "Eve", "timestamp": "Feb 09, 2025 11:00 UTC"}]
 
         result = kip_to_detail(wiki_entry, status_entry)
 
@@ -158,7 +158,9 @@ class TestKipToSummary:
         assert result.created_by == "Alice"
         assert result.created_on == "2025-01-15"
         assert result.detail_url == "kips/100.json"
-        assert result.web_url == f"https://wiki.apache.org/confluence/display/KAFKA/KIP-100"
+        assert (
+            result.web_url == "https://wiki.apache.org/confluence/display/KAFKA/KIP-100"
+        )
 
     def test_title_uses_full_wiki_title(self):
         """Test that title uses full wiki title, not cleaned status text."""
@@ -189,9 +191,7 @@ class TestKipToSummary:
             {"name": "Alice", "timestamp": "Feb 10, 2025 09:00 UTC"},
             {"name": "Bob", "timestamp": "Feb 11, 2025 10:00 UTC"},
         ]
-        status_entry["0"] = [
-            {"name": "Charlie", "timestamp": "Feb 12, 2025 11:00 UTC"}
-        ]
+        status_entry["0"] = [{"name": "Charlie", "timestamp": "Feb 12, 2025 11:00 UTC"}]
         status_entry["-1"] = []
 
         result = kip_to_summary(status_entry, wiki_entry)

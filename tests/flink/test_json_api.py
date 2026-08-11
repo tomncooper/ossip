@@ -1,10 +1,5 @@
 """Tests for Flink JSON API conversion functions."""
 
-import datetime as dt
-from pathlib import Path
-
-import pytest
-
 from ipper.flink.output import flip_to_detail, flip_to_summary, generate_flink_json_api
 
 
@@ -54,7 +49,10 @@ class TestFlipToDetail:
         assert result.discussion_thread == "https://lists.apache.org/thread/xyz789"
         assert result.vote_thread is None
         assert result.jira == "https://issues.apache.org/jira/browse/FLINK-54321"
-        assert result.web_url == f"https://cwiki.apache.org/confluence/display/FLINK/FLIP-42"
+        assert (
+            result.web_url
+            == "https://cwiki.apache.org/confluence/display/FLINK/FLIP-42"
+        )
         assert result.activity_status is None
 
     def test_sentinel_values_to_none(self):
@@ -84,9 +82,7 @@ class TestFlipToDetail:
             {"name": "Charlie", "timestamp": "Mar 10, 2025 09:00 UTC"},
             {"name": "David", "timestamp": "Jan 05, 2025 14:30 UTC"},
         ]
-        flip_data["-1"] = [
-            {"name": "Eve", "timestamp": "Feb 09, 2025 11:00 UTC"}
-        ]
+        flip_data["-1"] = [{"name": "Eve", "timestamp": "Feb 09, 2025 11:00 UTC"}]
 
         result = flip_to_detail(flip_data)
 
@@ -162,7 +158,10 @@ class TestFlipToSummary:
         assert result.created_by == "Alice"
         assert result.created_on == "2025-03-01"
         assert result.detail_url == "flips/42.json"
-        assert result.web_url == f"https://cwiki.apache.org/confluence/display/FLINK/FLIP-42"
+        assert (
+            result.web_url
+            == "https://cwiki.apache.org/confluence/display/FLINK/FLIP-42"
+        )
 
     def test_created_on_is_iso_date(self):
         """Test that created_on is converted to ISO date format."""
@@ -180,9 +179,7 @@ class TestFlipToSummary:
             {"name": "Alice", "timestamp": "Mar 10, 2025 09:00 UTC"},
             {"name": "Bob", "timestamp": "Mar 11, 2025 10:00 UTC"},
         ]
-        flip_data["0"] = [
-            {"name": "Charlie", "timestamp": "Mar 12, 2025 11:00 UTC"}
-        ]
+        flip_data["0"] = [{"name": "Charlie", "timestamp": "Mar 12, 2025 11:00 UTC"}]
         flip_data["-1"] = []
 
         result = flip_to_summary(flip_data)

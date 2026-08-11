@@ -2,12 +2,8 @@
 
 import datetime as dt
 import json
-from pathlib import Path
-
-import pytest
 
 from ipper.common.api_output import (
-    VOTE_TIMESTAMP_FORMAT,
     confluence_date_to_iso_date,
     confluence_date_to_iso_datetime,
     generate_api_index,
@@ -20,14 +16,11 @@ from ipper.common.api_output import (
 )
 from ipper.common.constants import NOT_SET_STR, UNKNOWN_STR
 from ipper.common.models import (
-    ApiIndex,
-    FlipDetail,
     KipDetail,
     ProjectMeta,
     ProjectSummary,
     ProposalSummary,
     VoteCount,
-    VoterInfo,
     VoteSummary,
 )
 
@@ -248,10 +241,10 @@ class TestWriteSchemas:
         assert schema_dir.exists()
 
         expected_files = [
-            "ApiIndex.json",
-            "ProjectSummary.json",
-            "KipDetail.json",
-            "FlipDetail.json",
+            "ApiIndex.schema.json",
+            "ProjectSummary.schema.json",
+            "KipDetail.schema.json",
+            "FlipDetail.schema.json",
         ]
 
         for filename in expected_files:
@@ -397,4 +390,4 @@ class TestGenerateApiIndex:
         # Verify schemas were written
         schema_dir = tmp_path / "schemas"
         assert schema_dir.exists()
-        assert (schema_dir / "ApiIndex.json").exists()
+        assert (schema_dir / "ApiIndex.schema.json").exists()

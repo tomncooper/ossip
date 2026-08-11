@@ -1,8 +1,9 @@
 """JSON output utilities for OSSIP API."""
 
 import datetime as dt
+import json
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from ipper.common.constants import NOT_SET_STR, UNKNOWN_STR
 from ipper.common.models import (
@@ -71,7 +72,9 @@ def sentinel_to_none(value: str) -> str | None:
     return value
 
 
-def write_json_file(model: ProjectMeta | ProjectSummary | ApiIndex | ProposalDetail, path: Path) -> None:
+def write_json_file(
+    model: ProjectMeta | ProjectSummary | ApiIndex | ProposalDetail, path: Path
+) -> None:
     """Write a Pydantic model to a JSON file.
 
     Args:
@@ -119,10 +122,10 @@ def write_schemas(dir_path: Path) -> None:
 
     # Export schemas for the four main API models
     models_to_export = [
-        (ApiIndex, "ApiIndex.json"),
-        (ProjectSummary, "ProjectSummary.json"),
-        (KipDetail, "KipDetail.json"),
-        (FlipDetail, "FlipDetail.json"),
+        (ApiIndex, "ApiIndex.schema.json"),
+        (ProjectSummary, "ProjectSummary.schema.json"),
+        (KipDetail, "KipDetail.schema.json"),
+        (FlipDetail, "FlipDetail.schema.json"),
     ]
 
     for model_class, filename in models_to_export:
@@ -130,7 +133,7 @@ def write_schemas(dir_path: Path) -> None:
         schema_path = schema_dir / filename
         schema_path.write_text(
             # Use json.dumps for consistent formatting
-            __import__("json").dumps(schema, indent=2)
+            json.dumps(schema, indent=2)
         )
 
 
@@ -159,8 +162,6 @@ def generate_api_index(base_dir: Path) -> None:
         full_path = base_dir / summary_path
         if full_path.exists():
             # Read the summary file to get count and last_updated
-            import json
-
             with open(full_path) as f:
                 summary_data = json.load(f)
 

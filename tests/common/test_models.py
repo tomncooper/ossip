@@ -259,9 +259,7 @@ class TestApiIndex:
 
     def test_empty_projects(self):
         """Test ApiIndex with no projects."""
-        index = ApiIndex(
-            version=1, last_updated="2025-01-10T12:00:00Z", projects={}
-        )
+        index = ApiIndex(version=1, last_updated="2025-01-10T12:00:00Z", projects={})
         assert index.version == 1
         assert index.projects == {}
 

@@ -196,7 +196,8 @@ def setup_output_command(main_subparser):
     )
 
     standalone_subparser.add_argument(
-        "--api-dir", default=None,
+        "--api-dir",
+        default=None,
         help="Optional: Directory for JSON API output (e.g., site_files/api/v1/kafka)",
     )
 

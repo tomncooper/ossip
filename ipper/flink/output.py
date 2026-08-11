@@ -5,23 +5,23 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, Template
 from pandas import DataFrame
 
+from ipper.common.api_output import (
+    confluence_date_to_iso_date,
+    confluence_date_to_iso_datetime,
+    sentinel_to_none,
+    vote_timestamp_to_iso,
+    write_project_summary,
+    write_proposal_details,
+)
 from ipper.common.constants import DATE_FORMAT, DEFAULT_TEMPLATES_DIR, NOT_SET_STR
 from ipper.common.mailing_list import create_vote_dict as _create_vote_dict
 from ipper.common.models import (
     FlipDetail,
-    ProposalSummary,
     ProjectSummary,
+    ProposalSummary,
     VoteCount,
     VoterInfo,
     VoteSummary,
-)
-from ipper.common.api_output import (
-    confluence_date_to_iso_date,
-    confluence_date_to_iso_datetime,
-    vote_timestamp_to_iso,
-    sentinel_to_none,
-    write_proposal_details,
-    write_project_summary,
 )
 
 logger = logging.getLogger(__name__)
@@ -192,14 +192,18 @@ def flip_to_detail(flip_data: dict) -> FlipDetail:
         created_on=confluence_date_to_iso_date(flip_data["created_on"]),
         last_modified_on=confluence_date_to_iso_datetime(flip_data["last_modified_on"]),
         last_modified_by=flip_data["last_modified_by"],
-        discussion_thread=sentinel_to_none(flip_data.get("discussion_thread", NOT_SET_STR)),
+        discussion_thread=sentinel_to_none(
+            flip_data.get("discussion_thread", NOT_SET_STR)
+        ),
         vote_thread=sentinel_to_none(flip_data.get("vote_thread", NOT_SET_STR)),
         jira=sentinel_to_none(flip_data.get("jira_link", NOT_SET_STR)),
         web_url=flip_data["web_url"],
         activity_status=None,
         votes=votes,
         release_version=sentinel_to_none(flip_data.get("release_version", NOT_SET_STR)),
-        release_component=sentinel_to_none(flip_data.get("release_component", NOT_SET_STR)),
+        release_component=sentinel_to_none(
+            flip_data.get("release_component", NOT_SET_STR)
+        ),
         jira_id=sentinel_to_none(flip_data.get("jira_id", NOT_SET_STR)),
         jira_link=sentinel_to_none(flip_data.get("jira_link", NOT_SET_STR)),
     )
@@ -252,7 +256,7 @@ def generate_flink_json_api(enriched_wiki_cache: dict, api_dir: Path) -> None:
 
     # Sort FLIP IDs numerically in descending order
     # Cache keys are strings, so we need to convert to int for sorting
-    sorted_flip_ids = sorted([int(key) for key in enriched_wiki_cache.keys()], reverse=True)
+    sorted_flip_ids = sorted([int(key) for key in enriched_wiki_cache], reverse=True)
 
     # Process each FLIP
     for flip_id in sorted_flip_ids:

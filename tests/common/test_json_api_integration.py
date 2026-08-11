@@ -2,9 +2,6 @@
 
 import datetime as dt
 import json
-from pathlib import Path
-
-import pytest
 
 from ipper.common.api_output import generate_api_index
 from ipper.common.models import (
@@ -16,7 +13,6 @@ from ipper.common.models import (
 from ipper.flink.output import generate_flink_json_api
 from ipper.kafka.output import (
     KIPStatus,
-    create_status_dict,
     generate_kafka_json_api,
     render_standalone_status_page,
 )
@@ -102,7 +98,9 @@ class TestKafkaIntegration:
         # Create test data: 3 KIPs in different states
         # KIP-100: under discussion with green status
         wiki_100 = _make_kip_wiki_info_entry(kip_id=100, state="under discussion")
-        status_100 = _make_kip_status_entry(kip_id=100, state="under discussion", status=KIPStatus.GREEN)
+        status_100 = _make_kip_status_entry(
+            kip_id=100, state="under discussion", status=KIPStatus.GREEN
+        )
 
         # KIP-200: accepted (no activity status)
         wiki_200 = _make_kip_wiki_info_entry(kip_id=200, state="accepted")
@@ -112,7 +110,9 @@ class TestKafkaIntegration:
         # KIP-300: under discussion with yellow status
         wiki_300 = _make_kip_wiki_info_entry(kip_id=300, state="under discussion")
         wiki_300["jira"] = "not set"  # Test sentinel
-        status_300 = _make_kip_status_entry(kip_id=300, state="under discussion", status=KIPStatus.YELLOW)
+        status_300 = _make_kip_status_entry(
+            kip_id=300, state="under discussion", status=KIPStatus.YELLOW
+        )
 
         kip_wiki_info = {100: wiki_100, 200: wiki_200, 300: wiki_300}
         kip_status = [status_100, status_200, status_300]
@@ -157,7 +157,9 @@ class TestKafkaIntegration:
 
         with open(api_dir / "kips" / "200.json") as f:
             kip_200_data = json.load(f)
-        assert kip_200_data["activity_status"] is None  # Accepted KIPs have no activity status
+        assert (
+            kip_200_data["activity_status"] is None
+        )  # Accepted KIPs have no activity status
 
         with open(api_dir / "kips" / "300.json") as f:
             kip_300_data = json.load(f)
@@ -199,11 +201,17 @@ class TestKafkaIntegration:
         api_dir = tmp_path / "api"
 
         # Create KIPs in different states
-        wiki_discussion = _make_kip_wiki_info_entry(kip_id=100, state="under discussion")
-        status_discussion = _make_kip_status_entry(kip_id=100, state="under discussion", status=KIPStatus.BLUE)
+        wiki_discussion = _make_kip_wiki_info_entry(
+            kip_id=100, state="under discussion"
+        )
+        status_discussion = _make_kip_status_entry(
+            kip_id=100, state="under discussion", status=KIPStatus.BLUE
+        )
 
         wiki_accepted = _make_kip_wiki_info_entry(kip_id=200, state="accepted")
-        status_accepted = _make_kip_status_entry(kip_id=200, state="accepted", status=None)
+        status_accepted = _make_kip_status_entry(
+            kip_id=200, state="accepted", status=None
+        )
 
         kip_wiki_info = {100: wiki_discussion, 200: wiki_accepted}
         kip_status = [status_discussion, status_accepted]
@@ -288,7 +296,10 @@ class TestFlinkIntegration:
         assert detail_data["release_version"] == "1.18"
         assert detail_data["release_component"] == "Runtime"
         assert detail_data["jira_id"] == "FLINK-12345"
-        assert detail_data["jira_link"] == "https://issues.apache.org/jira/browse/FLINK-12345"
+        assert (
+            detail_data["jira_link"]
+            == "https://issues.apache.org/jira/browse/FLINK-12345"
+        )
 
     def test_activity_status_always_none(self, tmp_path):
         """Verify activity_status is always None for FLIPs, regardless of state."""
@@ -299,7 +310,11 @@ class TestFlinkIntegration:
         flip_accepted = _make_enriched_flip(flip_id=200, state="accepted")
         flip_progress = _make_enriched_flip(flip_id=300, state="in progress")
 
-        enriched_wiki_cache = {"100": flip_discussion, "200": flip_accepted, "300": flip_progress}
+        enriched_wiki_cache = {
+            "100": flip_discussion,
+            "200": flip_accepted,
+            "300": flip_progress,
+        }
 
         generate_flink_json_api(enriched_wiki_cache, api_dir)
 
@@ -381,7 +396,12 @@ class TestApiIndexIntegration:
         schema_files = list(schemas_dir.glob("*.json"))
         assert len(schema_files) == 4
 
-        expected_schemas = {"ApiIndex.json", "ProjectSummary.json", "KipDetail.json", "FlipDetail.json"}
+        expected_schemas = {
+            "ApiIndex.schema.json",
+            "ProjectSummary.schema.json",
+            "KipDetail.schema.json",
+            "FlipDetail.schema.json",
+        }
         actual_schemas = {f.name for f in schema_files}
         assert actual_schemas == expected_schemas
 

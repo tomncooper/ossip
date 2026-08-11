@@ -104,7 +104,9 @@ def process_output(args: Namespace) -> None:
     if mentions_file.exists():
         logger.info("Loading FLIP mentions from %s", mentions_file)
         flip_mentions = load_mbox_cache_file(mentions_file)
-        wiki_cache_data = enrich_flip_wiki_info_with_votes(wiki_cache_data, flip_mentions)
+        wiki_cache_data = enrich_flip_wiki_info_with_votes(
+            wiki_cache_data, flip_mentions
+        )
     else:
         logger.info("No FLIP mentions file found, rendering without vote data")
 
