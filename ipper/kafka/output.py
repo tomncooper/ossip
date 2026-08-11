@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 import re
 from enum import Enum
 from pathlib import Path
@@ -7,8 +8,24 @@ from typing import cast
 from jinja2 import Environment, FileSystemLoader, Template
 from pandas import DataFrame, Series, Timedelta, Timestamp, to_datetime
 
-from ipper.common.constants import DATE_FORMAT, DEFAULT_TEMPLATES_DIR, IPState
+from ipper.common.constants import DATE_FORMAT, DEFAULT_TEMPLATES_DIR, IPState, NOT_SET_STR, UNKNOWN_STR
 from ipper.common.mailing_list import create_vote_dict as _create_vote_dict
+from ipper.common.models import (
+    KipDetail,
+    ProposalSummary,
+    ProjectSummary,
+    VoteCount,
+    VoterInfo,
+    VoteSummary,
+)
+from ipper.common.api_output import (
+    confluence_date_to_iso_date,
+    confluence_date_to_iso_datetime,
+    vote_timestamp_to_iso,
+    sentinel_to_none,
+    write_proposal_details,
+    write_project_summary,
+)
 from ipper.common.utils import calculate_age
 from ipper.common.wiki import APACHE_CONFLUENCE_DATE_FORMAT
 from ipper.kafka.mailing_list import get_most_recent_mention_by_type
@@ -16,6 +33,8 @@ from ipper.kafka.wiki import (
     get_kip_information,
     get_kip_main_page_info,
 )
+
+logger = logging.getLogger(__name__)
 
 KIP_SPLITTER: re.Pattern = re.compile(r"KIP-\d+\W?[:-]?\W?", re.IGNORECASE)
 
@@ -245,3 +264,136 @@ def render_kip_info_pages(
 
         with open(output_filepath, "w", encoding="utf8") as out_file:
             out_file.write(output)
+
+
+def kip_to_detail(wiki_entry: dict, status_entry: dict) -> KipDetail:
+    """Convert KIP wiki and status entries to KipDetail model.
+
+    Args:
+        wiki_entry: Wiki information dict containing full KIP metadata
+        status_entry: Status dict containing activity status and votes
+
+    Returns:
+        KipDetail model instance
+    """
+    # Convert vote lists
+    plus_one_votes = [
+        VoterInfo(name=v["name"], timestamp=vote_timestamp_to_iso(v["timestamp"]))
+        for v in status_entry["+1"]
+    ]
+    zero_votes = [
+        VoterInfo(name=v["name"], timestamp=vote_timestamp_to_iso(v["timestamp"]))
+        for v in status_entry["0"]
+    ]
+    minus_one_votes = [
+        VoterInfo(name=v["name"], timestamp=vote_timestamp_to_iso(v["timestamp"]))
+        for v in status_entry["-1"]
+    ]
+
+    votes = VoteSummary(
+        plus_one=plus_one_votes,
+        zero=zero_votes,
+        minus_one=minus_one_votes,
+    )
+
+    # Determine activity_status
+    status = status_entry.get("status")
+    activity_status = status.text if status is not None else None
+
+    return KipDetail(
+        id=status_entry["id"],
+        title=wiki_entry["title"],
+        state=wiki_entry["state"],
+        created_by=wiki_entry["created_by"],
+        created_on=confluence_date_to_iso_date(wiki_entry["created_on"]),
+        last_modified_on=confluence_date_to_iso_datetime(wiki_entry["last_modified_on"]),
+        last_modified_by=wiki_entry["last_modified_by"],
+        discussion_thread=sentinel_to_none(wiki_entry["discussion_thread"]),
+        vote_thread=sentinel_to_none(wiki_entry["vote_thread"]),
+        jira=sentinel_to_none(wiki_entry["jira"]),
+        web_url=wiki_entry["web_url"],
+        activity_status=activity_status,
+        votes=votes,
+    )
+
+
+def kip_to_summary(status_entry: dict, wiki_entry: dict) -> ProposalSummary:
+    """Convert KIP status and wiki entries to ProposalSummary model.
+
+    Args:
+        status_entry: Status dict containing activity status and votes
+        wiki_entry: Wiki information dict containing full KIP metadata
+
+    Returns:
+        ProposalSummary model instance
+    """
+    # Count votes
+    vote_count = VoteCount(
+        plus_one=len(status_entry["+1"]),
+        zero=len(status_entry["0"]),
+        minus_one=len(status_entry["-1"]),
+    )
+
+    # Determine activity_status
+    status = status_entry.get("status")
+    activity_status = status.text if status is not None else None
+
+    return ProposalSummary(
+        id=status_entry["id"],
+        title=wiki_entry["title"],
+        state=status_entry["state"],
+        created_by=status_entry["created_by"],
+        created_on=confluence_date_to_iso_date(wiki_entry["created_on"]),
+        vote_count=vote_count,
+        activity_status=activity_status,
+        detail_url=f"kips/{status_entry['id']}.json",
+        web_url=status_entry["url"],
+    )
+
+
+def generate_kafka_json_api(kip_status: list, kip_wiki_info: dict, api_dir: Path) -> None:
+    """Generate JSON API files for Kafka KIPs.
+
+    Creates:
+    - kips.json: Summary file with all KIPs
+    - kips/{id}.json: Individual detail files for each KIP
+
+    Args:
+        kip_status: List of status dicts from create_status_dict
+        kip_wiki_info: Dict mapping KIP IDs to wiki info dicts
+        api_dir: Base directory for API output
+    """
+    details = []
+    summaries = []
+
+    # Process each status entry
+    for status_entry in kip_status:
+        kip_id = status_entry["id"]
+
+        # Skip KIPs not in wiki_info
+        if kip_id not in kip_wiki_info:
+            logger.warning(f"Skipping KIP-{kip_id}: not found in wiki info")
+            continue
+
+        wiki_entry = kip_wiki_info[kip_id]
+
+        # Build detail and summary
+        detail = kip_to_detail(wiki_entry, status_entry)
+        summary = kip_to_summary(status_entry, wiki_entry)
+
+        details.append(detail)
+        summaries.append(summary)
+
+    # Write individual detail files
+    write_proposal_details(details, api_dir / "kips")
+
+    # Build and write project summary
+    project_summary = ProjectSummary(
+        project="kafka",
+        proposal_type="KIP",
+        last_updated=dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        count=len(summaries),
+        proposals=summaries,
+    )
+
+    write_project_summary(project_summary, api_dir / "kips.json")
