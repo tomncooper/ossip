@@ -21,6 +21,8 @@ from ipper.flink.mailing_list import (
 from ipper.flink.output import (
     FLINK_MAIN_PAGE_TEMPLATE,
     FLIP_RAW_INFO_PAGE_TEMPLATE,
+    enrich_flip_wiki_info_with_votes,
+    generate_flink_json_api,
     render_flink_main_page,
     render_raw_info_pages,
 )
@@ -97,12 +99,12 @@ def process_output(args: Namespace) -> None:
     with open(wiki_cache_path, encoding="utf8") as wiki_cache_file:
         wiki_cache_data = json.load(wiki_cache_file)
 
-    # Load mailing list mentions if available
-    flip_mentions = None
+    # Enrich with vote data ONCE (was done twice, once per renderer)
     mentions_file = Path("cache/flink_mailbox_files/flip_mentions.csv")
     if mentions_file.exists():
         logger.info("Loading FLIP mentions from %s", mentions_file)
         flip_mentions = load_mbox_cache_file(mentions_file)
+        wiki_cache_data = enrich_flip_wiki_info_with_votes(wiki_cache_data, flip_mentions)
     else:
         logger.info("No FLIP mentions file found, rendering without vote data")
 
@@ -111,7 +113,6 @@ def process_output(args: Namespace) -> None:
         args.main_page_file,
         args.template_dir,
         args.main_page_template_filename,
-        flip_mentions,
     )
 
     render_raw_info_pages(
@@ -119,8 +120,10 @@ def process_output(args: Namespace) -> None:
         args.raw_flip_dir,
         args.template_dir,
         args.raw_flip_template_filename,
-        flip_mentions,
     )
+
+    if args.api_dir:
+        generate_flink_json_api(wiki_cache_data, Path(args.api_dir))
 
 
 def setup_wiki_command(main_subparser):
@@ -473,6 +476,12 @@ def setup_output_command(main_subparser):
         required=False,
         default=FLIP_RAW_INFO_PAGE_TEMPLATE,
         help="Name of the template for the raw flip info pages, inside the template directory",
+    )
+
+    output_parser.add_argument(
+        "--api-dir",
+        default=None,
+        help="Optional: Directory for JSON API output (e.g., site_files/api/v1/flink)",
     )
 
     output_parser.set_defaults(func=process_output)

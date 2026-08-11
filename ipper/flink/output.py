@@ -92,24 +92,18 @@ def render_flink_main_page(
     output_filepath: str,
     template_dir: str = DEFAULT_TEMPLATES_DIR,
     template_filename: str = FLINK_MAIN_PAGE_TEMPLATE,
-    flip_mentions: DataFrame | None = None,
 ) -> None:
     """Render the main Flink index page with FLIP data.
 
     Args:
-        wiki_cache: Dictionary of FLIP wiki data
+        wiki_cache: Dictionary of FLIP wiki data (already enriched with vote data)
         output_filepath: Path to save the output HTML file
         template_dir: Directory containing Jinja2 templates
         template_filename: Name of the template file
-        flip_mentions: Optional DataFrame with mailing list mentions for vote data
     """
 
     output_path = Path(output_filepath)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Enrich with vote data if available
-    if flip_mentions is not None:
-        wiki_cache = enrich_flip_wiki_info_with_votes(wiki_cache, flip_mentions)
 
     template = get_template(template_dir, template_filename)
 
@@ -133,21 +127,15 @@ def render_raw_info_pages(
     output_directory: str,
     template_dir: str = DEFAULT_TEMPLATES_DIR,
     template_filename: str = FLIP_RAW_INFO_PAGE_TEMPLATE,
-    flip_mentions: DataFrame | None = None,
 ) -> None:
     """Render individual FLIP information pages.
 
     Args:
-        wiki_cache: Dictionary of FLIP wiki data
+        wiki_cache: Dictionary of FLIP wiki data (already enriched with vote data)
         output_directory: Directory to save the output HTML files
         template_dir: Directory containing Jinja2 templates
         template_filename: Name of the template file
-        flip_mentions: Optional DataFrame with mailing list mentions for vote data
     """
-
-    # Enrich with vote data if available
-    if flip_mentions is not None:
-        wiki_cache = enrich_flip_wiki_info_with_votes(wiki_cache, flip_mentions)
 
     template = get_template(template_dir, template_filename)
 
