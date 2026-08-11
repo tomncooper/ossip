@@ -61,13 +61,24 @@ mkdir -p site_files
 cp templates/index.html site_files/
 cp templates/style.css site_files/
 cp -r templates/assets site_files/assets
+mkdir -p site_files/skill/ossip
+cp templates/skill/ossip/SKILL.md site_files/skill/ossip/SKILL.md
+cp templates/api.html site_files/api.html 2>/dev/null || true
 
 # Build the Kafka site
 echo "🏗️  Building Kafka site..."
-uv run python ipper/main.py kafka output standalone cache/mailbox_files/kip_mentions.csv site_files/kafka.html site_files/kips
+uv run python ipper/main.py kafka output standalone cache/mailbox_files/kip_mentions.csv site_files/kafka.html site_files/kips --api-dir site_files/api/v1/kafka
 
 # Build the Flink site
 echo "🏗️  Building Flink site..."
-uv run python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips
+uv run python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips --api-dir site_files/api/v1/flink
+
+# Generate API index
+echo "📋 Generating API index..."
+uv run python -c "
+from ipper.common.api_output import generate_api_index
+from pathlib import Path
+generate_api_index(Path('site_files/api/v1'))
+"
 
 echo "✅ Build complete! Output in site_files/"

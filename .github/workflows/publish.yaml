@@ -60,12 +60,44 @@ jobs:
           cp templates/style.css site_files
           cp -r templates/assets site_files/assets
 
+      - name: Copy skill and API documentation
+        run: |
+          mkdir -p site_files/skill/ossip
+          cp templates/skill/ossip/SKILL.md site_files/skill/ossip/SKILL.md
+          cp templates/api.html site_files/api.html 2>/dev/null || true
+
       - name: Build the Kafka site
-        run: uv run python ipper/main.py kafka output standalone cache/mailbox_files/kip_mentions.csv site_files/kafka.html site_files/kips
+        id: kafka-build
+        continue-on-error: true
+        run: uv run python ipper/main.py kafka output standalone cache/mailbox_files/kip_mentions.csv site_files/kafka.html site_files/kips --api-dir site_files/api/v1/kafka
 
       - name: Build the Flink site
-        run: uv run python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips 
-      
+        id: flink-build
+        continue-on-error: true
+        run: uv run python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips --api-dir site_files/api/v1/flink
+
+      - name: Generate API index
+        run: |
+          uv run python -c "
+          from ipper.common.api_output import generate_api_index
+          from pathlib import Path
+          generate_api_index(Path('site_files/api/v1'))
+          "
+
+      - name: Check build results
+        if: always()
+        run: |
+          if [ "${{ steps.kafka-build.outcome }}" = "failure" ]; then
+            echo "::warning::Kafka build failed — JSON API will not include KIP data"
+          fi
+          if [ "${{ steps.flink-build.outcome }}" = "failure" ]; then
+            echo "::warning::Flink build failed — JSON API will not include FLIP data"
+          fi
+          if [ "${{ steps.kafka-build.outcome }}" = "failure" ] && [ "${{ steps.flink-build.outcome }}" = "failure" ]; then
+            echo "::error::Both Kafka and Flink builds failed"
+            exit 1
+          fi
+
       - name: Commit updated cache files
         run: |
           git config user.name "github-actions[bot]"
