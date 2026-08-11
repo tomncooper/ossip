@@ -15,7 +15,9 @@ from ipper.kafka.mailing_list import (
     update_kip_mentions_cache,
 )
 from ipper.kafka.output import (
+    create_status_dict,
     enrich_kip_wiki_info_with_votes,
+    generate_kafka_json_api,
     render_kip_info_pages,
     render_standalone_status_page,
 )
@@ -193,6 +195,11 @@ def setup_output_command(main_subparser):
         help="Optional: The path to the directory for storing individual KIP info pages",
     )
 
+    standalone_subparser.add_argument(
+        "--api-dir", default=None,
+        help="Optional: Directory for JSON API output (e.g., site_files/api/v1/kafka)",
+    )
+
     standalone_subparser.set_defaults(func=run_output_standalone_cmd)
 
 
@@ -309,18 +316,20 @@ def run_refresh_cmd(args: Namespace) -> None:
 def run_output_standalone_cmd(args: Namespace) -> None:
     cache_file = Path(args.kip_mentions_file)
     kip_mentions: DataFrame = load_mbox_cache_file(cache_file)
-    render_standalone_status_page(kip_mentions, args.output_file)
 
-    # Generate individual KIP info pages if directory is specified
+    # Load wiki data ONCE (was fetched twice before)
+    kip_main_info = get_kip_main_page_info()
+    kip_wiki_info = get_kip_information(kip_main_info)
+
+    kip_status = create_status_dict(kip_mentions, kip_wiki_info)
+    render_standalone_status_page(kip_status, args.output_file)
+
     if args.kip_info_dir:
-        kip_main_info = get_kip_main_page_info()
-        kip_wiki_info = get_kip_information(kip_main_info)
-
-        # Enrich with vote data
         enriched_kip_info = enrich_kip_wiki_info_with_votes(kip_wiki_info, kip_mentions)
-
-        # Render individual pages
         render_kip_info_pages(enriched_kip_info, args.kip_info_dir)
+
+    if args.api_dir:
+        generate_kafka_json_api(kip_status, kip_wiki_info, Path(args.api_dir))
 
 
 def run_keys_refresh_cmd(args: Namespace) -> None:

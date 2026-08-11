@@ -29,10 +29,6 @@ from ipper.common.api_output import (
 from ipper.common.utils import calculate_age
 from ipper.common.wiki import APACHE_CONFLUENCE_DATE_FORMAT
 from ipper.kafka.mailing_list import get_most_recent_mention_by_type
-from ipper.kafka.wiki import (
-    get_kip_information,
-    get_kip_main_page_info,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -181,7 +177,7 @@ def create_status_dict(
 
 
 def render_standalone_status_page(
-    kip_mentions: DataFrame,
+    kip_status: list[dict[str, int | str | None | KIPStatus | list[dict[str, str]]]],
     output_filename: str,
     templates_dir: str = DEFAULT_TEMPLATES_DIR,
     template_filename: str = KAFKA_MAIN_PAGE_TEMPLATE,
@@ -190,13 +186,6 @@ def render_standalone_status_page(
 
     output_path: Path = Path(output_filename)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    kip_main_info = get_kip_main_page_info()
-    kip_wiki_info = get_kip_information(kip_main_info)
-
-    kip_status: list[dict[str, int | str | None | KIPStatus | list[dict[str, str]]]] = (
-        create_status_dict(kip_mentions, kip_wiki_info)
-    )
 
     template: Template = Environment(
         loader=FileSystemLoader(templates_dir)
