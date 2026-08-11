@@ -203,27 +203,45 @@ Pydantic model definitions as described above.
 
 Shared JSON rendering logic:
 
-- `write_proposal_detail(proposal: ProposalDetail, output_dir: Path)` — writes a single `{id}.json` file
-- `write_project_summary(summary: ProjectSummary, output_path: Path)` — writes the summary list
-- `write_api_index(index: ApiIndex, output_path: Path)` — writes `index.json`
-- `write_schemas(output_dir: Path)` — exports JSON Schema files from Pydantic models
-- `render_json_api(...)` — orchestrates all of the above for a given project
+- `write_json_file(model: BaseModel, output_path: Path)` — writes a single Pydantic model to a JSON file, creating parent directories as needed
+- `write_proposal_details(proposals: list[ProposalDetail], output_dir: Path)` — writes individual `{id}.json` files
+- `write_project_summary(summary: ProjectSummary, output_path: Path)` — writes the summary list file
+- `write_schemas(output_dir: Path)` — exports JSON Schema files from all Pydantic models (idempotent — safe to call from multiple projects)
+- `generate_api_index(api_base_dir: Path)` — **resilient index generator**: scans `api_base_dir` for per-project summary files (`kafka/kips.json`, `flink/flips.json`), reads each one found to extract count and last_updated, assembles an `ApiIndex` model, and writes `index.json`. If no project files are found, writes a valid empty index. This replaces the originally-considered `api finalize` CLI subcommand with a simple function call.
 
 ### Changes to `ipper/kafka/output.py`
 
-Add a function to convert existing enriched KIP data dicts into `KipDetail` / `ProposalSummary` Pydantic models and call the shared JSON rendering. This reuses the same enriched data that the HTML renderer already computes.
+**Refactor `render_standalone_status_page()`**: Currently this function internally fetches wiki data from Confluence (`get_kip_main_page_info()` → `get_kip_information()`). This data loading is extracted to the caller (`run_output_standalone_cmd` in `ipper/kafka/main.py`) so the enriched data is available for both HTML rendering and JSON generation. This also fixes an existing inefficiency where wiki data was fetched twice when generating both the main page and individual KIP info pages.
+
+After refactoring, `render_standalone_status_page()` accepts pre-computed `kip_status` data instead of a DataFrame.
+
+**Add JSON conversion functions**:
+- `kip_to_detail(kip_wiki_info: dict, kip_status_entry: dict) -> KipDetail` — merges raw wiki fields (discussion_thread, vote_thread, jira, last_modified_on/by) with status fields (activity_status from `KIPStatus` enum, full vote lists). Maps `kip_id` to `id`, `NOT_SET_STR` to `None`, Confluence dates to ISO 8601, `KIPStatus.text` to activity_status string.
+- `kip_to_summary(kip_status_entry: dict) -> ProposalSummary` — compact version with integer vote counts
+- `generate_kafka_json_api(kip_status: list[dict], kip_wiki_info: dict, api_dir: Path)` — orchestrates conversion of all KIPs to models and calls shared write functions
+
+### Changes to `ipper/kafka/main.py`
+
+Add `--api-dir` optional argument to the `standalone` output subparser. Refactor `run_output_standalone_cmd()` to load wiki data once and pass the enriched data to HTML rendering, KIP info page rendering, and (if `--api-dir` is set) JSON generation.
 
 ### Changes to `ipper/flink/output.py`
 
-Same pattern as Kafka, using `FlipDetail` for the detail models.
+**Add JSON conversion functions**:
+- `flip_to_detail(flip_data: dict) -> FlipDetail` — maps enriched FLIP wiki dict to `FlipDetail`, including Flink-specific fields (`release_version`, `release_component`, `jira_id`, `jira_link`). Maps `UNKNOWN_STR` to `None`. Sets `activity_status` to `None` (Flink does not use colored activity status).
+- `flip_to_summary(flip_data: dict) -> ProposalSummary` — compact version with integer vote counts
+- `generate_flink_json_api(enriched_wiki_cache: dict, api_dir: Path)` — orchestrates conversion and write
+
+### Changes to `ipper/flink/main.py`
+
+Add `--api-dir` optional argument to the output parser. Refactor `process_output()` to enrich wiki data once (currently `enrich_flip_wiki_info_with_votes` is called twice — once per HTML renderer) and pass the pre-enriched data to both HTML renderers and (if `--api-dir` is set) JSON generation.
 
 ---
 
 ## Build Pipeline Integration
 
-### Approach: Integrated Output
+### Approach: Per-Project Integrated Output
 
-JSON generation is added to the existing output commands rather than creating separate commands. When the HTML output runs, JSON files are generated alongside it into a `site_files/api/v1/` directory.
+JSON generation is added to each project's existing output command rather than creating a separate cross-project command. When the HTML output runs, JSON files are generated alongside it into a `site_files/api/v1/` directory. Each project generates its own JSON independently — if one project's build fails, the other still produces valid JSON output.
 
 The existing output commands gain an optional `--api-dir` argument:
 
@@ -238,11 +256,25 @@ uv run python ipper/main.py flink output \
   --api-dir site_files/api/v1/flink
 ```
 
-The `index.json` and schemas are written after both projects have generated their data. This could be a small post-step in the build script or a dedicated command.
+Each project's output step writes:
+- Its summary file (`kips.json` or `flips.json`)
+- Individual detail files (`kips/{id}.json` or `flips/{id}.json`)
+- JSON Schema files to the shared `schemas/` directory (idempotent — whichever project runs first writes them, subsequent runs overwrite with identical content)
+
+The `index.json` is generated by a lightweight post-step that scans the filesystem for whatever project summaries exist. This is a function call in `ipper/common/api_output.py`, not a CLI subcommand.
+
+### Fault Tolerance Design
+
+The current pipeline treats each project independently — `local_build.sh` even runs Kafka and Flink updates in parallel. The JSON API preserves this independence:
+
+1. Each project's `--api-dir` output is self-contained — no dependency on the other project
+2. The `generate_api_index()` post-step is resilient: it discovers what project summary files exist on disk and assembles `index.json` from whatever it finds
+3. If only one project succeeds, `index.json` lists only that project — partial but accurate
+4. If zero projects succeed, `index.json` is a valid empty index (`{"version": 1, "projects": {}}`)
 
 ### `local_build.sh` Changes
 
-Add `--api-dir` arguments to the existing build commands and a final step to generate `index.json` and schemas:
+Add `--api-dir` arguments to the existing build commands and a resilient index generation post-step:
 
 ```bash
 # Build Kafka (HTML + JSON)
@@ -255,26 +287,54 @@ uv run python ipper/main.py flink output \
   cache/flip_wiki_cache.json site_files/flink.html site_files/flips \
   --api-dir site_files/api/v1/flink
 
-# Generate API index and schemas
-uv run python ipper/main.py api finalize site_files/api/v1
+# Generate API index from whatever project outputs exist
+uv run python -c "
+from ipper.common.api_output import generate_api_index
+from pathlib import Path
+generate_api_index(Path('site_files/api/v1'))
+"
 ```
 
-### `api finalize` Command
-
-A new top-level subcommand in `ipper/main.py` (alongside `kafka` and `flink`). It:
-1. Reads the project-level summary files already written by the Kafka/Flink output steps
-2. Generates `index.json` with project metadata and counts
-3. Exports JSON Schema files from all Pydantic models to `schemas/`
-
-This runs after both project output steps, since it needs to know the total counts from each project.
+For fault tolerance, the build script should track per-project exit codes (it already has this pattern with `KAFKA_EXIT_CODE` and `FLINK_EXIT_CODE` for the update steps) and allow the build to continue when one project fails, reporting the failure at the end.
 
 ### `publish.yaml` (CI) Changes
 
-Same `--api-dir` arguments added to the existing build steps. One new step added after the project builds to run `api finalize`. The JSON files land in `site_files/` and are picked up by the existing pages artifact upload.
+Same `--api-dir` arguments added to the existing build steps. Each project build step uses `continue-on-error: true` so the pipeline doesn't abort when one project fails. A post-step generates `index.json` from whatever succeeded. A final check step reports which projects succeeded or failed.
+
+```yaml
+- name: Build the Kafka site
+  run: |
+    uv run python ipper/main.py kafka output standalone \
+      cache/mailbox_files/kip_mentions.csv site_files/kafka.html site_files/kips \
+      --api-dir site_files/api/v1/kafka
+  continue-on-error: true
+
+- name: Build the Flink site
+  run: |
+    uv run python ipper/main.py flink output \
+      cache/flip_wiki_cache.json site_files/flink.html site_files/flips \
+      --api-dir site_files/api/v1/flink
+  continue-on-error: true
+
+- name: Generate API index
+  run: |
+    uv run python -c "
+    from ipper.common.api_output import generate_api_index
+    from pathlib import Path
+    generate_api_index(Path('site_files/api/v1'))
+    "
+```
+
+The JSON files land in `site_files/` and are picked up by the existing pages artifact upload. JSON API files are ephemeral build artifacts in `site_files/` and are NOT committed to the repository (covered by the existing `site_files/*` gitignore rule).
 
 ### Skill File Deployment
 
-The `ossip.md` skill file is a static file stored in the repo (e.g., `templates/skill/ossip.md`). It is copied to `site_files/skill/ossip.md` during the static file copy step, alongside `index.html` and `style.css`.
+The `ossip.md` skill file is a static file stored in the repo at `templates/skill/ossip.md`. It is copied to `site_files/skill/ossip.md` during the static file copy step. This requires an explicit copy command alongside the existing ones for `index.html` and `style.css`:
+
+```bash
+mkdir -p site_files/skill
+cp templates/skill/ossip.md site_files/skill/ossip.md
+```
 
 ---
 
@@ -285,9 +345,11 @@ Add `pydantic` to the project dependencies in `pyproject.toml`:
 ```toml
 dependencies = [
     # ... existing deps ...
-    "pydantic>=2.0.0",
+    "pydantic>=2.7,<3",
 ]
 ```
+
+Pinned above 2.7 to avoid early Pydantic 2.x `model_json_schema()` inconsistencies, and below 3 to prevent breaking changes from a major version bump.
 
 ---
 
@@ -358,18 +420,35 @@ Users download the skill file and place it in their Claude Code skills directory
 
 ## Testing Strategy
 
-### Unit Tests
+### Unit Tests (`tests/common/test_models.py`)
 
 - Pydantic model serialization: verify models produce expected JSON structure
 - Schema export: verify `model_json_schema()` output is valid JSON Schema
-- Data conversion: verify enriched dicts convert correctly to Pydantic models
-- Edge cases: proposals with no votes, missing fields, `"not set"` values
+- Sentinel string cleanup: verify models never contain `"not set"` or `"unknown"` — these should be `None`
+- `KipDetail` and `FlipDetail` subclass behavior
+
+### Unit Tests (`tests/common/test_api_output.py`)
+
+- `write_proposal_details` creates correct file structure with valid JSON
+- `write_project_summary` produces valid JSON matching model schema
+- `write_schemas` produces valid JSON Schema files (idempotent)
+- `generate_api_index` with both projects present
+- `generate_api_index` with only one project present (fault tolerance)
+- `generate_api_index` with zero projects present (empty but valid index)
+
+### Unit Tests (`tests/kafka/test_json_api.py`, `tests/flink/test_json_api.py`)
+
+- Per-project dict → Pydantic model conversion (KIP and FLIP)
+- Field mapping: `kip_id` → `id`, `NOT_SET_STR`/`UNKNOWN_STR` → `None`, Confluence dates → ISO 8601
+- Edge cases: proposals with no votes, missing fields, unknown state
+- Flink-specific: `release_version`, `release_component`, `jira_id`, `jira_link` mapping
 
 ### Integration Tests
 
-- End-to-end JSON generation: run the output command on test data, verify file structure and contents
+- End-to-end JSON generation: run the output command with `--api-dir` on test data, verify file structure and contents
 - Schema validation: validate generated JSON data files against the exported schemas
 - Size sanity checks: verify summary files are within expected size ranges
+- Verify HTML output is unchanged when `--api-dir` is added
 
 ### CI Validation
 
@@ -383,10 +462,10 @@ Users download the skill file and place it in their Claude Code skills directory
 | Component | What | Where |
 |-----------|------|-------|
 | Pydantic models | Data structures + validation + schema source | `ipper/common/models.py` |
-| JSON renderer | Serialize models to static JSON files | `ipper/common/api_output.py` |
-| Kafka integration | Convert KIP data → models → JSON | `ipper/kafka/output.py` (modified) |
-| Flink integration | Convert FLIP data → models → JSON | `ipper/flink/output.py` (modified) |
-| API index + schemas | Entry point + JSON Schema files | `ipper/common/api_output.py` |
-| Build integration | `--api-dir` flag + `api finalize` command | `local_build.sh`, `publish.yaml`, CLI |
+| JSON renderer | Shared write utilities + resilient index generation | `ipper/common/api_output.py` |
+| Kafka integration | Convert KIP data → models → JSON + refactor data loading | `ipper/kafka/output.py`, `ipper/kafka/main.py` (modified) |
+| Flink integration | Convert FLIP data → models → JSON + refactor enrichment | `ipper/flink/output.py`, `ipper/flink/main.py` (modified) |
+| API index + schemas | Resilient filesystem-scanning index + JSON Schema export | `ipper/common/api_output.py` |
+| Build integration | `--api-dir` flag on per-project output + resilient index post-step | `local_build.sh`, `publish.yaml` |
 | Claude Code skill | Agent instructions for querying the API | `templates/skill/ossip.md` |
 | New dependency | Pydantic | `pyproject.toml` |
