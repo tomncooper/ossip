@@ -130511,3 +130511,7 @@ kip,mention_type,message_id,mbox_year,mbox_month,timestamp,from,vote
 1279,discuss,171,2026,8,2026-08-12 23:03:37+00:00,"""Jun Rao via dev"" <dev@kafka.apache.org>",
 932,body,171,2026,8,2026-08-12 23:03:37+00:00,"""Jun Rao via dev"" <dev@kafka.apache.org>",
 890,body,172,2026,8,2026-08-12 23:12:00+00:00,"""Justine Olshan (Jira)"" <jira@apache.org>",
+1373,body,17,2026,9,2026-09-02 07:20:00+00:00,"""Manan Gupta (Jira)"" <jira@apache.org>",
+1373,subject,21,2026,9,2026-09-02 10:00:09+00:00,Manan Gupta <manan.gupta@uber.com>,
+1373,discuss,21,2026,9,2026-09-02 10:00:09+00:00,Manan Gupta <manan.gupta@uber.com>,
+1373,body,21,2026,9,2026-09-02 10:00:09+00:00,Manan Gupta <manan.gupta@uber.com>,
