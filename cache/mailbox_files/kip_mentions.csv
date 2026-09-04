@@ -130515,3 +130515,6 @@ kip,mention_type,message_id,mbox_year,mbox_month,timestamp,from,vote
 1373,subject,21,2026,9,2026-09-02 10:00:09+00:00,Manan Gupta <manan.gupta@uber.com>,
 1373,discuss,21,2026,9,2026-09-02 10:00:09+00:00,Manan Gupta <manan.gupta@uber.com>,
 1373,body,21,2026,9,2026-09-02 10:00:09+00:00,Manan Gupta <manan.gupta@uber.com>,
+939,body,54,2026,9,2026-09-03 22:41:00+00:00,"""Justine Olshan (Jira)"" <jira@apache.org>",
+939,body,55,2026,9,2026-09-03 22:42:52+00:00,"""Justine Olshan via dev"" <dev@kafka.apache.org>",
+939,body,56,2026,9,2026-09-04 03:33:01+00:00,Chia-Ping Tsai <chia7712@apache.org>,
