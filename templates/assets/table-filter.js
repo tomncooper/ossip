@@ -29,6 +29,8 @@ const TableFilter = (function() {
             filterState[col.id] = 'all';
         });
 
+        filterState['search'] = '';
+
         // Build the filter UI
         buildFilterUI();
         
@@ -65,6 +67,14 @@ const TableFilter = (function() {
                 </div>
             `;
         });
+
+        // Search Button
+        html += `
+        <div class="filter-group">
+            <label for="search-input">Search:</label>
+            <input type="text" id="search-input" placeholder="Search by ID or description..." />
+        </div>`
+        ;
 
         // Add clear filters button and row counter
         html += `
@@ -136,6 +146,15 @@ const TableFilter = (function() {
             }
         });
 
+        // Attach change listeners for the search box
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                filterState['search'] = e.target.value.toLowerCase().trim();
+                applyFilters();
+            });
+        }
+
         // Attach click listener to clear button
         const clearBtn = document.getElementById('clear-filters');
         if (clearBtn) {
@@ -163,7 +182,13 @@ const TableFilter = (function() {
                 return rowValue === filterValue;
             });
 
-            if (matches) {
+            // Check if description or Id matchesthe searchTerm
+            const searchTerm = filterState['search'];
+            const searchableTerm = row.cells[0].textContent.toLowerCase() + row.cells[1].textContent.toLowerCase();
+            const matchesSearch = !searchTerm || searchableTerm.includes(searchTerm);
+
+
+            if (matches && matchesSearch) {
                 row.classList.remove('filtered-out');
                 visibleCount++;
             } else {
@@ -186,6 +211,11 @@ const TableFilter = (function() {
             }
             filterState[col.id] = 'all';
         });
+
+        // Reset search box to empty
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.value = '';
+        filterState['search'] = '';
 
         // Remove all filtered-out classes
         const table = document.querySelector(config.tableSelector);
