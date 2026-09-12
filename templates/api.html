@@ -42,17 +42,6 @@
             margin: 8px 0;
             line-height: 1.6;
         }
-        .install-step {
-            margin: 15px 0;
-            padding: 15px;
-            background: var(--sol-bg-highlight);
-            border-left: 4px solid var(--sol-blue);
-            border-radius: 5px;
-        }
-        .install-step h4 {
-            margin: 0 0 10px 0;
-            color: var(--sol-blue);
-        }
     </style>
 </head>
 
@@ -66,6 +55,7 @@
             <div class="nav-item"><a href="kafka.html">Kafka KIPs</a></div>
             <div class="nav-item"><a href="flink.html">Flink FLIPs</a></div>
             <div class="nav-item"><a href="api.html">API Docs</a></div>
+            <div class="nav-item"><a href="skills.html">Agent Skill</a></div>
         </div>
 
         <!-- JSON API Overview -->
@@ -83,7 +73,7 @@
             </ul>
             <p>
                 Use the JSON API for status dashboards, automated monitoring, cross-proposal analysis, and integration
-                with AI agents via the OSSIP skill.
+                with AI agents via the <a href="skills.html">OSSIP skill</a>.
             </p>
         </div>
 
@@ -171,63 +161,14 @@
             <p>Fields with unavailable or non-applicable data are set to <code>null</code>. Never empty strings or sentinel values like "unknown" or "not set".</p>
         </div>
 
-        <!-- Using the OSSIP Skill -->
+        <!-- Agent Skill -->
         <div class="section">
-            <h2>Using the OSSIP Skill</h2>
+            <h2>Agent Skill</h2>
             <p>
                 The OSSIP skill is a pre-built <a href="https://agentskills.io">Agent Skill</a> that allows AI agents to
-                query the JSON API programmatically. It's optimized for:
+                query this JSON API programmatically — for status lookups, activity queries, vote analysis, and more.
+                See the dedicated <a href="skills.html">Agent Skill page</a> for details and installation instructions.
             </p>
-            <ul>
-                <li>Status lookups ("Is KIP-123 approved?")</li>
-                <li>Activity queries ("Which proposals are stale?")</li>
-                <li>Vote analysis ("Who voted against this proposal?")</li>
-                <li>Cross-referencing ("Find KIPs related to consumer groups")</li>
-                <li>Author-based queries ("Show all proposals by a specific author")</li>
-            </ul>
-            <p>
-                The skill works with any agent supporting the Agent Skills standard, including:
-            </p>
-            <ul>
-                <li><strong>Claude Code</strong> (Anthropic's official CLI)</li>
-                <li><strong>Claude Desktop</strong> (when Agent Skills support is available)</li>
-                <li><strong>Custom agents</strong> built with the Agent Skills framework</li>
-            </ul>
-        </div>
-
-        <!-- Installation -->
-        <div class="section">
-            <h2>Installation</h2>
-            <p>
-                Download the skill file from <code>https://ossip.dev/skill/ossip/SKILL.md</code> and place it in your
-                agent's skills directory. The installation location depends on whether you want project-scoped or
-                personal (global) access.
-            </p>
-
-            <div class="install-step">
-                <h4>Claude Code (Project-Scoped)</h4>
-                <p>Install the skill for a specific project:</p>
-                <div class="code-block">mkdir -p .claude/skills/ossip
-curl -o .claude/skills/ossip/SKILL.md https://ossip.dev/skill/ossip/SKILL.md</div>
-                <p>The skill will be available only when working in that project directory.</p>
-            </div>
-
-            <div class="install-step">
-                <h4>Claude Code (Personal)</h4>
-                <p>Install the skill globally for all projects:</p>
-                <div class="code-block">mkdir -p ~/.claude/skills/ossip
-curl -o ~/.claude/skills/ossip/SKILL.md https://ossip.dev/skill/ossip/SKILL.md</div>
-                <p>The skill will be available in all Claude Code sessions.</p>
-            </div>
-
-            <div class="install-step">
-                <h4>Other Agents</h4>
-                <p>
-                    For Claude Desktop or custom agents, consult your agent's documentation for where to place skill files.
-                    Most agents following the <a href="https://agentskills.io">Agent Skills</a> standard use a similar
-                    directory structure (<code>~/.config/&lt;agent-name&gt;/skills/ossip/SKILL.md</code>).
-                </p>
-            </div>
         </div>
 
         <!-- Schemas -->

@@ -64,6 +64,7 @@ cp -r templates/assets site_files/assets
 mkdir -p site_files/skill/ossip
 cp templates/skill/ossip/SKILL.md site_files/skill/ossip/SKILL.md
 cp templates/api.html site_files/api.html 2>/dev/null || true
+cp templates/skills.html site_files/skills.html 2>/dev/null || true
 
 # Build the Kafka site
 echo "🏗️  Building Kafka site..."

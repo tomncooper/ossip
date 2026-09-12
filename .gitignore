@@ -1,5 +1,6 @@
 *.pyc
 *.mbox
+*.swp
 
 site_files/*
 
