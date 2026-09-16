@@ -130588,3 +130588,14 @@ kip,mention_type,message_id,mbox_year,mbox_month,timestamp,from,vote
 1279,subject,215,2026,9,2026-09-15 10:26:54+00:00,Andrew Schofield <schofielaj@apache.org>,
 1279,vote,215,2026,9,2026-09-15 10:26:54+00:00,Andrew Schofield <schofielaj@apache.org>,+1
 1279,body,215,2026,9,2026-09-15 10:26:54+00:00,Andrew Schofield <schofielaj@apache.org>,
+1279,subject,220,2026,9,2026-09-15 15:17:41+00:00,Rajini Sivaram <rajinisivaram@gmail.com>,
+1279,vote,220,2026,9,2026-09-15 15:17:41+00:00,Rajini Sivaram <rajinisivaram@gmail.com>,+1
+1279,body,220,2026,9,2026-09-15 15:17:41+00:00,Rajini Sivaram <rajinisivaram@gmail.com>,
+714,body,221,2026,9,2026-09-15 15:18:00+00:00,"""Apoorv Mittal (Jira)"" <jira@apache.org>",
+1076,body,221,2026,9,2026-09-15 15:18:00+00:00,"""Apoorv Mittal (Jira)"" <jira@apache.org>",
+1368,subject,233,2026,9,2026-09-15 20:44:06+00:00,"""Jun Rao via dev"" <dev@kafka.apache.org>",
+1368,discuss,233,2026,9,2026-09-15 20:44:06+00:00,"""Jun Rao via dev"" <dev@kafka.apache.org>",
+714,body,233,2026,9,2026-09-15 20:44:06+00:00,"""Jun Rao via dev"" <dev@kafka.apache.org>",
+1313,body,233,2026,9,2026-09-15 20:44:06+00:00,"""Jun Rao via dev"" <dev@kafka.apache.org>",
+606,body,233,2026,9,2026-09-15 20:44:06+00:00,"""Jun Rao via dev"" <dev@kafka.apache.org>",
+1368,body,233,2026,9,2026-09-15 20:44:06+00:00,"""Jun Rao via dev"" <dev@kafka.apache.org>",
