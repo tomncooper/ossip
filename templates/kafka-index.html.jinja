@@ -36,7 +36,7 @@
         </thead>
         <tbody>
         {% for kip in kip_status %}
-        <tr data-state="{{ kip['state']|e }}" data-authors="{{ kip['authors']|tojson|e }}">
+        <tr data-state="{{ kip['state']|e }}" data-authors='{{ kip['authors']|tojson }}'>
             <td><a href={{ kip['url'] }}>{{ kip['id'] }}</a></td>
             <td>{{ kip['text'] }}</td>
             <td>{{ kip['state'] }}</td>

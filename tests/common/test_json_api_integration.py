@@ -2,6 +2,7 @@
 
 import datetime as dt
 import json
+from html.parser import HTMLParser
 
 from ipper.common.api_output import generate_api_index
 from ipper.common.models import (
@@ -10,7 +11,7 @@ from ipper.common.models import (
     KipDetail,
     ProjectSummary,
 )
-from ipper.flink.output import generate_flink_json_api
+from ipper.flink.output import generate_flink_json_api, render_flink_main_page
 from ipper.kafka.output import (
     KIPStatus,
     generate_kafka_json_api,
@@ -578,3 +579,88 @@ class TestHtmlUnchanged:
         html_content = output_file.read_text()
         assert "KIP-100" in html_content or "100" in html_content
         assert "KIP-200" in html_content or "200" in html_content
+
+
+class TestDataAuthorsAttribute:
+    """Verify the data-authors attribute renders as parseable JSON.
+
+    Regression test: |tojson|e produced unescaped double quotes inside a
+    double-quoted HTML attribute, so the browser truncated the value at the
+    first quote (reading just "[") and the author filter dropdown collapsed
+    to a single "[" entry. The attribute must be single-quoted so the raw
+    JSON string survives HTML attribute-value parsing.
+    """
+
+    class _RowCollector(HTMLParser):
+        """Collects data-authors values as a browser resolves them."""
+
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.values: list[str] = []
+
+        def handle_starttag(self, tag, attrs):
+            attributes = dict(attrs)
+            if "data-authors" in attributes:
+                self.values.append(attributes["data-authors"])
+
+    def _assert_attributes_parse_as_json(self, html: str) -> list[list[str]]:
+        collector = self._RowCollector()
+        collector.feed(html)
+        assert collector.values, "no data-authors attributes found"
+
+        # A malformed (quote-broken) attribute fails this JSON parse
+        return [json.loads(value) for value in collector.values]
+
+    def test_kafka_index_data_authors_parse_as_json(self, tmp_path):
+        """data-authors values survive HTML attribute parsing and JSON-decode."""
+        output_file = tmp_path / "kafka.html"
+        kip_status = [
+            {
+                "id": 100,
+                "text": "Multi Author Proposal",
+                "url": "https://example.com",
+                "created_by": "Alice",
+                "authors": ["Alice", "Bob O'Brien", "Carol <carol@example.com>"],
+                "state": "under discussion",
+                "age": "1 year",
+                "status": KIPStatus.GREEN,
+                "last_mention_age": "2 weeks",
+                "emoji": None,
+                "+1": [],
+                "0": [],
+                "-1": [],
+            },
+        ]
+
+        render_standalone_status_page(kip_status, str(output_file))
+
+        parsed = self._assert_attributes_parse_as_json(output_file.read_text())
+        assert parsed == [["Alice", "Bob O'Brien", "Carol <carol@example.com>"]]
+
+    def test_flink_index_data_authors_parse_as_json(self, tmp_path):
+        """data-authors values survive HTML attribute parsing and JSON-decode."""
+        output_file = tmp_path / "flink.html"
+        wiki_cache = {
+            "42": {
+                "id": 42,
+                "title": "Test FLIP",
+                "web_url": "https://example.com",
+                "created_by": "Alice",
+                "authors": ["Alice", "Bob O'Brien"],
+                "state": "in progress",
+                "release_component": "Flink",
+                "release_version": "1.20",
+                "discussion_thread": "not set",
+                "vote_thread": "not set",
+                "jira_id": "not set",
+                "jira_link": "not set",
+                "+1": [],
+                "0": [],
+                "-1": [],
+            },
+        }
+
+        render_flink_main_page(wiki_cache, str(output_file))
+
+        parsed = self._assert_attributes_parse_as_json(output_file.read_text())
+        assert parsed == [["Alice", "Bob O'Brien"]]

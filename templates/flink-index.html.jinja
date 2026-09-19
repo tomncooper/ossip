@@ -38,7 +38,7 @@
         <tbody>
         {% for flip in flip_data %}
         {% set authors = flip.get('authors', [flip['created_by']]) %}
-        <tr data-state="{{ flip['state']|e }}" data-authors="{{ authors|tojson|e }}" data-component="{{ flip['release_component']|e }}">
+        <tr data-state="{{ flip['state']|e }}" data-authors='{{ authors|tojson }}' data-component="{{ flip['release_component']|e }}">
             <td><a href={{ flip['web_url'] }}>{{ flip['id'] }}</a></td>
             <td>{{ flip['title'] }}
             {% if flip["release_component"] == "not set" or flip["release_component"] == "unknown" %}
