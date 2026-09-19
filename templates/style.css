@@ -329,6 +329,13 @@ td.not-set {
     font-style: italic;
 }
 
+/* Author column: keep multi-author lists from blowing up the table layout */
+td.author-cell {
+    max-width: 16rem;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+}
+
 /* Status colors need to work with inline hex values, so we'll override common colors */
 td[style*="background-color:blue"],
 td[style*="background-color: blue"] {
