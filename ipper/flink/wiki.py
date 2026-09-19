@@ -276,7 +276,7 @@ def _enrich_flip_info(
 
     # We assume that the first table on the page is the summary table
     summary_table = tables[0]
-    summary_rows = summary_table.findAll("tr")
+    summary_rows = summary_table.find_all("tr")
     if not summary_rows:
         logger.warning(
             "No information in summary table in FLIP-%s. "
