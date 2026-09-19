@@ -20,6 +20,9 @@ const TableFilter = (function() {
      * @param {string} options.columns[].id - Unique ID for the filter
      * @param {string} options.columns[].label - Display label for the filter
      * @param {string} options.columns[].dataAttr - Data attribute name on table rows
+     * @param {boolean} options.columns[].multi - Optional: true when the attribute
+     *     holds a JSON array of values; the dropdown lists individual values and
+     *     rows match on partial membership
      */
     function init(options) {
         config = options;
@@ -82,6 +85,28 @@ const TableFilter = (function() {
     }
 
     /**
+     * Get the filterable values for a row/column pair.
+     *
+     * For multi-value columns (e.g. authors, where a row holds a JSON array of
+     * names in its data attribute) returns every individual value; for
+     * single-value columns returns a one-element array. Legacy non-JSON values
+     * on multi columns are tolerated and treated as a single value.
+     */
+    function getRowValues(row, col) {
+        const raw = row.getAttribute(col.dataAttr);
+        if (!raw || raw.trim() === '') return [];
+        if (col.multi) {
+            try {
+                return JSON.parse(raw);
+            } catch (e) {
+                // Tolerate legacy non-JSON values: treat as single value
+                return [raw];
+            }
+        }
+        return [raw];
+    }
+
+    /**
      * Populate filter dropdowns with unique values from the table
      */
     function populateFilters() {
@@ -95,12 +120,15 @@ const TableFilter = (function() {
 
         config.columns.forEach(col => {
             const uniqueValues = new Set();
-            
+
             rows.forEach(row => {
-                const value = row.getAttribute(col.dataAttr);
-                if (value && value.trim() !== '') {
-                    uniqueValues.add(value);
-                }
+                // Multi-value columns contribute each individual value to the
+                // dropdown; single-value columns contribute the whole string
+                getRowValues(row, col).forEach(value => {
+                    if (value && value.trim() !== '') {
+                        uniqueValues.add(value);
+                    }
+                });
             });
 
             // Sort values alphabetically
@@ -158,9 +186,10 @@ const TableFilter = (function() {
             const matches = config.columns.every(col => {
                 const filterValue = filterState[col.id];
                 if (filterValue === 'all') return true;
-                
-                const rowValue = row.getAttribute(col.dataAttr);
-                return rowValue === filterValue;
+
+                // Multi-value columns match on partial membership: a row
+                // matches when the selected value is one of its values
+                return getRowValues(row, col).includes(filterValue);
             });
 
             if (matches) {
