@@ -29,14 +29,14 @@
             <th>+1</th>
             <th>0</th>
             <th>-1</th>
-            <th>Created by</th>
+            <th>Author(s)</th>
             <th>Age</th>
             <th>More Info</th>
         </tr>
         </thead>
         <tbody>
         {% for kip in kip_status %}
-        <tr data-state="{{ kip['state']|e }}" data-created-by="{{ kip['created_by']|e }}">
+        <tr data-state="{{ kip['state']|e }}" data-authors='{{ kip['authors']|tojson }}'>
             <td><a href={{ kip['url'] }}>{{ kip['id'] }}</a></td>
             <td>{{ kip['text'] }}</td>
             <td>{{ kip['state'] }}</td>
@@ -88,7 +88,7 @@
             {% else %}
             <td>{{ kip["-1"]|length }}</td>
             {% endif %}
-            <td>{{ kip["created_by"] }}</td>
+            <td class="author-cell">{{ kip['authors']|join(", ") }}</td>
             <td>{{ kip["age"] }}</td>
             <td><a href=kips/KIP-{{ kip['id'] }}.html>info</a></td>
         </tr>
@@ -97,14 +97,14 @@
     </table>
 
     <!-- Filter JavaScript -->
-    <script src="assets/table-filter.js"></script>
+    <script src="assets/table-filter.js?v=2"></script>
     <script>
         TableFilter.init({
             tableSelector: 'table',
             filterContainerId: 'filter-controls',
             columns: [
                 { id: 'state', label: 'State', dataAttr: 'data-state' },
-                { id: 'created-by', label: 'Created By', dataAttr: 'data-created-by' }
+                { id: 'author', label: 'Author', dataAttr: 'data-authors', multi: true }
             ]
         });
     </script>

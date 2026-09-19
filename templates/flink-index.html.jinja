@@ -29,7 +29,7 @@
             <th>+1</th>
             <th>0</th>
             <th>-1</th>
-            <th>Created by</th>
+            <th>Author(s)</th>
             <th>State</th>
             <th>JIRA</th>
             <th>More Info</th>
@@ -37,7 +37,8 @@
         </thead>
         <tbody>
         {% for flip in flip_data %}
-        <tr data-state="{{ flip['state']|e }}" data-created-by="{{ flip['created_by']|e }}" data-component="{{ flip['release_component']|e }}">
+        {% set authors = flip.get('authors', [flip['created_by']]) %}
+        <tr data-state="{{ flip['state']|e }}" data-authors='{{ authors|tojson }}' data-component="{{ flip['release_component']|e }}">
             <td><a href={{ flip['web_url'] }}>{{ flip['id'] }}</a></td>
             <td>{{ flip['title'] }}
             {% if flip["release_component"] == "not set" or flip["release_component"] == "unknown" %}
@@ -89,7 +90,7 @@
             {% else %}
             <td>{{ flip["-1"]|length }}</td>
             {% endif %}
-            <td>{{ flip['created_by'] }}</td>
+            <td class="author-cell">{{ authors|join(", ") }}</td>
             <td>{{ flip["state"] }}</td>
             {% if flip["jira_id"] == "not set" %}
             <td></td>
@@ -103,14 +104,14 @@
     </table>
 
     <!-- Filter JavaScript -->
-    <script src="assets/table-filter.js"></script>
+    <script src="assets/table-filter.js?v=2"></script>
     <script>
         TableFilter.init({
             tableSelector: 'table',
             filterContainerId: 'filter-controls',
             columns: [
                 { id: 'state', label: 'State', dataAttr: 'data-state' },
-                { id: 'created-by', label: 'Created By', dataAttr: 'data-created-by' },
+                { id: 'author', label: 'Author', dataAttr: 'data-authors', multi: true },
                 { id: 'component', label: 'Component', dataAttr: 'data-component' }
             ]
         });

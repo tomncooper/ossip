@@ -29,7 +29,7 @@ All data is available as JSON via REST endpoints. Queries are client-side — fe
 - **Summary**: `https://ossip.dev/api/v1/kafka/kips.json`
   - All ~1,284 KIPs with compact metadata (~230KB)
   - Use for status lookups, filtering by state, and activity-based queries
-  - Fields: id, title, state, created_by, created_on, vote_count, activity_status, web_url, detail_url
+  - Fields: id, title, state, created_by, authors, created_on, vote_count, activity_status, web_url, detail_url
 
 - **Detail**: `https://ossip.dev/api/v1/kafka/kips/{id}.json`
   - Individual KIP with full vote details (voter names and timestamps)
@@ -41,7 +41,7 @@ All data is available as JSON via REST endpoints. Queries are client-side — fe
 - **Summary**: `https://ossip.dev/api/v1/flink/flips.json`
   - All ~570 FLIPs with compact metadata (~100KB)
   - Use for status lookups, filtering, and activity queries
-  - Fields: id, title, state, created_by, created_on, vote_count, activity_status, web_url, detail_url
+  - Fields: id, title, state, created_by, authors, created_on, vote_count, activity_status, web_url, detail_url
   - Note: activity_status is null for FLIPs (not color-coded like KIPs)
 
 - **Detail**: `https://ossip.dev/api/v1/flink/flips/{id}.json`
@@ -123,12 +123,18 @@ GET https://ossip.dev/api/v1/kafka/kips.json
 Find proposals by a specific author:
 
 1. Fetch the summary endpoint
-2. Filter by `created_by` field
+2. Filter by `created_by` (the wiki page creator) or by `authors` (the full merged author list). Prefer `authors`: it includes every declared author, not just the page creator.
 
 Example: All FLIPs created by a user:
 ```
 GET https://ossip.dev/api/v1/flink/flips.json
 → filter created_by = "alice"
+```
+
+Example: All proposals a user co-authored (multi-author proposals list every author):
+```
+GET https://ossip.dev/api/v1/kafka/kips.json
+→ filter authors contains "alice"
 ```
 
 ## Response Structure
@@ -142,7 +148,8 @@ All responses are JSON objects or arrays conforming to the schemas at `ossip.dev
   "id": 123,
   "title": "Proposal Title",
   "state": "under discussion",
-  "created_by": "author name",
+  "created_by": "wiki page creator",
+  "authors": ["author 1", "author 2"],
   "created_on": "2023-01-15",
   "vote_count": {
     "plus_one": 5,
@@ -162,7 +169,8 @@ All responses are JSON objects or arrays conforming to the schemas at `ossip.dev
   "id": 123,
   "title": "Proposal Title",
   "state": "under discussion",
-  "created_by": "author name",
+  "created_by": "wiki page creator",
+  "authors": ["author 1", "author 2"],
   "created_on": "2023-01-15",
   "last_modified_on": "2024-03-20T14:30:00Z",
   "last_modified_by": "reviewer name",
@@ -223,6 +231,9 @@ When presenting proposal information to users:
 - **Proposal IDs**: Positive integers. KIP and FLIP numbering is independent (both start from 1).
 - **Dates**: Calendar dates (created_on) use `YYYY-MM-DD` format. Timestamps (last_modified_on, votes) use ISO 8601 with seconds and Z (UTC) timezone.
 - **States**: One of "accepted", "under discussion", "not accepted", "completed", "in progress", "unknown"
+- **Authorship**:
+  - `created_by`: name of the wiki page creator (who created the Confluence page)
+  - `authors`: merged, deduplicated list of proposal authors — the page creator plus any authors/co-authors declared on the wiki page. For pages without an explicit author declaration, `authors` contains only `created_by`.
 - **Activity Status** (KIPs only):
   - `"blue"`: New, created in last 4 weeks
   - `"green"`: Mentioned in last 4 weeks

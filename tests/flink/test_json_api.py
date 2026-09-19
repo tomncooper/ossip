@@ -15,6 +15,7 @@ def _make_enriched_flip(flip_id=42):
         "content_url": "https://example.com/api/content/67890",
         "created_on": "2025-03-01T09:00:00.000Z",
         "created_by": "Alice",
+        "authors": ["Alice", "Bob"],
         "last_modified_on": "2025-04-15T16:20:00.000Z",
         "last_modified_by": "Bob",
         "state": "in progress",
@@ -43,6 +44,7 @@ class TestFlipToDetail:
         assert result.title == "FLIP-42: Test Flink Proposal"
         assert result.state == "in progress"
         assert result.created_by == "Alice"
+        assert result.authors == ["Alice", "Bob"]
         assert result.created_on == "2025-03-01"
         assert result.last_modified_on == "2025-04-15T16:20:00Z"
         assert result.last_modified_by == "Bob"
@@ -156,6 +158,7 @@ class TestFlipToSummary:
         assert result.title == "FLIP-42: Test Flink Proposal"
         assert result.state == "in progress"
         assert result.created_by == "Alice"
+        assert result.authors == ["Alice", "Bob"]
         assert result.created_on == "2025-03-01"
         assert result.detail_url == "flips/42.json"
         assert (

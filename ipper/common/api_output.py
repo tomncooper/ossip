@@ -5,6 +5,8 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
+from pydantic import BaseModel
+
 from ipper.common.constants import NOT_SET_STR, UNKNOWN_STR
 from ipper.common.models import (
     ApiIndex,
@@ -121,7 +123,7 @@ def write_schemas(dir_path: Path) -> None:
     schema_dir.mkdir(parents=True, exist_ok=True)
 
     # Export schemas for the four main API models
-    models_to_export = [
+    models_to_export: list[tuple[type[BaseModel], str]] = [
         (ApiIndex, "ApiIndex.schema.json"),
         (ProjectSummary, "ProjectSummary.schema.json"),
         (KipDetail, "KipDetail.schema.json"),

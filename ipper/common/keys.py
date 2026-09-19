@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass, field
 from email.utils import parseaddr
 from pathlib import Path
+from typing import Any
 
 import requests
 from rapidfuzz import fuzz
@@ -196,7 +197,7 @@ def parse_keys_file(keys_content: str) -> list[CommitterInfo]:
         List of CommitterInfo objects (one per unique committer name)
     """
     # Dictionary to aggregate committers by name: {name: {emails: set, raw_uid: str}}
-    committer_data: dict[str, dict[str, any]] = {}
+    committer_data: dict[str, dict[str, Any]] = {}
 
     # Pattern to match uid lines with name and email
     # Format: uid   [optional trust] Name (optional comment) <email@domain.com>

@@ -6,6 +6,7 @@ from typing import Any, cast
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
+from ipper.common.authors import dedupe_authors, parse_authors_from_text
 from ipper.common.constants import NOT_SET_STR, UNKNOWN_STR, IPState
 from ipper.common.jira import JiraStatus, get_apache_jira_status
 from ipper.common.wiki import (
@@ -83,6 +84,12 @@ def _find_Jira_key_and_link(row_data: Tag) -> tuple[str | None, str | None]:
 def _add_row_data(
     header: str, row_data: Tag, flip_dict: dict[str, str | int | list[str]]
 ) -> None:
+
+    if "author" in header:
+        # The cell text flattens the confluence-userlink anchors, so a
+        # comma-separated list of names (FLIP-588 style) parses directly
+        flip_dict["wiki_authors"] = parse_authors_from_text(row_data.text)
+        return
 
     if "discussion" in header:
         if TEMPLATE_BOILER_PLATE_PREFIX in row_data.text:
@@ -256,6 +263,7 @@ def _enrich_flip_info(
     flip_dict[VOTE_THREAD_KEY] = UNKNOWN_STR
     flip_dict[RELEASE_COMPONENT_KEY] = UNKNOWN_STR
     flip_dict[RELEASE_VERSION_KEY] = UNKNOWN_STR
+    flip_dict["wiki_authors"] = []
     flip_dict["state"] = IPState.UNKNOWN
 
     if not tables:
@@ -268,7 +276,7 @@ def _enrich_flip_info(
 
     # We assume that the first table on the page is the summary table
     summary_table = tables[0]
-    summary_rows = summary_table.findAll("tr")
+    summary_rows = summary_table.find_all("tr")
     if not summary_rows:
         logger.warning(
             "No information in summary table in FLIP-%s. "
@@ -293,7 +301,7 @@ def _enrich_flip_info(
     flip_dict["state"] = _determine_state(flip_dict)
 
 
-def process_child_kip(flip_id: int, child: dict):
+def process_child_kip(flip_id: int, child: dict) -> dict[str, int | str | list[str]]:
     """Process and enrich the KIP child page dictionary"""
 
     logger.info("Processing FLIP %s wiki page", flip_id)
@@ -310,6 +318,16 @@ def process_child_kip(flip_id: int, child: dict):
     ]
     _enrich_flip_info(flip_id, child["body"]["view"]["value"], child_dict)
 
+    # Merge the page creator with any explicitly declared authors into the
+    # final deduplicated author list. The intermediate wiki_authors key is
+    # removed so only the merged list is persisted to the cache.
+    child_dict["authors"] = dedupe_authors(
+        [
+            cast(str, child_dict["created_by"]),
+            *cast(list[str], child_dict.pop("wiki_authors", [])),
+        ]
+    )
+
     return child_dict
 
 
@@ -317,9 +335,9 @@ def get_flip_information(
     flip_main_info,
     chunk: int = 100,
     timeout: int = 30,
-    existing_cache: dict | None = None,
+    existing_cache: dict[int, dict[str, int | str | list[str]]] | None = None,
     refresh_days: int = 30,
-):
+) -> dict[int, dict[str, int | str | list[str]]]:
 
     output = existing_cache if existing_cache else {}
 
@@ -344,14 +362,17 @@ def get_flip_information(
             if flip_id in output:
                 # Parse the created_on date from the cached FLIP
                 try:
-                    created_on_str = output[flip_id]["created_on"]
+                    created_on_str = cast(str, output[flip_id]["created_on"])
                     # Handle ISO format with 'Z' or timezone info
                     created_date = datetime.fromisoformat(
                         created_on_str.replace("Z", "+00:00")
                     )
 
-                    # Skip if FLIP was created outside the refresh window
-                    if created_date < refresh_cutoff:
+                    # Skip only if outside the refresh window AND already
+                    # backfilled with the authors field. FLIPs created before
+                    # the cutoff that lack authors fall through so they are
+                    # backfilled by the reprocessing below.
+                    if created_date < refresh_cutoff and "authors" in output[flip_id]:
                         logger.info(
                             "Skipping FLIP-%s (created %s, outside %s-day "
                             "refresh window)",
@@ -362,7 +383,7 @@ def get_flip_information(
                         continue
                     else:
                         logger.info(
-                            "Refreshing FLIP-%s (created recently: %s)",
+                            "Refreshing FLIP-%s (recent or missing authors: %s)",
                             flip_id,
                             created_on_str,
                         )

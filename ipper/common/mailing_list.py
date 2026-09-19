@@ -328,7 +328,7 @@ def extract_message_payload(msg: Message) -> list[str]:
             continue
 
         raw_bytes = part.get_payload(decode=True)
-        if raw_bytes is None:
+        if raw_bytes is None or not isinstance(raw_bytes, bytes):
             continue
 
         # Skip HTML parts since they often contain the same text as the plain text part

@@ -18,6 +18,8 @@
             <td {% if value in ["not set", "unknown"] %}class="not-set"{% endif %}>
                 {% if value and value is string and (value.startswith('http://') or value.startswith('https://')) %}
                     <a href="{{ value }}">{{ value }}</a>
+                {% elif value is sequence and value is not string %}
+                    {{ value|join(", ") }}
                 {% else %}
                     {{ value }}
                 {% endif %}

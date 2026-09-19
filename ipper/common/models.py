@@ -52,7 +52,9 @@ class ProposalSummary(BaseModel):
         id: Proposal ID number
         title: Proposal title
         state: Current state (e.g., "accepted", "under discussion")
-        created_by: Author's name
+        created_by: Name of the wiki page creator
+        authors: Merged, deduplicated list of proposal authors (creator + any
+            authors/co-authors declared on the wiki page)
         created_on: Creation date (YYYY-MM-DD)
         vote_count: Integer vote counts
         activity_status: Activity level indicator ("blue", "green", "yellow", "red",
@@ -66,6 +68,7 @@ class ProposalSummary(BaseModel):
     title: str
     state: str
     created_by: str
+    authors: list[str]
     created_on: str
     vote_count: VoteCount
     activity_status: str | None
@@ -80,7 +83,9 @@ class ProposalDetail(BaseModel):
         id: Proposal ID number
         title: Proposal title
         state: Current state (e.g., "accepted", "under discussion")
-        created_by: Author's name
+        created_by: Name of the wiki page creator
+        authors: Merged, deduplicated list of proposal authors (creator + any
+            authors/co-authors declared on the wiki page)
         created_on: Creation date (YYYY-MM-DD)
         last_modified_on: Last modification timestamp (YYYY-MM-DDTHH:MM:SSZ)
         last_modified_by: Name of last modifier
@@ -96,6 +101,7 @@ class ProposalDetail(BaseModel):
     title: str
     state: str
     created_by: str
+    authors: list[str]
     created_on: str
     last_modified_on: str
     last_modified_by: str

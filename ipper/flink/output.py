@@ -37,7 +37,7 @@ def get_template(template_dir: str, template_filename) -> Template:
         raise AttributeError(f"Template {template_path} not found")
 
     template: Template = Environment(
-        loader=FileSystemLoader(template_dir)
+        loader=FileSystemLoader(template_dir), autoescape=True
     ).get_template(template_filename)
 
     return template
@@ -189,6 +189,7 @@ def flip_to_detail(flip_data: dict) -> FlipDetail:
         title=flip_data["title"],
         state=flip_data["state"],
         created_by=flip_data["created_by"],
+        authors=flip_data.get("authors", [flip_data["created_by"]]),
         created_on=confluence_date_to_iso_date(flip_data["created_on"]),
         last_modified_on=confluence_date_to_iso_datetime(flip_data["last_modified_on"]),
         last_modified_by=flip_data["last_modified_by"],
@@ -232,6 +233,7 @@ def flip_to_summary(flip_data: dict) -> ProposalSummary:
         title=flip_data["title"],
         state=flip_data["state"],
         created_by=flip_data["created_by"],
+        authors=flip_data.get("authors", [flip_data["created_by"]]),
         created_on=confluence_date_to_iso_date(flip_data["created_on"]),
         vote_count=vote_count,
         activity_status=None,
