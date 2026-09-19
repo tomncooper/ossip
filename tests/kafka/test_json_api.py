@@ -17,6 +17,7 @@ def _make_kip_wiki_info_entry(kip_id=100):
         "content_url": "https://example.com/api/content/12345",
         "created_on": "2025-01-15T10:30:00.000Z",
         "created_by": "Alice",
+        "authors": ["Alice", "Bob"],
         "last_modified_on": "2025-02-20T14:45:00.000Z",
         "last_modified_by": "Bob",
         "state": "under discussion",
@@ -33,6 +34,7 @@ def _make_kip_status_entry(kip_id=100):
         "text": "Test Proposal",
         "url": f"https://wiki.apache.org/confluence/display/KAFKA/KIP-{kip_id}",
         "created_by": "Alice",
+        "authors": ["Alice", "Bob"],
         "state": "under discussion",
         "age": "1 year",
         "status": KIPStatus.GREEN,
@@ -58,6 +60,7 @@ class TestKipToDetail:
         assert result.title == "KIP-100: Test Proposal"
         assert result.state == "under discussion"
         assert result.created_by == "Alice"
+        assert result.authors == ["Alice", "Bob"]
         assert result.created_on == "2025-01-15"
         assert result.last_modified_on == "2025-02-20T14:45:00Z"
         assert result.last_modified_by == "Bob"
@@ -156,6 +159,7 @@ class TestKipToSummary:
         assert result.title == "KIP-100: Test Proposal"
         assert result.state == "under discussion"
         assert result.created_by == "Alice"
+        assert result.authors == ["Alice", "Bob"]
         assert result.created_on == "2025-01-15"
         assert result.detail_url == "kips/100.json"
         assert (

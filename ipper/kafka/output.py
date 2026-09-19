@@ -113,8 +113,14 @@ def create_vote_dict(
 
 
 def create_status_dict(
-    kip_mentions: DataFrame, kip_wiki_info: dict[int, dict[str, int | str]]
-) -> list[dict[str, int | str | None | KIPStatus | list[dict[str, str]]]]:
+    kip_mentions: DataFrame,
+    kip_wiki_info: dict[int, dict[str, int | str | list[str]]],
+) -> list[
+    dict[
+        str,
+        int | str | None | KIPStatus | list[dict[str, str]] | list[str],
+    ]
+]:
     """Calculate a status for each KIP. For KIPs under discussion, calculate status
     based on how recently it was mentioned in email subject. For other KIPs, use emoji."""
 
@@ -126,16 +132,26 @@ def create_status_dict(
         kip_mentions
     )
 
-    output: list[dict[str, int | str | None | KIPStatus | list[dict[str, str]]]] = []
+    output: list[
+        dict[
+            str,
+            int | str | None | KIPStatus | list[dict[str, str]] | list[str],
+        ]
+    ] = []
     for kip_id in sorted(kip_wiki_info.keys(), reverse=True):
-        kip_data: dict[str, int | str] = kip_wiki_info[kip_id]
+        kip_data: dict[str, int | str | list[str]] = kip_wiki_info[kip_id]
         status_entry: dict[
-            str, int | str | None | KIPStatus | list[dict[str, str]]
+            str,
+            int | str | None | KIPStatus | list[dict[str, str]] | list[str],
         ] = {}
         status_entry["id"] = kip_id
         status_entry["text"] = clean_description(cast(str, kip_data["title"]))
         status_entry["url"] = kip_data["web_url"]
         status_entry["created_by"] = kip_data["created_by"]
+        # .get() fallback keeps output working against pre-backfill caches
+        status_entry["authors"] = kip_data.get(
+            "authors", [cast(str, kip_data["created_by"])]
+        )
         status_entry["state"] = kip_data["state"]
         status_entry["age"] = calculate_age(
             cast(str, kip_data["created_on"]), APACHE_CONFLUENCE_DATE_FORMAT
@@ -181,7 +197,12 @@ def create_status_dict(
 
 
 def render_standalone_status_page(
-    kip_status: list[dict[str, int | str | None | KIPStatus | list[dict[str, str]]]],
+    kip_status: list[
+        dict[
+            str,
+            int | str | None | KIPStatus | list[dict[str, str]] | list[str],
+        ]
+    ],
     output_filename: str,
     templates_dir: str = DEFAULT_TEMPLATES_DIR,
     template_filename: str = KAFKA_MAIN_PAGE_TEMPLATE,
@@ -206,18 +227,22 @@ def render_standalone_status_page(
 
 
 def enrich_kip_wiki_info_with_votes(
-    kip_wiki_info: dict[int, dict[str, int | str]],
+    kip_wiki_info: dict[int, dict[str, int | str | list[str]]],
     kip_mentions: DataFrame,
-) -> dict[int, dict[str, int | str | list[dict[str, str]]]]:
+) -> dict[int, dict[str, int | str | list[str] | list[dict[str, str]]]]:
     """Enriches KIP wiki information with vote data from mailing list mentions."""
 
     vote_dict: dict[int, dict[str, list[dict[str, str]]]] = create_vote_dict(
         kip_mentions
     )
 
-    enriched_info: dict[int, dict[str, int | str | list[dict[str, str]]]] = {}
+    enriched_info: dict[
+        int, dict[str, int | str | list[str] | list[dict[str, str]]]
+    ] = {}
     for kip_id, kip_data in kip_wiki_info.items():
-        enriched_kip: dict[str, int | str | list[dict[str, str]]] = dict(kip_data)
+        enriched_kip: dict[str, int | str | list[str] | list[dict[str, str]]] = dict(
+            kip_data
+        )
 
         if kip_id in vote_dict:
             for vote in ["+1", "0", "-1"]:
@@ -232,7 +257,7 @@ def enrich_kip_wiki_info_with_votes(
 
 
 def render_kip_info_pages(
-    kip_wiki_info: dict[int, dict[str, int | str | list[dict[str, str]]]],
+    kip_wiki_info: dict[int, dict[str, int | str | list[str] | list[dict[str, str]]]],
     output_directory: str,
     template_dir: str = DEFAULT_TEMPLATES_DIR,
     template_filename: str = KIP_RAW_INFO_PAGE_TEMPLATE,
@@ -298,6 +323,7 @@ def kip_to_detail(wiki_entry: dict, status_entry: dict) -> KipDetail:
         title=wiki_entry["title"],
         state=wiki_entry["state"],
         created_by=wiki_entry["created_by"],
+        authors=wiki_entry.get("authors", [wiki_entry["created_by"]]),
         created_on=confluence_date_to_iso_date(wiki_entry["created_on"]),
         last_modified_on=confluence_date_to_iso_datetime(
             wiki_entry["last_modified_on"]
@@ -338,6 +364,7 @@ def kip_to_summary(status_entry: dict, wiki_entry: dict) -> ProposalSummary:
         title=wiki_entry["title"],
         state=status_entry["state"],
         created_by=status_entry["created_by"],
+        authors=status_entry.get("authors", [status_entry["created_by"]]),
         created_on=confluence_date_to_iso_date(wiki_entry["created_on"]),
         vote_count=vote_count,
         activity_status=activity_status,
