@@ -298,8 +298,11 @@ def get_kip_information(
             elif update:
                 cached_modified = output[kip_id].get("last_modified_on")
                 api_modified = child["history"]["lastUpdated"]["when"]
-                if cached_modified != api_modified:
-                    logger.info("KIP %s has been modified, refreshing", kip_id)
+                if cached_modified != api_modified or "authors" not in output[kip_id]:
+                    if cached_modified != api_modified:
+                        logger.info("KIP %s has been modified, refreshing", kip_id)
+                    else:
+                        logger.info("KIP %s is missing authors, backfilling", kip_id)
                     output[kip_id] = process_child_kip(kip_id, child)
 
     with open(cache_file_path, "w", encoding="utf8") as cache_file:

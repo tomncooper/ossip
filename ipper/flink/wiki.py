@@ -368,8 +368,11 @@ def get_flip_information(
                         created_on_str.replace("Z", "+00:00")
                     )
 
-                    # Skip if FLIP was created outside the refresh window
-                    if created_date < refresh_cutoff:
+                    # Skip only if outside the refresh window AND already
+                    # backfilled with the authors field. FLIPs created before
+                    # the cutoff that lack authors fall through so they are
+                    # backfilled by the reprocessing below.
+                    if created_date < refresh_cutoff and "authors" in output[flip_id]:
                         logger.info(
                             "Skipping FLIP-%s (created %s, outside %s-day "
                             "refresh window)",
@@ -380,7 +383,7 @@ def get_flip_information(
                         continue
                     else:
                         logger.info(
-                            "Refreshing FLIP-%s (created recently: %s)",
+                            "Refreshing FLIP-%s (recent or missing authors: %s)",
                             flip_id,
                             created_on_str,
                         )

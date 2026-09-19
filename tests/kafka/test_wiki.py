@@ -290,7 +290,8 @@ class TestGetKipInformationCacheUpdate:
         assert result[100]["title"] == "KIP-100: Test Proposal"
 
     def test_unmodified_kip_skipped(self, tmp_path, mocker):
-        """A KIP with the same last_modified_on is not re-processed."""
+        """A KIP with the same last_modified_on (and already backfilled with
+        authors) is not re-processed."""
         timestamp = "2025-06-01T00:00:00.000Z"
         cache_data = {
             "200": {
@@ -298,6 +299,7 @@ class TestGetKipInformationCacheUpdate:
                 "title": "KIP-200: Old Title",
                 "last_modified_on": timestamp,
                 "state": IPState.ACCEPTED,
+                "authors": ["Author"],
             }
         }
         cache_file = tmp_path / "cache" / "kip_cache.json"
@@ -386,3 +388,68 @@ class TestGetKipInformationCacheUpdate:
 
         assert result[400]["state"] == IPState.ACCEPTED
         assert result[400]["last_modified_on"] == "2025-07-01T00:00:00.000Z"
+
+    def test_missing_authors_backfilled(self, tmp_path, mocker):
+        """A cached KIP with an unchanged last_modified_on but no authors
+        field is re-processed (backfill)."""
+        timestamp = "2025-06-01T00:00:00.000Z"
+        cache_data = {
+            "500": {
+                "kip_id": 500,
+                "title": "KIP-500: Legacy Title",
+                "last_modified_on": timestamp,
+                "state": IPState.ACCEPTED,
+            }
+        }
+        cache_file = tmp_path / "cache" / "kip_cache.json"
+        self._write_cache(cache_file, cache_data)
+
+        child = _make_child_page(500, last_updated=timestamp)
+        mocker.patch(
+            "ipper.kafka.wiki.child_page_generator",
+            return_value=iter([child]),
+        )
+
+        result = get_kip_information(
+            {"id": "123"},
+            update=True,
+            cache_filepath=str(cache_file),
+        )
+
+        assert result[500]["authors"] == ["Author"]
+        assert result[500]["title"] == "KIP-500: Test Proposal"
+
+    def test_authors_present_not_backfilled(self, tmp_path, mocker):
+        """A cached KIP with authors and unchanged last_modified_on is not
+        re-processed (backfill is self-clearing)."""
+        timestamp = "2025-06-01T00:00:00.000Z"
+        cache_data = {
+            "600": {
+                "kip_id": 600,
+                "title": "KIP-600: Old Title",
+                "last_modified_on": timestamp,
+                "state": IPState.ACCEPTED,
+                "authors": ["Existing Author"],
+            }
+        }
+        cache_file = tmp_path / "cache" / "kip_cache.json"
+        self._write_cache(cache_file, cache_data)
+
+        child = _make_child_page(600, last_updated=timestamp)
+        mocker.patch(
+            "ipper.kafka.wiki.child_page_generator",
+            return_value=iter([child]),
+        )
+        spy = mocker.spy(
+            __import__("ipper.kafka.wiki", fromlist=["process_child_kip"]),
+            "process_child_kip",
+        )
+
+        result = get_kip_information(
+            {"id": "123"},
+            update=True,
+            cache_filepath=str(cache_file),
+        )
+
+        spy.assert_not_called()
+        assert result[600]["authors"] == ["Existing Author"]

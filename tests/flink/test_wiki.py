@@ -1,8 +1,10 @@
 """Tests for ipper.flink.wiki parsing and author assembly."""
 
+import json
+
 from bs4 import BeautifulSoup
 
-from ipper.flink.wiki import _add_row_data, process_child_kip
+from ipper.flink.wiki import _add_row_data, get_flip_information, process_child_kip
 
 
 def _make_child_page(
@@ -101,3 +103,89 @@ class TestProcessChildKipAuthors:
         result = process_child_kip(100, child)
 
         assert result["authors"] == ["Author"]
+
+
+class TestGetFlipInformationBackfill:
+    """Tests for the authors-backfill guard in get_flip_information()."""
+
+    def _write_cache(self, path, data):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w", encoding="utf8") as f:
+            json.dump(data, f)
+
+    def _run_update(self, tmp_path, mocker, cache_data, refresh_days=30):
+        cache_file = tmp_path / "cache" / "flip_cache.json"
+        self._write_cache(cache_file, cache_data)
+
+        child = _make_child_page(700)
+        mocker.patch(
+            "ipper.flink.wiki.child_page_generator",
+            return_value=iter([child]),
+        )
+        spy = mocker.spy(
+            __import__("ipper.flink.wiki", fromlist=["process_child_kip"]),
+            "process_child_kip",
+        )
+
+        result = get_flip_information(
+            {"id": "123"},
+            existing_cache={int(k): v for k, v in cache_data.items()},
+            refresh_days=refresh_days,
+        )
+
+        return result, spy
+
+    def test_old_flip_without_authors_backfilled(self, tmp_path, mocker):
+        """A cached FLIP created outside the refresh window but lacking the
+        authors field must NOT be skipped (backfill requirement)."""
+        cache_data = {
+            "700": {
+                "id": 700,
+                "title": "FLIP-700: Old Title",
+                "created_on": "2023-01-01T00:00:00.000Z",
+                "last_modified_on": "2024-01-01T00:00:00.000Z",
+                "state": "accepted",
+            }
+        }
+
+        result, spy = self._run_update(tmp_path, mocker, cache_data)
+
+        spy.assert_called()  # entry reprocessed so authors get backfilled
+        assert result[700]["authors"] == ["Author"]
+
+    def test_old_flip_with_authors_skipped(self, tmp_path, mocker):
+        """A cached FLIP outside the refresh window that already has authors
+        is skipped (backfill is self-clearing)."""
+        cache_data = {
+            "700": {
+                "id": 700,
+                "title": "FLIP-700: Old Title",
+                "created_on": "2023-01-01T00:00:00.000Z",
+                "last_modified_on": "2024-01-01T00:00:00.000Z",
+                "state": "accepted",
+                "authors": ["Existing Author"],
+            }
+        }
+
+        result, spy = self._run_update(tmp_path, mocker, cache_data)
+
+        spy.assert_not_called()
+        assert result[700]["authors"] == ["Existing Author"]
+
+    def test_recent_flip_refreshed_without_authors(self, tmp_path, mocker):
+        """A FLIP created inside the refresh window is refreshed even when
+        authors are missing (pre-existing behaviour)."""
+        cache_data = {
+            "700": {
+                "id": 700,
+                "title": "FLIP-700: Old Title",
+                "created_on": "2099-01-01T00:00:00.000Z",
+                "last_modified_on": "2099-01-01T00:00:00.000Z",
+                "state": "accepted",
+            }
+        }
+
+        result, spy = self._run_update(tmp_path, mocker, cache_data)
+
+        spy.assert_called()
+        assert result[700]["authors"] == ["Author"]
