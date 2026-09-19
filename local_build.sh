@@ -56,11 +56,15 @@ if [[ "$RENDER_MODE" == false ]]; then
 fi
 
 # Copy static page to site_files
+# NOTE: 'cp -r src dst' where dst already exists nests src *inside* dst
+# (site_files/assets/assets/...), leaving the previously-copied files stale.
+# Copy the directory *contents* so files are overwritten on every build.
 echo "📋 Copying static files..."
 mkdir -p site_files
 cp templates/index.html site_files/
 cp templates/style.css site_files/
-cp -r templates/assets site_files/assets
+mkdir -p site_files/assets
+cp -r templates/assets/. site_files/assets/
 mkdir -p site_files/skill/ossip
 cp templates/skill/ossip/SKILL.md site_files/skill/ossip/SKILL.md
 cp templates/api.html site_files/api.html 2>/dev/null || true
