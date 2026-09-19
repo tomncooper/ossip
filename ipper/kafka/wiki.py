@@ -7,6 +7,7 @@ from typing import Any, cast
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
+from ipper.common.authors import dedupe_authors, is_author_line, parse_authors_from_text
 from ipper.common.constants import NOT_SET_STR, UNKNOWN_STR, IPState
 from ipper.common.wiki import (
     APACHE_CONFLUENCE_BASE_URL,
@@ -138,8 +139,30 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
     jira_processed: bool = False
     discussion_processed: bool = False
     vote_processed: bool = False
+    authors_processed: bool = False
+    co_authors_processed: bool = False
 
     for para in parsed_body.find_all("p"):
+        # Author lines are checked with separate 'if' statements (not part of
+        # the elif chain below) because an author paragraph can share fields
+        # with other data (e.g. KIP-1320: "Authors: Eric Chang<br/>Discussion
+        # thread: ..."). Both the authors and the discussion thread must be
+        # extractable from the same paragraph.
+        if (
+            not authors_processed
+            and "authors" in para.text.lower()
+            and is_author_line(para.text)
+        ):
+            kip_dict["wiki_authors"] = parse_authors_from_text(para.text)
+            authors_processed = True
+        elif (
+            not co_authors_processed
+            and "co author" in para.text.lower()
+            and is_author_line(para.text)
+        ):
+            kip_dict["wiki_co_authors"] = parse_authors_from_text(para.text)
+            co_authors_processed = True
+
         if not state_processed and "current state" in para.text.lower():
             state: str | None = get_current_state(para.text)
             if state:
@@ -203,7 +226,7 @@ def enrich_kip_info(body_html: str, kip_dict: dict[str, list[str] | str | int]) 
         kip_dict["vote_thread"] = NOT_SET_STR
 
 
-def process_child_kip(kip_id: int, child: dict):
+def process_child_kip(kip_id: int, child: dict) -> dict[str, list[str] | str | int]:
     """Process and enrich the KIP child page dictionary"""
 
     logger.info("Processing KIP %s wiki page", kip_id)
@@ -220,6 +243,17 @@ def process_child_kip(kip_id: int, child: dict):
     ]
     enrich_kip_info(child["body"]["view"]["value"], child_dict)
 
+    # Merge the page creator with any explicitly declared authors/co-authors
+    # into the final deduplicated author list. The intermediate wiki_* keys
+    # are removed so only the merged list is persisted to the cache.
+    child_dict["authors"] = dedupe_authors(
+        [
+            cast(str, child_dict["created_by"]),
+            *cast(list[str], child_dict.pop("wiki_authors", [])),
+            *cast(list[str], child_dict.pop("wiki_co_authors", [])),
+        ]
+    )
+
     return child_dict
 
 
@@ -230,7 +264,7 @@ def get_kip_information(
     overwrite_cache: bool = False,
     cache_filepath: str = "cache/kip_wiki_cache.json",
     timeout: int = 30,
-) -> dict[int, dict[str, int | str]]:
+) -> dict[int, dict[str, int | str | list[str]]]:
     """Gets the details of all child pages of the KIP main page that relate
     to a KIP. This takes a long time so will cache its results in a json file."""
 
@@ -241,7 +275,7 @@ def get_kip_information(
     if cache_file_path.exists() and not overwrite_cache:
         logger.info("Loading KIP Wiki information from cache file: %s", cache_file_path)
         with open(cache_file_path, encoding="utf8") as cache_file:
-            output: dict[int, dict[str, int | str]] = {
+            output: dict[int, dict[str, int | str | list[str]]] = {
                 int(k): v for k, v in json.load(cache_file).items()
             }
         if not update:

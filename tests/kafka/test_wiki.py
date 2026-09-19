@@ -12,6 +12,7 @@ from ipper.kafka.wiki import (
     enrich_kip_info,
     get_current_state,
     get_kip_information,
+    process_child_kip,
 )
 
 # The exact template placeholder text from the KIP wiki template
@@ -140,6 +141,124 @@ class TestEnrichKipInfo:
         assert kip_dict["jira"] == NOT_SET_STR
         assert kip_dict["discussion_thread"] == NOT_SET_STR
         assert kip_dict["vote_thread"] == NOT_SET_STR
+
+
+class TestEnrichKipInfoAuthors:
+    """Tests for author parsing in enrich_kip_info()."""
+
+    def test_multi_author_paragraph_sets_wiki_authors(self):
+        """KIP-1279 style: plain comma-separated authors paragraph."""
+        body = (
+            "<p>Current state: Under Discussion</p>"
+            "<p><span><strong>Authors</strong>: Luke Chen, Federico Valeri, "
+            "Omnia Ibrahim, Gaurav Narula</span></p>"
+        )
+        kip_dict: dict = {}
+        enrich_kip_info(body, kip_dict)
+        assert kip_dict["wiki_authors"] == [
+            "Luke Chen",
+            "Federico Valeri",
+            "Omnia Ibrahim",
+            "Gaurav Narula",
+        ]
+
+    def test_names_in_em_flattened(self):
+        """KIP-1134 style: names inside <em> elements."""
+        body = (
+            "<p><strong>Authors: </strong><em>Daniel Urban, Gergely Harmadas</em></p>"
+        )
+        kip_dict: dict = {}
+        enrich_kip_info(body, kip_dict)
+        assert kip_dict["wiki_authors"] == ["Daniel Urban", "Gergely Harmadas"]
+
+    def test_shared_paragraph_stops_at_discussion_thread(self):
+        """KIP-1320 style: authors and discussion thread share one paragraph."""
+        body = (
+            "<p><strong>Authors:</strong> Eric Chang<br/>"
+            "<strong>Discussion thread:</strong> "
+            "<a href='https://example.com/thread'>here</a></p>"
+        )
+        kip_dict: dict = {}
+        enrich_kip_info(body, kip_dict)
+        assert kip_dict["wiki_authors"] == ["Eric Chang"]
+        # The discussion link in the shared paragraph must still be found
+        assert kip_dict["discussion_thread"] == "https://example.com/thread"
+
+    def test_co_author_paragraph_sets_wiki_co_authors(self):
+        """KIP-1255 style: supplementary co-author as a user-mention link."""
+        body = (
+            "<p><strong>Co Author: </strong>"
+            "<a class='confluence-userlink'>Satish Duggana</a></p>"
+        )
+        kip_dict: dict = {}
+        enrich_kip_info(body, kip_dict)
+        assert kip_dict["wiki_co_authors"] == ["Satish Duggana"]
+
+    def test_author_line_missing_leaves_keys_unset(self):
+        body = "<p>Current state: Accepted</p>"
+        kip_dict: dict = {}
+        enrich_kip_info(body, kip_dict)
+        assert "wiki_authors" not in kip_dict
+        assert "wiki_co_authors" not in kip_dict
+
+    def test_only_first_author_paragraph_used(self):
+        """Prose mentions of 'authors' later in the document are ignored."""
+        body = (
+            "<p><strong>Authors:</strong> Jane Doe</p>"
+            "<p>Other authors have contributed to this area.</p>"
+        )
+        kip_dict: dict = {}
+        enrich_kip_info(body, kip_dict)
+        assert kip_dict["wiki_authors"] == ["Jane Doe"]
+
+
+class TestProcessChildKipAuthors:
+    """Tests for author assembly in process_child_kip()."""
+
+    def test_multi_author_body_produces_merged_authors(self):
+        child = _make_child_page(
+            100,
+            body_html=(
+                "<p>Current state: Under Discussion</p>"
+                "<p><strong>Authors:</strong> Luke Chen, Federico Valeri</p>"
+                "<p><strong>Co Author:</strong> Omnia Ibrahim</p>"
+            ),
+        )
+
+        result = process_child_kip(100, child)
+
+        # Creator first, then explicit authors and co-authors
+        assert result["authors"] == [
+            "Author",
+            "Luke Chen",
+            "Federico Valeri",
+            "Omnia Ibrahim",
+        ]
+        # Intermediate keys must not leak into the persisted dict
+        assert "wiki_authors" not in result
+        assert "wiki_co_authors" not in result
+        # created_by is kept untouched for compatibility
+        assert result["created_by"] == "Author"
+
+    def test_repeated_creator_is_deduped(self):
+        child = _make_child_page(
+            100,
+            body_html=(
+                "<p>Current state: Under Discussion</p>"
+                "<p><strong>Authors:</strong> Author, Luke Chen</p>"
+            ),
+        )
+
+        result = process_child_kip(100, child)
+
+        assert result["authors"] == ["Author", "Luke Chen"]
+
+    def test_authorless_page_falls_back_to_creator(self):
+        child = _make_child_page(100, body_html="<p>Current state: Accepted</p>")
+
+        result = process_child_kip(100, child)
+
+        assert result["authors"] == ["Author"]
 
 
 class TestGetKipInformationCacheUpdate:
