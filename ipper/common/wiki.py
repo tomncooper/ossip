@@ -3,6 +3,8 @@ from typing import Any
 
 import requests
 
+from ipper.common.http import get_with_retries
+
 APACHE_CONFLUENCE_BASE_URL: str = "https://wiki.apache.org/confluence"
 APACHE_CONFLUENCE_DATE_FORMAT: str = "%Y-%m-%dT%H:%M:%S.000Z"
 CONTENT_URL: str = APACHE_CONFLUENCE_BASE_URL + "/rest/api/content"
@@ -13,7 +15,7 @@ def get_wiki_page_info(
 ) -> dict[str, Any]:
     """Gets the details of the main KIP page"""
 
-    wiki_request: requests.Response = requests.get(
+    wiki_request: requests.Response = get_with_retries(
         CONTENT_URL,
         params={
             "type": "page",
@@ -44,7 +46,7 @@ def get_wiki_page_body(wiki_page_info: dict[str, Any], timeout: int = 30) -> str
     """Gets the RAW HTML body of the wiki page using information in the
     supplied wiki page info dict."""
 
-    wiki_body_request: requests.Response = requests.get(
+    wiki_body_request: requests.Response = get_with_retries(
         CONTENT_URL + "/" + wiki_page_info["id"],
         params={"expand": "body.view"},
         timeout=timeout,
@@ -61,14 +63,14 @@ def child_page_generator(
     """Generator function which will yield the child info dict of each child page of the
     supplied wiki page"""
 
-    wiki_page_child_info_request: requests.Response = requests.get(
+    wiki_page_child_info_request: requests.Response = get_with_retries(
         APACHE_CONFLUENCE_BASE_URL + wiki_page_info["_expandable"]["children"],
         timeout=timeout,
     )
 
     wiki_page_child_info_request.raise_for_status()
 
-    first_child_request: requests.Response = requests.get(
+    first_child_request: requests.Response = get_with_retries(
         APACHE_CONFLUENCE_BASE_URL
         + wiki_page_child_info_request.json()["_expandable"]["page"],
         params={
@@ -87,7 +89,7 @@ def child_page_generator(
         yield from response_json["results"]
 
         if "next" in response_json["_links"]:
-            kip_child_response: requests.Response = requests.get(
+            kip_child_response: requests.Response = get_with_retries(
                 APACHE_CONFLUENCE_BASE_URL + response_json["_links"]["next"],
                 timeout=timeout,
             )

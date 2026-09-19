@@ -15,8 +15,9 @@ from email.utils import parseaddr
 from pathlib import Path
 from typing import Any
 
-import requests
 from rapidfuzz import fuzz
+
+from ipper.common.http import get_with_retries
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +167,7 @@ def download_keys_file(url: str, timeout: int = 30) -> str:
     Raises:
         requests.RequestException: If download fails
     """
-    response = requests.get(url, timeout=timeout)
+    response = get_with_retries(url, timeout=timeout)
     response.raise_for_status()
     return response.text
 
