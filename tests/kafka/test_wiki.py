@@ -240,6 +240,30 @@ class TestProcessChildKipAuthors:
         # created_by is kept untouched for compatibility
         assert result["created_by"] == "Author"
 
+    def test_kip_1115_names_with_emails_split_and_deduped(self):
+        """KIP-1115 regression: 'Name email Name email' author line.
+
+        The emails must act as delimiters; the parsed names then dedupe
+        against the creator when they match.
+        """
+        child = _make_child_page(
+            1115,
+            body_html=(
+                "<p>Current state: Under Discussion</p>"
+                "<p><em><strong>Authors</strong>: </em>"
+                "<span>Vince Rose </span>"
+                "<a href='mailto:vrose@confluent.io'><span>vrose@confluent.io</span></a> "
+                "<em><span>Farid Zakaria </span>"
+                "<a href='mailto:fzakaria@confluent.io'>"
+                "<span>fzakaria@confluent.io</span></a></em></p>"
+            ),
+        )
+
+        result = process_child_kip(1115, child)
+
+        # Fixture creator is "Author"; parsed names follow, emails dropped
+        assert result["authors"] == ["Author", "Vince Rose", "Farid Zakaria"]
+
     def test_repeated_creator_is_deduped(self):
         child = _make_child_page(
             100,

@@ -136,6 +136,45 @@ class TestParseAuthorsFromText:
             "Alan Sheinberg",
         ]
 
+    def test_kip_1115_names_with_inline_emails(self):
+        """KIP-1115: 'Name email Name email' with no other delimiter.
+
+        The email addresses must act as delimiters, otherwise the whole
+        paragraph parses as one giant author entry (which used to blow up
+        the author filter dropdown width).
+        """
+        html = (
+            "<p><em><strong>Authors</strong>: </em>"
+            "<span>Vince Rose </span>"
+            "<a class='external-link' href='mailto:vrose@confluent.io'>"
+            "<span>vrose@confluent.io</span></a> "
+            "<em><span>Farid Zakaria </span>"
+            "<a class='external-link' href='mailto:fzakaria@confluent.io'>"
+            "<span>fzakaria@confluent.io</span></a></em></p>"
+        )
+        from bs4 import BeautifulSoup
+
+        para = BeautifulSoup(html, "html.parser").find("p")
+        assert parse_authors_from_text(para.text) == [
+            "Vince Rose",
+            "Farid Zakaria",
+        ]
+
+    def test_angle_bracketed_emails_dropped(self):
+        """Common 'Name <email>' convention."""
+        assert parse_authors_from_text(
+            "Authors: Jane Doe <jane@example.com>, John Smith"
+        ) == ["Jane Doe", "John Smith"]
+
+    def test_parenthesised_email_dropped(self):
+        assert parse_authors_from_text("Authors: John Smith (john@example.com)") == [
+            "John Smith"
+        ]
+
+    def test_bare_email_is_not_a_name(self):
+        """An author line containing only an email yields no names."""
+        assert parse_authors_from_text("Authors: jane@example.com") == []
+
     def test_and_delimiter(self):
         assert parse_authors_from_text("Authors: Jane Doe and John Smith") == [
             "Jane Doe",

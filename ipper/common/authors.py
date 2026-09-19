@@ -26,11 +26,20 @@ STOP_PHRASES: list[str] = ["discussion thread", "vote thread", "jira"]
 # "Anderson") are safe.
 NAME_DELIMITER_PATTERN: re.Pattern = re.compile(r"\s*(?:,|;|\band\b)\s*")
 
+# Email addresses, with optional surrounding angle brackets and whitespace
+# (e.g. "Vince Rose vrose@confluent.io Farid Zakaria fzakaria@confluent.io"
+# on KIP-1115, or the common "Jane Doe <jane@example.com>" convention).
+# Replaced with a delimiter before splitting so that "Name email Name email"
+# runs (which have no other delimiter) split into individual names.
+EMAIL_PATTERN: re.Pattern = re.compile(
+    r"\s*[(\[]*[<]?[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}[>)\]]*\s*"
+)
+
 # Zero-width characters Confluence sometimes emits inside styled spans
 ZERO_WIDTH_CHARS: str = "\u200b\u200c\u200d\ufeff"
 
 # Trailing punctuation to trim from parsed names
-TRAILING_PUNCTUATION: str = ",;."
+TRAILING_PUNCTUATION: str = ",;.("
 
 FUZZY_DEDUPE_THRESHOLD: float = 85.0
 
@@ -75,6 +84,10 @@ def parse_authors_from_text(text: str) -> list[str]:
     as the author list.
     """
     remainder: str = _cut_at_stop_phrase(_strip_label(text))
+
+    # Email addresses act as delimiters between "Name email" pairs (KIP-1115
+    # style) and are dropped; a bare email is not a usable display name.
+    remainder = EMAIL_PATTERN.sub(", ", remainder)
 
     names: list[str] = [
         cleaned
