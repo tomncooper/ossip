@@ -323,7 +323,7 @@ class TestGenerateApiIndex:
         with open(index_file) as f:
             data = json.load(f)
 
-        assert data["version"] == 1
+        assert data["version"] == 2
         # Should use the latest last_updated (flink's)
         assert data["last_updated"] == "2025-01-25T14:30:00Z"
         assert "kafka" in data["projects"]
@@ -379,7 +379,7 @@ class TestGenerateApiIndex:
         with open(index_file) as f:
             data = json.load(f)
 
-        assert data["version"] == 1
+        assert data["version"] == 2
         assert data["projects"] == {}
         # Should have a valid timestamp even with no projects
         assert "last_updated" in data

@@ -23,13 +23,15 @@ from ipper.common.github_config import (
 from ipper.common.github_process import (
     classify_pull,
     derive_pull_state,
+    derive_review_activity,
+    derive_review_activity_from_snapshots,
     extract_number,
+    is_bot_login,
     is_proposal_file,
     last_activity_of,
+    migrate_cache,
     normalize_reviews,
     parse_tarball,
-    reviews_to_votes,
-    reviews_to_votes_from_snapshot,
 )
 
 # ---------------------------------------------------------------------------
@@ -415,31 +417,136 @@ class TestClassification:
         assert result["classification"] == "plumbing"
 
 
-class TestVotes:
-    def test_review_mapping(self):
-        votes = reviews_to_votes(
-            [
-                make_review("alice", "APPROVED"),
-                make_review("bob", "CHANGES_REQUESTED"),
-                make_review("carol", "COMMENTED"),
-                make_review("dave", "DISMISSED"),
-            ]
-        )
-        assert [v["name"] for v in votes["+1"]] == ["alice"]
-        assert [v["name"] for v in votes["-1"]] == ["bob"]
-        assert votes["0"] == []
-        assert votes["+1"][0]["timestamp"] == "2026-02-01T00:00:00Z"
+def _review_snapshot(name: str, state: str, timestamp: str) -> dict:
+    return {"name": name, "state": state, "timestamp": timestamp}
 
-    def test_empty_reviews(self):
-        assert reviews_to_votes([]) == {"+1": [], "0": [], "-1": []}
 
-    def test_votes_from_snapshot(self):
-        snapshot = normalize_reviews(
-            [make_review("alice", "APPROVED"), make_review("bob", "CHANGES_REQUESTED")]
+def _comment_snapshot(name: str, timestamp: str) -> dict:
+    return {"name": name, "timestamp": timestamp}
+
+
+class TestReviewActivity:
+    def test_columns_from_raw_payloads(self):
+        reviews = [
+            make_review("alice", "APPROVED"),
+            make_review("bob", "CHANGES_REQUESTED"),
+            make_review("carol", "COMMENTED"),
+        ]
+        comments = [make_comment("dan")]
+        activity = derive_review_activity(reviews, comments)
+        assert [u["name"] for u in activity["accepted"]] == ["alice"]
+        assert [u["name"] for u in activity["changes_requested"]] == ["bob"]
+        assert sorted(u["name"] for u in activity["commented"]) == ["carol", "dan"]
+        assert activity["accepted"][0]["timestamp"] == "2026-02-01T00:00:00Z"
+
+    def test_empty_inputs(self):
+        assert derive_review_activity([], []) == {
+            "accepted": [],
+            "commented": [],
+            "changes_requested": [],
+        }
+
+    def test_from_snapshots(self):
+        activity = derive_review_activity_from_snapshots(
+            [_review_snapshot("alice", "APPROVED", "2026-02-01T00:00:00Z")],
+            [_comment_snapshot("dan", "2026-02-02T00:00:00Z")],
         )
-        votes = reviews_to_votes_from_snapshot(snapshot)
-        assert [v["name"] for v in votes["+1"]] == ["alice"]
-        assert [v["name"] for v in votes["-1"]] == ["bob"]
+        assert [u["name"] for u in activity["accepted"]] == ["alice"]
+        assert [u["name"] for u in activity["commented"]] == ["dan"]
+
+    def test_approval_is_terminal(self):
+        """A user who approved never appears in the other columns, even
+        if they also commented or requested changes."""
+
+        reviews = [
+            make_review("alice", "CHANGES_REQUESTED", "2026-02-01T00:00:00Z"),
+            make_review("alice", "COMMENTED", "2026-02-02T00:00:00Z"),
+            make_review("alice", "APPROVED", "2026-02-03T00:00:00Z"),
+        ]
+        comments = [make_comment("alice", "2026-02-04T00:00:00Z")]
+        activity = derive_review_activity(reviews, comments)
+        assert [u["name"] for u in activity["accepted"]] == ["alice"]
+        assert activity["commented"] == []
+        assert activity["changes_requested"] == []
+        assert activity["accepted"][0]["timestamp"] == "2026-02-03T00:00:00Z"
+
+    def test_changes_requested_wins_over_commented(self):
+        reviews = [
+            make_review("bob", "COMMENTED", "2026-02-01T00:00:00Z"),
+            make_review("bob", "CHANGES_REQUESTED", "2026-02-02T00:00:00Z"),
+        ]
+        activity = derive_review_activity(reviews, [])
+        assert [u["name"] for u in activity["changes_requested"]] == ["bob"]
+        assert activity["commented"] == []
+        assert activity["changes_requested"][0]["timestamp"] == "2026-02-02T00:00:00Z"
+
+    def test_unique_users_with_latest_timestamp(self):
+        reviews = [
+            make_review("alice", "APPROVED", "2026-02-01T00:00:00Z"),
+            make_review("alice", "APPROVED", "2026-02-05T00:00:00Z"),
+        ]
+        activity = derive_review_activity(reviews, [])
+        assert activity["accepted"] == [
+            {"name": "alice", "timestamp": "2026-02-05T00:00:00Z"}
+        ]
+
+    def test_comment_timestamp_is_latest_across_sources(self):
+        """Both issue comments and COMMENTED reviews count; the latest
+        timestamp of either wins."""
+
+        activity = derive_review_activity(
+            [make_review("carol", "COMMENTED", "2026-02-01T00:00:00Z")],
+            [make_comment("carol", "2026-02-09T00:00:00Z")],
+        )
+        assert activity["commented"] == [
+            {"name": "carol", "timestamp": "2026-02-09T00:00:00Z"}
+        ]
+
+    def test_author_excluded(self):
+        activity = derive_review_activity(
+            [make_review("alice", "COMMENTED")],
+            [make_comment("alice")],
+            author="alice",
+        )
+        assert activity == {
+            "accepted": [],
+            "commented": [],
+            "changes_requested": [],
+        }
+
+    def test_bots_excluded(self):
+        reviews = [
+            make_review("dependabot[bot]", "APPROVED"),
+            make_review("coderabbitai", "COMMENTED"),
+        ]
+        comments = [make_comment("github-actions")]
+        assert derive_review_activity(reviews, comments) == {
+            "accepted": [],
+            "commented": [],
+            "changes_requested": [],
+        }
+
+    def test_is_bot_login(self):
+        assert is_bot_login("dependabot[bot]")
+        assert is_bot_login("github-actions")
+        assert is_bot_login("renovate")
+        assert not is_bot_login("scholzj")
+        assert not is_bot_login("alice")
+
+    def test_dismissed_and_pending_ignored(self):
+        """A dismissed approval no longer counts; PENDING reviews are not
+        submitted and never count. A user whose only approval was
+        dismissed still shows as a commenter if they commented."""
+
+        reviews = [
+            make_review("alice", "DISMISSED"),
+            make_review("bob", "PENDING"),
+        ]
+        comments = [make_comment("alice")]
+        activity = derive_review_activity(reviews, comments)
+        assert activity["accepted"] == []
+        assert [u["name"] for u in activity["commented"]] == ["alice"]
+        assert activity["changes_requested"] == []
 
     def test_normalize_reviews_skips_missing_user(self):
         normalized = normalize_reviews([{"state": "APPROVED", "user": None}])
@@ -578,8 +685,11 @@ class TestInitCache:
         assert merged_record["merged_on"] == "2026-02-01T00:00:00Z"
         assert merged_record["frozen"] is True
         assert merged_record["web_url"].endswith("blob/main/157-kafka-exporter.md")
-        # frozen approval history: APPROVED review captured, COMMENTED not
-        assert [v["name"] for v in merged_record["votes"]["+1"]] == ["committer1"]
+        # frozen review history: approver accepted, commenter commented
+        assert [v["name"] for v in merged_record["reviews"]["accepted"]] == [
+            "committer1"
+        ]
+        assert [v["name"] for v in merged_record["reviews"]["commented"]] == ["dev1"]
         assert merged_record["activity_status"] is None
 
         # open proposal: no number yet
@@ -592,7 +702,9 @@ class TestInitCache:
         rejected_record = cache["proposals"]["pr-248"]
         assert rejected_record["state"] == "not accepted"
         assert rejected_record["frozen"] is True
-        assert [v["name"] for v in rejected_record["votes"]["-1"]] == ["dev2"]
+        assert [v["name"] for v in rejected_record["reviews"]["changes_requested"]] == [
+            "dev2"
+        ]
 
         # amendment PR recorded on the merged proposal
         assert merged_record["amendments"] == [
@@ -673,19 +785,38 @@ class TestKroxyliciousInit:
                 113: [make_file("proposals/000-scatter-gather-routing-api.md")],
                 135: [make_file("proposals/135-dedicated-service-account.md")],
             },
-            reviews={113: [make_review("dev", "CHANGES_REQUESTED")]},
+            reviews={
+                99: [
+                    make_review("committer1", "APPROVED"),
+                    make_review("dev1", "COMMENTED"),
+                ],
+                113: [make_review("dev", "CHANGES_REQUESTED")],
+            },
+            comments={99: [make_comment("reviewer")]},
             tarball=tarball,
         )
         cache = init_cache(KROXYLICIOUS_CONFIG, client)
 
-        # merged KDP proposal: no files call made for PR 99 (shortcut)
+        # merged KDP proposal: no files call made for PR 99 (shortcut),
+        # but review/comment snapshots ARE captured now
         assert client.calls["files:99"] == 0
+        assert client.calls["reviews:99"] == 1
+        assert client.calls["comments:99"] == 1
         assert "99" in cache["proposals"]
         record = cache["proposals"]["99"]
         assert record["id"] == 99
         assert record["title"] == "Micrometer configuration"
+        assert [v["name"] for v in record["reviews"]["accepted"]] == ["committer1"]
+        assert sorted(v["name"] for v in record["reviews"]["commented"]) == [
+            "dev1",
+            "reviewer",
+        ]
+        assert cache["pr_index"]["99"]["snapshots_fetched"] is True
 
-        # merged plumbing PR resolved via the shortcut (no file 107 on main)
+        # merged plumbing PR resolved via the shortcut (no file 107 on main,
+        # no review/comment fetch either)
+        assert client.calls["files:107"] == 0
+        assert client.calls["reviews:107"] == 0
         assert cache["pr_index"]["107"]["classification"] == "plumbing"
         assert "pr-107" not in cache["proposals"]
 
@@ -770,7 +901,7 @@ class TestIncrementalUpdate:
         update_cache(STRIMZI_CONFIG, cache, client)
         assert client.calls["files:247"] == 1
 
-    def test_close_transition_freezes_votes(self):
+    def test_close_transition_freezes_review_activity(self):
         cache, _ = self._initial_cache()
 
         pulls = [
@@ -805,8 +936,8 @@ class TestIncrementalUpdate:
         assert record["state"] == "not accepted"
         assert record["frozen"] is True
         assert record["activity_status"] is None
-        assert [v["name"] for v in record["votes"]["+1"]] == ["final1"]
-        assert [v["name"] for v in record["votes"]["-1"]] == ["final2"]
+        assert [v["name"] for v in record["reviews"]["accepted"]] == ["final1"]
+        assert [v["name"] for v in record["reviews"]["changes_requested"]] == ["final2"]
         assert cache["pr_index"]["247"]["frozen"] is True
 
     def test_reopen_unfreezes_and_resumes_tracking(self):
@@ -859,7 +990,7 @@ class TestIncrementalUpdate:
         record = cache["proposals"]["pr-247"]
         assert record["state"] == "under discussion"
         assert record["frozen"] is False
-        assert [v["name"] for v in record["votes"]["+1"]] == ["dev1"]
+        assert [v["name"] for v in record["reviews"]["accepted"]] == ["dev1"]
         assert record["activity_status"] is not None
 
     def test_new_merge_reconciles_to_numbered_record(self):
@@ -903,7 +1034,7 @@ class TestIncrementalUpdate:
         assert record["created_by"] == "author2"
         assert record["merged_on"] == "2026-02-12T00:00:00Z"
         assert record["frozen"] is True
-        assert [v["name"] for v in record["votes"]["+1"]] == ["approver"]
+        assert [v["name"] for v in record["reviews"]["accepted"]] == ["approver"]
         assert cache["pr_index"]["247"]["proposal_key"] == "158"
 
     def test_renumbered_merge_maps_via_slug(self):
@@ -979,3 +1110,188 @@ class TestIncrementalUpdate:
         client = _strimzi_init_client()
         update_cache(STRIMZI_CONFIG, cache, client)
         assert client.calls["tarball"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Cache migration (votes -> reviews)
+# ---------------------------------------------------------------------------
+
+
+class TestMigrateCache:
+    def _old_strimzi_cache(self) -> dict:
+        return {
+            "last_updated": "2026-02-10T00:00:00Z",
+            "watermark": "2026-02-01T00:00:00Z",
+            "proposals": {
+                "157": {
+                    "key": "157",
+                    "id": 157,
+                    "pr_number": 245,
+                    "title": "Kafka Exporter",
+                    "state": "accepted",
+                    "created_by": "alice",
+                    "authors": ["alice"],
+                    "created_on": "2026-01-10",
+                    "merged_on": "2026-02-01T00:00:00Z",
+                    "web_url": "https://github.com/o/r/blob/main/157-x.md",
+                    "pr_url": "https://github.com/o/r/pull/245",
+                    "votes": {
+                        "+1": [
+                            {"name": "committer1", "timestamp": "2026-01-31T00:00:00Z"}
+                        ],
+                        "0": [],
+                        "-1": [],
+                    },
+                    "amendments": [],
+                    "frozen": True,
+                    "last_activity": None,
+                    "activity_status": None,
+                    "last_activity_age": None,
+                },
+            },
+            "pr_index": {
+                "245": {
+                    "state": "merged",
+                    "classification": "proposal",
+                    "proposal_key": "157",
+                    "files": [{"filename": "157-x.md", "status": "added"}],
+                    "updated_at": "2026-02-01T00:00:00Z",
+                    "head_sha": "sha-1",
+                    "frozen": True,
+                    "reviews_snapshot": [
+                        {
+                            "name": "committer1",
+                            "state": "APPROVED",
+                            "timestamp": "2026-01-31T00:00:00Z",
+                        },
+                        {
+                            "name": "alice",
+                            "state": "COMMENTED",
+                            "timestamp": "2026-01-30T00:00:00Z",
+                        },
+                    ],
+                    "comments_snapshot": [
+                        {"name": "bob", "timestamp": "2026-01-28T00:00:00Z"}
+                    ],
+                    "snapshots_fetched": True,
+                },
+            },
+        }
+
+    def test_migrates_votes_to_reviews_from_snapshots(self):
+        cache = self._old_strimzi_cache()
+        migrate_cache(STRIMZI_CONFIG, cache)
+
+        record = cache["proposals"]["157"]
+        assert "votes" not in record
+        assert [u["name"] for u in record["reviews"]["accepted"]] == ["committer1"]
+        # issue comments count as comments; the author is excluded
+        assert [u["name"] for u in record["reviews"]["commented"]] == ["bob"]
+        assert record["reviews"]["changes_requested"] == []
+
+    def test_migration_is_idempotent(self):
+        cache = self._old_strimzi_cache()
+        migrate_cache(STRIMZI_CONFIG, cache)
+        once = json.loads(json.dumps(cache))
+        migrate_cache(STRIMZI_CONFIG, cache)
+        assert cache == once
+
+    def _old_kdp_cache(self) -> dict:
+        return {
+            "last_updated": "2026-02-10T00:00:00Z",
+            "watermark": "2026-02-09T00:00:00Z",
+            "proposals": {
+                "99": {
+                    "key": "99",
+                    "id": 99,
+                    "pr_number": 99,
+                    "title": "Micrometer configuration",
+                    "state": "accepted",
+                    "created_by": "alice",
+                    "authors": ["alice"],
+                    "created_on": "2026-01-01",
+                    "merged_on": "2026-02-01T00:00:00Z",
+                    "web_url": "https://github.com/o/r/blob/main/proposals/099-x.md",
+                    "pr_url": "https://github.com/o/r/pull/99",
+                    "votes": {"+1": [], "0": [], "-1": []},
+                    "amendments": [],
+                    "frozen": True,
+                    "last_activity": None,
+                    "activity_status": None,
+                    "last_activity_age": None,
+                },
+            },
+            "pr_index": {
+                "99": {
+                    "state": "merged",
+                    "classification": "proposal",
+                    "proposal_key": "99",
+                    "files": [],
+                    "updated_at": "2026-02-01T00:00:00Z",
+                    "head_sha": "sha-1",
+                    "frozen": True,
+                    # pre-backfill cache: no snapshots were ever fetched
+                    "reviews_snapshot": [],
+                    "comments_snapshot": [],
+                },
+            },
+        }
+
+    def test_kdp_backfill_fetches_missing_snapshots(self):
+        cache = self._old_kdp_cache()
+        client = FakeGithubClient(
+            reviews={99: [make_review("committer1", "APPROVED")]},
+            comments={99: [make_comment("bob")]},
+        )
+        migrate_cache(KROXYLICIOUS_CONFIG, cache, client)
+
+        assert client.calls["reviews:99"] == 1
+        assert client.calls["comments:99"] == 1
+        entry = cache["pr_index"]["99"]
+        assert entry["snapshots_fetched"] is True
+        assert entry["frozen"] is True
+        assert [r["name"] for r in entry["reviews_snapshot"]] == ["committer1"]
+
+        record = cache["proposals"]["99"]
+        assert [u["name"] for u in record["reviews"]["accepted"]] == ["committer1"]
+        assert [u["name"] for u in record["reviews"]["commented"]] == ["bob"]
+
+    def test_kdp_backfill_not_repeated(self):
+        cache = self._old_kdp_cache()
+        client = FakeGithubClient(
+            reviews={99: [make_review("committer1", "APPROVED")]},
+            comments={99: [make_comment("bob")]},
+        )
+        migrate_cache(KROXYLICIOUS_CONFIG, cache, client)
+
+        second_client = FakeGithubClient(
+            reviews={99: [make_review("committer1", "APPROVED")]},
+            comments={99: [make_comment("bob")]},
+        )
+        migrate_cache(KROXYLICIOUS_CONFIG, cache, second_client)
+        assert second_client.calls["reviews:99"] == 0
+        assert second_client.calls["comments:99"] == 0
+
+    def test_kdp_backfill_skipped_without_client(self):
+        cache = self._old_kdp_cache()
+        migrate_cache(KROXYLICIOUS_CONFIG, cache, client=None)
+
+        record = cache["proposals"]["99"]
+        assert "votes" not in record
+        assert record["reviews"] == {
+            "accepted": [],
+            "commented": [],
+            "changes_requested": [],
+        }
+        assert cache["pr_index"]["99"]["reviews_snapshot"] == []
+
+    def test_strimzi_never_backfills(self):
+        """Sequential repos always captured snapshots; nothing to fetch."""
+
+        cache = self._old_strimzi_cache()
+        cache["pr_index"]["245"].pop("reviews_snapshot")
+        client = FakeGithubClient(
+            reviews={245: [make_review("committer1", "APPROVED")]}
+        )
+        migrate_cache(STRIMZI_CONFIG, cache, client)
+        assert client.calls["reviews:245"] == 0

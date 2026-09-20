@@ -15,11 +15,11 @@ from ipper.common.constants import DATE_FORMAT, DEFAULT_TEMPLATES_DIR, IPState
 from ipper.common.github_config import GithubProjectConfig
 from ipper.common.github_models import Amendment, GithubProposalDetail
 from ipper.common.models import (
+    GithubProposalSummary,
     ProjectSummary,
-    ProposalSummary,
-    VoteCount,
-    VoterInfo,
-    VoteSummary,
+    ReviewCount,
+    ReviewerInfo,
+    ReviewSummary,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,10 +80,22 @@ def _sorted_proposals(cache: dict[str, Any]) -> list[dict[str, Any]]:
     )
 
 
+EMPTY_REVIEW_ACTIVITY: dict[str, list[dict[str, str]]] = {
+    "accepted": [],
+    "commented": [],
+    "changes_requested": [],
+}
+
+
+def _review_activity(record: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
+    """A record's review activity, defaulting to empty lists."""
+
+    return record.get("reviews") or EMPTY_REVIEW_ACTIVITY
+
+
 def _prepare_row(config: GithubProjectConfig, record: dict[str, Any]) -> dict[str, Any]:
     """Prepare a template-friendly dict for one index table row."""
 
-    votes = record.get("votes") or {"+1": [], "0": [], "-1": []}
     state = IPState(record.get("state") or "unknown")
     return {
         "display_id": display_id(config, record),
@@ -91,7 +103,7 @@ def _prepare_row(config: GithubProjectConfig, record: dict[str, Any]) -> dict[st
         "state": state,
         "authors": record.get("authors", []),
         "created_on": record.get("created_on", ""),
-        "votes": votes,
+        "reviews": _review_activity(record),
         "web_url": record.get("web_url", ""),
         "emoji": None if state == IPState.UNDER_DISCUSSION else STATE_EMOJI.get(state),
         "activity_status": record.get("activity_status"),
@@ -135,9 +147,8 @@ def render_index_page(
 def _prepare_detail(
     config: GithubProjectConfig, record: dict[str, Any]
 ) -> dict[str, Any]:
-    votes = record.get("votes") or {"+1": [], "0": [], "-1": []}
     detail = dict(record)
-    detail["votes"] = votes
+    detail["reviews"] = _review_activity(record)
     detail["heading"] = (
         f"{config.prefix}-{record['id']}"
         if record.get("id") is not None
@@ -178,7 +189,7 @@ def render_detail_pages(
 def _record_to_detail(
     config: GithubProjectConfig, record: dict[str, Any]
 ) -> GithubProposalDetail:
-    votes = record.get("votes") or {"+1": [], "0": [], "-1": []}
+    reviews = _review_activity(record)
 
     return GithubProposalDetail(
         id=record.get("id"),
@@ -197,15 +208,18 @@ def _record_to_detail(
         jira=None,
         web_url=record.get("web_url", ""),
         activity_status=record.get("activity_status"),
-        votes=VoteSummary(
-            plus_one=[
-                VoterInfo(name=v["name"], timestamp=v["timestamp"]) for v in votes["+1"]
+        reviews=ReviewSummary(
+            accepted=[
+                ReviewerInfo(login=r["name"], timestamp=r["timestamp"])
+                for r in reviews["accepted"]
             ],
-            zero=[
-                VoterInfo(name=v["name"], timestamp=v["timestamp"]) for v in votes["0"]
+            commented=[
+                ReviewerInfo(login=r["name"], timestamp=r["timestamp"])
+                for r in reviews["commented"]
             ],
-            minus_one=[
-                VoterInfo(name=v["name"], timestamp=v["timestamp"]) for v in votes["-1"]
+            changes_requested=[
+                ReviewerInfo(login=r["name"], timestamp=r["timestamp"])
+                for r in reviews["changes_requested"]
             ],
         ),
         merged_on=record.get("merged_on"),
@@ -218,9 +232,9 @@ def _record_to_detail(
 
 def _record_to_summary(
     config: GithubProjectConfig, record: dict[str, Any]
-) -> ProposalSummary:
-    votes = record.get("votes") or {"+1": [], "0": [], "-1": []}
-    return ProposalSummary(
+) -> GithubProposalSummary:
+    reviews = _review_activity(record)
+    return GithubProposalSummary(
         id=record.get("id"),
         pr_number=record["pr_number"],
         title=record.get("title", ""),
@@ -228,8 +242,10 @@ def _record_to_summary(
         created_by=record.get("created_by", ""),
         authors=record.get("authors", []),
         created_on=record.get("created_on", ""),
-        vote_count=VoteCount(
-            plus_one=len(votes["+1"]), zero=len(votes["0"]), minus_one=len(votes["-1"])
+        review_count=ReviewCount(
+            accepted=len(reviews["accepted"]),
+            commented=len(reviews["commented"]),
+            changes_requested=len(reviews["changes_requested"]),
         ),
         activity_status=record.get("activity_status"),
         detail_url=(

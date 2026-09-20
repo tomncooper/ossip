@@ -15,7 +15,7 @@ from ipper.common.models import (
     KipDetail,
     ProjectMeta,
     ProjectSummary,
-    ProposalDetail,
+    ProposalDetailBase,
 )
 from ipper.common.wiki import APACHE_CONFLUENCE_DATE_FORMAT
 
@@ -76,7 +76,7 @@ def sentinel_to_none(value: str) -> str | None:
 
 
 def write_json_file(
-    model: ProjectMeta | ProjectSummary | ApiIndex | ProposalDetail, path: Path
+    model: ProjectMeta | ProjectSummary | ApiIndex | ProposalDetailBase, path: Path
 ) -> None:
     """Write a Pydantic model to a JSON file.
 
@@ -92,7 +92,7 @@ def write_json_file(
     path.write_text(json_content)
 
 
-def proposal_detail_filename(proposal: ProposalDetail) -> str:
+def proposal_detail_filename(proposal: ProposalDetailBase) -> str:
     """Compute the base filename (without extension) for a proposal detail file.
 
     Numbered proposals use their id; unnumbered GitHub proposals (sequential
@@ -108,7 +108,9 @@ def proposal_detail_filename(proposal: ProposalDetail) -> str:
     )
 
 
-def write_proposal_details(proposals: Sequence[ProposalDetail], dir_path: Path) -> None:
+def write_proposal_details(
+    proposals: Sequence[ProposalDetailBase], dir_path: Path
+) -> None:
     """Write individual JSON files for each proposal.
 
     Args:
@@ -160,8 +162,10 @@ def write_schemas(dir_path: Path) -> None:
 def generate_api_index(base_dir: Path) -> None:
     """Generate the API index file by scanning for project summary files.
 
-    Scans for kafka/kips.json and flink/flips.json, reads count and last_updated
-    from each found file, builds ApiIndex, writes index.json, and calls write_schemas.
+    Scans for each project's summary file (kafka/kips.json, flink/flips.json,
+    strimzi/sips.json, streamshub/ships.json, kroxylicious/kdps.json), reads
+    count and last_updated from each found file, builds ApiIndex, writes
+    index.json, and calls write_schemas.
 
     Resilient: missing projects are skipped, zero projects produces valid empty index.
 
@@ -204,9 +208,10 @@ def generate_api_index(base_dir: Path) -> None:
     if latest_update is None:
         latest_update = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    # Build the API index
+    # Build the API index (version 2: GitHub projects report review
+    # counts instead of vote counts)
     index = ApiIndex(
-        version=1,
+        version=2,
         last_updated=latest_update,
         projects=projects,
     )

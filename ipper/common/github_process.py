@@ -29,12 +29,21 @@ logger = logging.getLogger(__name__)
 
 CACHE_DIR = "cache"
 
-# Review states mapped to votes; COMMENTED (and unknown states like
-# DISMISSED) are not counted as votes.
-REVIEW_VOTE_MAP: dict[str, str] = {
-    "APPROVED": "+1",
-    "CHANGES_REQUESTED": "-1",
-}
+# Bot accounts filtered from review activity. GitHub App bots use a
+# '[bot]' login suffix (e.g. 'dependabot[bot]'); KNOWN_BOTS covers
+# accounts that don't follow the convention. Extend as new bots appear.
+KNOWN_BOTS = frozenset(
+    {
+        "github-actions",
+        "coderabbitai",
+        "copilot-pull-request-copilot",
+        "copilot-sweeper",
+        "k8s-ci-robot",
+        "renovate",
+        "renovate-preview",
+        "dependabot-preview",
+    }
+)
 
 # PR file statuses that count as modifying an existing file
 MODIFY_STATUSES = frozenset({"modified", "changed", "renamed"})
@@ -185,25 +194,23 @@ def extract_comments(comments: list[dict[str, Any]]) -> list[dict[str, str]]:
     return normalized
 
 
-def reviews_to_votes(reviews: list[dict[str, Any]]) -> dict[str, list[dict[str, str]]]:
-    """Map PR reviews to votes: APPROVED -> +1, CHANGES_REQUESTED -> -1.
+def is_bot_login(login: str) -> bool:
+    """True when a GitHub login belongs to a bot account."""
 
-    COMMENTED reviews are not counted. Voter is the GitHub login,
-    timestamp the review's submitted_at.
+    return login.endswith("[bot]") or login in KNOWN_BOTS
+
+
+def derive_review_activity(
+    reviews: list[dict[str, Any]], comments: list[dict[str, Any]], author: str = ""
+) -> dict[str, list[dict[str, str]]]:
+    """Derive unique-user review activity from raw GitHub payloads.
+
+    See derive_review_activity_from_snapshots for the column semantics.
     """
 
-    votes: dict[str, list[dict[str, str]]] = {"+1": [], "0": [], "-1": []}
-    for review in reviews:
-        user = review.get("user") or {}
-        vote = REVIEW_VOTE_MAP.get(review.get("state", ""))
-        if user and vote:
-            votes[vote].append(
-                {
-                    "name": user.get("login", ""),
-                    "timestamp": review.get("submitted_at") or "",
-                }
-            )
-    return votes
+    return derive_review_activity_from_snapshots(
+        normalize_reviews(reviews), extract_comments(comments), author
+    )
 
 
 def derive_pull_state(pull: dict[str, Any]) -> str:
@@ -307,7 +314,7 @@ def _base_record(config: GithubProjectConfig, pull: dict[str, Any]) -> dict[str,
         "created_on": (pull.get("created_at") or "")[:10],
         "state": "",
         "web_url": "",
-        "votes": {"+1": [], "0": [], "-1": []},
+        "reviews": {"accepted": [], "commented": [], "changes_requested": []},
         "last_activity": None,
         "activity_status": None,
         "last_activity_age": None,
@@ -325,10 +332,11 @@ def build_open_record(
     """Build a proposal record for an open (under discussion) proposal PR."""
 
     record = _base_record(config, pull)
+    author = (pull.get("user") or {}).get("login", "")
     record["state"] = IPState.UNDER_DISCUSSION
     record["id"] = pull["number"] if config.numbering == "pr_number" else None
     record["web_url"] = pull.get("html_url", "")
-    record["votes"] = reviews_to_votes(reviews)
+    record["reviews"] = derive_review_activity(reviews, comments, author)
     record["last_activity"] = last_activity_of(pull, reviews, comments)
     record["activity_status"] = activity_status_name(record["last_activity"])
     record["last_activity_age"] = activity_age(record["last_activity"])
@@ -343,14 +351,15 @@ def build_rejected_record(
 ) -> dict[str, Any]:
     """Build a proposal record for a closed-unmerged (rejected) proposal PR.
 
-    Review votes are frozen at close time.
+    Review activity is frozen at close time.
     """
 
     record = _base_record(config, pull)
+    author = (pull.get("user") or {}).get("login", "")
     record["state"] = IPState.NOT_ACCEPTED
     record["id"] = pull["number"] if config.numbering == "pr_number" else None
     record["web_url"] = pull.get("html_url", "")
-    record["votes"] = reviews_to_votes(reviews)
+    record["reviews"] = derive_review_activity(reviews, comments, author)
     record["last_activity"] = pull.get("closed_at") or pull.get("updated_at")
     record["activity_status"] = None
     record["frozen"] = True
@@ -363,11 +372,13 @@ def sync_open_record(
     reviews: list[dict[str, Any]],
     comments: list[dict[str, Any]],
 ) -> None:
-    """Refresh an open proposal record's votes/activity in place."""
+    """Refresh an open proposal record's reviews/activity in place."""
 
     record["state"] = IPState.UNDER_DISCUSSION
     record["title"] = pull.get("title", record.get("title", ""))
-    record["votes"] = reviews_to_votes(reviews)
+    record["reviews"] = derive_review_activity(
+        reviews, comments, (pull.get("user") or {}).get("login", "")
+    )
     record["last_activity"] = last_activity_of(pull, reviews, comments)
     record["activity_status"] = activity_status_name(record["last_activity"])
     record["last_activity_age"] = activity_age(record["last_activity"])
@@ -405,13 +416,10 @@ def _store_snapshots(
 ) -> None:
     entry["reviews_snapshot"] = normalize_reviews(reviews)
     entry["comments_snapshot"] = extract_comments(comments)
-
-
-def _skip_files_fetch(config: GithubProjectConfig, state: str) -> bool:
-    """Kroxylicious shortcut: a merged KDP PR needs no files call - it is a
-    proposal iff proposals/<PR#>-*.md exists on main."""
-
-    return config.numbering == "pr_number" and state == "merged"
+    # Marks that snapshots were fetched at least once, so snapshot-less
+    # entries can be told apart from zero-activity ones (used by the
+    # KDP backfill in migrate_cache).
+    entry["snapshots_fetched"] = True
 
 
 def _promote_merged_record(
@@ -453,11 +461,12 @@ def _promote_merged_record(
         or _base_record(config, pull)
     )
 
-    votes = record.get("votes") or {"+1": [], "0": [], "-1": []}
-    if not any(votes.values()):
-        votes = reviews_to_votes_from_snapshot(entry.get("reviews_snapshot", []))
-
     author = (pull.get("user") or {}).get("login", "")
+    reviews = derive_review_activity_from_snapshots(
+        entry.get("reviews_snapshot", []),
+        entry.get("comments_snapshot", []),
+        author,
+    )
     merged_on = pull.get("merged_at") or pull.get("updated_at") or ""
     record.update(
         {
@@ -474,7 +483,7 @@ def _promote_merged_record(
             "web_url": merged_file.blob_url,
             "pr_url": pull.get("html_url", ""),
             "file_path": merged_file.path,
-            "votes": votes,
+            "reviews": reviews,
             "last_activity": None,
             "activity_status": None,
             "last_activity_age": None,
@@ -490,22 +499,74 @@ def _promote_merged_record(
     entry["frozen"] = True
 
 
-def reviews_to_votes_from_snapshot(
-    snapshot: list[dict[str, str]],
+def derive_review_activity_from_snapshots(
+    reviews_snapshot: list[dict[str, str]],
+    comments_snapshot: list[dict[str, str]],
+    author: str = "",
 ) -> dict[str, list[dict[str, str]]]:
-    """Map a stored reviews snapshot ({name, state, timestamp}) to votes."""
+    """Derive unique-user review activity from stored PR snapshots.
 
-    votes: dict[str, list[dict[str, str]]] = {"+1": [], "0": [], "-1": []}
-    for review in snapshot:
-        vote = REVIEW_VOTE_MAP.get(review.get("state", ""))
-        if vote:
-            votes[vote].append(
-                {
-                    "name": review.get("name", ""),
-                    "timestamp": review.get("timestamp", ""),
-                }
+    Columns (each a list of unique users with their latest qualifying
+    timestamp):
+    - accepted: users with at least one APPROVED review. Terminal: an
+      approver never appears in the other columns.
+    - changes_requested: users with at least one CHANGES_REQUESTED
+      review and no approval.
+    - commented: everyone else who participated via issue comments or
+      COMMENTED reviews.
+
+    PENDING and DISMISSED reviews are ignored (a dismissed approval no
+    longer counts). Bots and the PR author are excluded.
+    """
+
+    latest: dict[str, dict[str, str | None]] = {}
+
+    def note(name: str, column: str, timestamp: str) -> None:
+        entry = latest.setdefault(
+            name, {"accepted": None, "changes_requested": None, "commented": None}
+        )
+        current = entry[column]
+        if current is None or timestamp > current:
+            entry[column] = timestamp
+
+    for review in reviews_snapshot:
+        name = review.get("name", "")
+        if not name or name == author or is_bot_login(name):
+            continue
+        state = review.get("state", "")
+        if state == "APPROVED":
+            note(name, "accepted", review.get("timestamp", ""))
+        elif state == "CHANGES_REQUESTED":
+            note(name, "changes_requested", review.get("timestamp", ""))
+        elif state == "COMMENTED":
+            note(name, "commented", review.get("timestamp", ""))
+
+    for comment in comments_snapshot:
+        name = comment.get("name", "")
+        if not name or name == author or is_bot_login(name):
+            continue
+        note(name, "commented", comment.get("timestamp", ""))
+
+    activity: dict[str, list[dict[str, str]]] = {
+        "accepted": [],
+        "commented": [],
+        "changes_requested": [],
+    }
+    for name, stamps in latest.items():
+        if stamps["accepted"] is not None:
+            activity["accepted"].append({"name": name, "timestamp": stamps["accepted"]})
+        elif stamps["changes_requested"] is not None:
+            activity["changes_requested"].append(
+                {"name": name, "timestamp": stamps["changes_requested"]}
             )
-    return votes
+        elif stamps["commented"] is not None:
+            activity["commented"].append(
+                {"name": name, "timestamp": stamps["commented"]}
+            )
+
+    for users in activity.values():
+        users.sort(key=lambda user: (user["timestamp"], user["name"]), reverse=True)
+    return activity
 
 
 def _find_origin_pr(
@@ -561,18 +622,6 @@ def _reconcile_merged_proposals(
     mapped back to its originating PR, and non-merged records are moved to
     their numbered key with a frozen approval-history vote record.
     """
-
-    # Resolve Kroxylicious merged PRs without a files call: a merged KDP PR
-    # is a proposal iff proposals/<PR#>-*.md exists on main.
-    if config.numbering == "pr_number":
-        for pr_str, entry in cache["pr_index"].items():
-            if entry["state"] == "merged" and entry["classification"] == "unknown":
-                pr_number = int(pr_str)
-                if any(m.number == pr_number for m in merged_files.values()):
-                    entry["classification"] = "proposal"
-                    entry["proposal_key"] = f"pr-{pr_str}"
-                else:
-                    entry["classification"] = "plumbing"
 
     # Map added proposal filenames -> originating PR (lowest PR number wins,
     # so an amendment PR re-adding a renamed file cannot steal the mapping).
@@ -652,24 +701,39 @@ def _process_new_pull(
     config: GithubProjectConfig,
     cache: dict[str, Any],
     pull: dict[str, Any],
-    merged_paths: set[str],
+    merged_files: dict[str, MergedProposal],
     client: GithubClient,
 ) -> None:
     """Process a pull request not present in the PR index yet."""
 
     pr_str = str(pull["number"])
     state = derive_pull_state(pull)
+    merged_paths = set(merged_files)
+    merged_numbers = {merged.number for merged in merged_files.values()}
 
-    if _skip_files_fetch(config, state):
+    if config.numbering == "pr_number" and state == "merged":
+        # Kroxylicious shortcut: a merged KDP PR needs no files call - it
+        # is a proposal iff proposals/<PR#>-*.md exists on main (the
+        # proposal number equals the PR number). Snapshots are captured
+        # now so the frozen approval history is available to
+        # reconciliation.
         files: list[dict[str, Any]] = []
-        classification = {
-            "classification": "unknown",
+        is_proposal_pr = pull["number"] in merged_numbers
+        classification: dict[str, Any] = {
+            "classification": "proposal" if is_proposal_pr else "plumbing",
             "proposal_files": [],
             "amendment_files": [],
         }
-    else:
-        files = list(client.get_pull_files(pull["number"]))
-        classification = classify_pull(config, files, merged_paths)
+        entry = _new_index_entry(pull, files, classification, state)
+        cache["pr_index"][pr_str] = entry
+        if is_proposal_pr:
+            reviews, comments = _fetch_reviews_and_comments(client, pull["number"])
+            _store_snapshots(entry, reviews, comments)
+            entry["frozen"] = True
+        return
+
+    files = list(client.get_pull_files(pull["number"]))
+    classification = classify_pull(config, files, merged_paths)
 
     entry = _new_index_entry(pull, files, classification, state)
     cache["pr_index"][pr_str] = entry
@@ -695,14 +759,13 @@ def _process_new_pull(
         reviews, comments = _fetch_reviews_and_comments(client, pull["number"])
         _store_snapshots(entry, reviews, comments)
         entry["frozen"] = True
-    # merged KDP PRs are resolved by reconciliation (ground truth: tarball)
 
 
 def _process_changed_pull(
     config: GithubProjectConfig,
     cache: dict[str, Any],
     pull: dict[str, Any],
-    merged_paths: set[str],
+    merged_files: dict[str, MergedProposal],
     client: GithubClient,
 ) -> None:
     """Apply the incremental gating rules to one changed pull request."""
@@ -712,8 +775,10 @@ def _process_changed_pull(
     entry = cache["pr_index"].get(pr_str)
 
     if entry is None:
-        _process_new_pull(config, cache, pull, merged_paths, client)
+        _process_new_pull(config, cache, pull, merged_files, client)
         return
+
+    merged_paths = set(merged_files)
 
     previous_state = entry["state"]
     head_sha = (pull.get("head") or {}).get("sha", "")
@@ -738,7 +803,9 @@ def _process_changed_pull(
             record["frozen"] = True
             record["activity_status"] = None
             record["last_activity_age"] = None
-            record["votes"] = reviews_to_votes(reviews)
+            record["reviews"] = derive_review_activity(
+                reviews, comments, (pull.get("user") or {}).get("login", "")
+            )
             if state == "closed":
                 record["state"] = IPState.NOT_ACCEPTED
                 record["last_activity"] = pull.get("closed_at") or pull["updated_at"]
@@ -759,7 +826,7 @@ def _process_changed_pull(
             sync_open_record(record, pull, reviews, comments)
 
     elif state == "open":
-        # Still open but bumped: refresh votes/activity. A head.sha change
+        # Still open but bumped: refresh reviews/activity. A head.sha change
         # also triggers a files re-fetch and reclassification.
         reviews, comments = _fetch_reviews_and_comments(client, pull["number"])
         _store_snapshots(entry, reviews, comments)
@@ -804,7 +871,6 @@ def update_cache(
 
     logger.info("Downloading %s/%s tarball", config.owner, config.repo)
     merged_files = parse_tarball(client.download_tarball(), config)
-    merged_paths = set(merged_files)
 
     watermark = cache.get("watermark") or ""
     changed: list[dict[str, Any]] = []
@@ -833,7 +899,7 @@ def update_cache(
     )
 
     for pull in changed:
-        _process_changed_pull(config, cache, pull, merged_paths, client)
+        _process_changed_pull(config, cache, pull, merged_files, client)
 
     cache["watermark"] = watermark
     _reconcile_merged_proposals(config, cache, merged_files, pulls_seen, client)
@@ -852,7 +918,6 @@ def init_cache(config: GithubProjectConfig, client: GithubClient) -> dict[str, A
 
     logger.info("Downloading %s/%s tarball", config.owner, config.repo)
     merged_files = parse_tarball(client.download_tarball(), config)
-    merged_paths = set(merged_files)
 
     cache: dict[str, Any] = {
         "last_updated": None,
@@ -866,7 +931,7 @@ def init_cache(config: GithubProjectConfig, client: GithubClient) -> dict[str, A
     for pull in client.list_pulls(state="all"):
         pull_count += 1
         pulls_seen[str(pull["number"])] = pull
-        _process_new_pull(config, cache, pull, merged_paths, client)
+        _process_new_pull(config, cache, pull, merged_files, client)
         if pull_count % 50 == 0:
             logger.info("Processed %d pull requests...", pull_count)
     logger.info("Fetched and classified %d pull requests", pull_count)
@@ -878,6 +943,77 @@ def init_cache(config: GithubProjectConfig, client: GithubClient) -> dict[str, A
     _attach_amendments(config, cache, merged_files, pulls_seen)
 
     cache["last_updated"] = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return cache
+
+
+def _backfill_merged_snapshots(
+    config: GithubProjectConfig, cache: dict[str, Any], client: GithubClient | None
+) -> None:
+    """One-time backfill of review/comment snapshots for merged KDP PRs.
+
+    Older versions never fetched reviews/comments for merged Kroxylicious
+    PRs (the classification shortcut), so their approval history is
+    missing. Snapshots are fetched once per PR (~2 API calls each) and
+    frozen. Skipped when no client is provided.
+    """
+
+    if config.numbering != "pr_number":
+        return
+
+    pending = [
+        (pr_str, entry)
+        for pr_str, entry in cache.get("pr_index", {}).items()
+        if entry.get("state") == "merged"
+        and entry.get("classification") == "proposal"
+        and not entry.get("snapshots_fetched")
+        and not entry.get("reviews_snapshot")
+        and not entry.get("comments_snapshot")
+    ]
+    if not pending:
+        return
+
+    if client is None:
+        logger.warning(
+            "%s: %d merged proposal PR(s) have no review snapshot "
+            "(pre-backfill cache); run '%s update' to backfill them",
+            config.key,
+            len(pending),
+            config.key,
+        )
+        return
+
+    for pr_str, entry in pending:
+        logger.info(
+            "%s: backfilling reviews/comments for merged PR #%s", config.key, pr_str
+        )
+        reviews, comments = _fetch_reviews_and_comments(client, int(pr_str))
+        _store_snapshots(entry, reviews, comments)
+        entry["frozen"] = True
+
+
+def migrate_cache(
+    config: GithubProjectConfig,
+    cache: dict[str, Any],
+    client: GithubClient | None = None,
+) -> dict[str, Any]:
+    """Migrate a cache to the review-activity record format.
+
+    1. Backfill snapshots for merged KDP proposal PRs (needs a client;
+       skipped with a warning otherwise).
+    2. Re-derive every proposal record's review activity from its PR
+       index snapshots and drop the legacy 'votes' key. Idempotent.
+    """
+
+    _backfill_merged_snapshots(config, cache, client)
+
+    for record in cache.get("proposals", {}).values():
+        entry = cache.get("pr_index", {}).get(str(record.get("pr_number")), {})
+        record["reviews"] = derive_review_activity_from_snapshots(
+            entry.get("reviews_snapshot", []),
+            entry.get("comments_snapshot", []),
+            record.get("created_by", ""),
+        )
+        record.pop("votes", None)
     return cache
 
 

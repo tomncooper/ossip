@@ -63,18 +63,18 @@
             <td><span style="color:{{ data.activity_status }};">&#9679;</span> Last activity {{ data.last_activity_age }} ago</td>
         </tr>
         {% endif %}
-        {% for vote_key, vote_label in [("+1", "Reviews +1"), ("0", "Reviews 0"), ("-1", "Reviews -1")] %}
+        {% for column, column_label in [("accepted", "Accepted"), ("commented", "Commented"), ("changes_requested", "Requested Changes")] %}
         <tr>
-            <td>{{ vote_label }}</td>
+            <td>{{ column_label }}</td>
             <td>
-                {% set voters = data.votes[vote_key] %}
-                {% if voters %}
-                {{ voters|length }} votes:
-                {% for voter in voters %}
-                {{ voter.name }} (<em>{{ voter.timestamp }}</em>){% if not loop.last %}, {% endif %}
+                {% set users = data.reviews[column] %}
+                {% if users %}
+                {{ users|length }} user{{ 's' if users|length > 1 }}:
+                {% for user in users %}
+                {{ user.name }} (<em>{{ user.timestamp }}</em>){% if not loop.last %}, {% endif %}
                 {% endfor %}
                 {% else %}
-                0 votes
+                No reviewers
                 {% endif %}
             </td>
         </tr>

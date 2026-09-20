@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-20T10:55:56Z",
+  "last_updated": "2026-09-20T14:03:17Z",
   "proposals": {
     "pr-12": {
       "pr_number": 12,
@@ -12,17 +12,22 @@
       "created_on": "2026-09-09",
       "state": "under discussion",
       "web_url": "https://github.com/streamshub/proposals/pull/12",
-      "votes": {
-        "+1": [],
-        "0": [],
-        "-1": []
-      },
       "last_activity": "2026-09-16T14:36:26Z",
       "activity_status": "green",
       "last_activity_age": "3 days",
       "amendments": [],
       "frozen": false,
-      "id": null
+      "id": null,
+      "reviews": {
+        "accepted": [],
+        "commented": [
+          {
+            "name": "MikeEdgar",
+            "timestamp": "2026-09-10T15:25:49Z"
+          }
+        ],
+        "changes_requested": []
+      }
     },
     "pr-4": {
       "pr_number": 4,
@@ -35,17 +40,34 @@
       "created_on": "2026-03-05",
       "state": "not accepted",
       "web_url": "https://github.com/streamshub/proposals/pull/4",
-      "votes": {
-        "+1": [],
-        "0": [],
-        "-1": []
-      },
       "last_activity": "2026-04-29T13:26:35Z",
       "activity_status": null,
       "last_activity_age": null,
       "amendments": [],
       "frozen": true,
-      "id": null
+      "id": null,
+      "reviews": {
+        "accepted": [],
+        "commented": [
+          {
+            "name": "MikeEdgar",
+            "timestamp": "2026-04-21T12:27:13Z"
+          },
+          {
+            "name": "Frawless",
+            "timestamp": "2026-04-07T19:51:22Z"
+          },
+          {
+            "name": "tomncooper",
+            "timestamp": "2026-03-11T17:03:15Z"
+          },
+          {
+            "name": "aswinayyolath",
+            "timestamp": "2026-03-10T04:35:22Z"
+          }
+        ],
+        "changes_requested": []
+      }
     },
     "1": {
       "pr_number": 3,
@@ -58,41 +80,6 @@
       "created_on": "2026-03-03",
       "state": "accepted",
       "web_url": "https://github.com/streamshub/proposals/blob/main/001-quickstart-kustomize-repo.md",
-      "votes": {
-        "+1": [
-          {
-            "name": "aswinayyolath",
-            "timestamp": "2026-03-09T16:57:47Z"
-          },
-          {
-            "name": "kornys",
-            "timestamp": "2026-03-10T08:57:01Z"
-          },
-          {
-            "name": "jankalinic",
-            "timestamp": "2026-03-10T16:45:28Z"
-          },
-          {
-            "name": "MikeEdgar",
-            "timestamp": "2026-03-10T17:42:33Z"
-          },
-          {
-            "name": "Frawless",
-            "timestamp": "2026-03-10T19:58:52Z"
-          }
-        ],
-        "0": [],
-        "-1": [
-          {
-            "name": "aswinayyolath",
-            "timestamp": "2026-03-06T15:51:04Z"
-          },
-          {
-            "name": "aswinayyolath",
-            "timestamp": "2026-03-09T16:51:50Z"
-          }
-        ]
-      },
       "last_activity": null,
       "activity_status": null,
       "last_activity_age": null,
@@ -102,7 +89,38 @@
       "id": 1,
       "merged_on": "2026-03-11T14:44:42Z",
       "last_modified_on": "2026-03-11T14:44:42Z",
-      "file_path": "001-quickstart-kustomize-repo.md"
+      "file_path": "001-quickstart-kustomize-repo.md",
+      "reviews": {
+        "accepted": [
+          {
+            "name": "Frawless",
+            "timestamp": "2026-03-10T19:58:52Z"
+          },
+          {
+            "name": "MikeEdgar",
+            "timestamp": "2026-03-10T17:42:33Z"
+          },
+          {
+            "name": "jankalinic",
+            "timestamp": "2026-03-10T16:45:28Z"
+          },
+          {
+            "name": "kornys",
+            "timestamp": "2026-03-10T08:57:01Z"
+          },
+          {
+            "name": "aswinayyolath",
+            "timestamp": "2026-03-09T16:57:47Z"
+          }
+        ],
+        "commented": [
+          {
+            "name": "ppatierno",
+            "timestamp": "2026-03-04T08:31:17Z"
+          }
+        ],
+        "changes_requested": []
+      }
     },
     "2": {
       "pr_number": 2,
@@ -115,29 +133,6 @@
       "created_on": "2026-02-25",
       "state": "accepted",
       "web_url": "https://github.com/streamshub/proposals/blob/main/002-streamshub-mcp-strimzi.md",
-      "votes": {
-        "+1": [
-          {
-            "name": "Frawless",
-            "timestamp": "2026-03-13T11:23:51Z"
-          },
-          {
-            "name": "martinstrasil",
-            "timestamp": "2026-03-18T13:22:24Z"
-          },
-          {
-            "name": "tomncooper",
-            "timestamp": "2026-03-24T17:07:05Z"
-          }
-        ],
-        "0": [],
-        "-1": [
-          {
-            "name": "tomncooper",
-            "timestamp": "2026-02-26T17:08:20Z"
-          }
-        ]
-      },
       "last_activity": null,
       "activity_status": null,
       "last_activity_age": null,
@@ -147,7 +142,34 @@
       "id": 2,
       "merged_on": "2026-03-26T06:39:25Z",
       "last_modified_on": "2026-03-26T06:39:25Z",
-      "file_path": "002-streamshub-mcp-strimzi.md"
+      "file_path": "002-streamshub-mcp-strimzi.md",
+      "reviews": {
+        "accepted": [
+          {
+            "name": "tomncooper",
+            "timestamp": "2026-03-24T17:07:05Z"
+          },
+          {
+            "name": "martinstrasil",
+            "timestamp": "2026-03-18T13:22:24Z"
+          },
+          {
+            "name": "Frawless",
+            "timestamp": "2026-03-13T11:23:51Z"
+          }
+        ],
+        "commented": [
+          {
+            "name": "MikeEdgar",
+            "timestamp": "2026-03-11T15:17:44Z"
+          },
+          {
+            "name": "ppatierno",
+            "timestamp": "2026-03-09T10:06:45Z"
+          }
+        ],
+        "changes_requested": []
+      }
     },
     "3": {
       "pr_number": 11,
@@ -160,24 +182,6 @@
       "created_on": "2026-08-03",
       "state": "accepted",
       "web_url": "https://github.com/streamshub/proposals/blob/main/003-donate-streamshub-mcp-to-strimzi.md",
-      "votes": {
-        "+1": [
-          {
-            "name": "MikeEdgar",
-            "timestamp": "2026-08-03T13:04:36Z"
-          },
-          {
-            "name": "kornys",
-            "timestamp": "2026-08-03T13:20:25Z"
-          },
-          {
-            "name": "alexcreasy",
-            "timestamp": "2026-08-19T13:43:30Z"
-          }
-        ],
-        "0": [],
-        "-1": []
-      },
       "last_activity": null,
       "activity_status": null,
       "last_activity_age": null,
@@ -187,7 +191,30 @@
       "id": 3,
       "merged_on": "2026-09-15T19:27:59Z",
       "last_modified_on": "2026-09-15T19:27:59Z",
-      "file_path": "003-donate-streamshub-mcp-to-strimzi.md"
+      "file_path": "003-donate-streamshub-mcp-to-strimzi.md",
+      "reviews": {
+        "accepted": [
+          {
+            "name": "alexcreasy",
+            "timestamp": "2026-08-19T13:43:30Z"
+          },
+          {
+            "name": "kornys",
+            "timestamp": "2026-08-03T13:20:25Z"
+          },
+          {
+            "name": "MikeEdgar",
+            "timestamp": "2026-08-03T13:04:36Z"
+          }
+        ],
+        "commented": [
+          {
+            "name": "tomncooper",
+            "timestamp": "2026-08-03T15:06:39Z"
+          }
+        ],
+        "changes_requested": []
+      }
     }
   },
   "pr_index": {

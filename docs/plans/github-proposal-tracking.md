@@ -1,11 +1,17 @@
 # Implementation Plan: GitHub-Based Proposal Tracking
 
-**Status:** Implemented (2026-09-20)
+**Status:** Implemented (2026-09-20); review-activity refactor (see §5) 2026-10-04
 **Date:** 2026-02-16
 **Goal:** Add improvement proposal tracking for projects that manage proposals in
 GitHub repositories (no mailing lists / Confluence wikis), producing tracking
 pages and JSON API output consistent with the existing KIP (Kafka) and FLIP
 (Flink) pages.
+
+> **Note (2026-10-04):** the +1/0/-1 vote columns were replaced with three
+> unique-user review columns — Accepted, Commented, Requested Changes — see
+> Design Decisions §5 below. The JSON API moved to version 2 as part of the
+> same change (GitHub projects report `review_count`/`reviews` instead of
+> `vote_count`/`votes`).
 
 ## Supported Projects
 
@@ -33,9 +39,19 @@ the pipeline always fetches from GitHub).
    Sequential-repo proposals under review/rejected carry **no number** (shown
    as `PR #N`); Kroxylicious proposals always carry their PR number. Numbering
    gaps are skipped. Tables are ordered by creation date (descending).
-5. **Votes:** PR reviews map to votes — `APPROVED` → +1, `CHANGES_REQUESTED`
-   → -1, `COMMENTED` → not counted. Voter = GitHub login, timestamp = review
-   submitted_at.
+5. **Review activity (2026-10 refactor):** instead of mailing-list style
+   +1/0/-1 votes, PR reviews/comments map to three unique-user columns:
+   - **accepted:** ≥ 1 `APPROVED` review. Terminal — an approver never
+     appears in the other columns, even if they also commented or requested
+     changes earlier.
+   - **changes_requested:** ≥ 1 `CHANGES_REQUESTED` review and no approval.
+   - **commented:** only participated via issue comments or `COMMENTED`
+     reviews (both count). The PR author and bot accounts (logins ending in
+     `[bot]` plus a known-bots list) are excluded.
+   - Each entry carries the user's **latest qualifying timestamp**.
+   - `PENDING` reviews never count; a `DISMISSED` approval no longer counts
+     as acceptance (matching GitHub's own semantics) but the user's comments
+     still count.
 6. **Detail pages:** metadata + votes only (no markdown rendering).
 7. **Activity:** for open proposal PRs, last activity = max(PR `updated_at`,
    last push, last issue comment, last review), mapped to the existing
@@ -44,12 +60,15 @@ the pipeline always fetches from GitHub).
 8. **JSON API:** all three projects join the existing `api/v1` API.
 9. **CLI:** subcommands `strimzi`, `streamshub`, `kroxylicious` following the
    kafka/flink pattern.
-10. **Votes on rejected proposals:** frozen review votes are retained on
-    closed-unmerged (rejected) proposal PRs, captured once at (or before)
-    close time.
-11. **Votes on merged proposals:** the approval history is retained on merged
-    (accepted) proposal PRs, frozen at merge — the historical record of who
-    approved the proposal.
+10. **Review activity on rejected proposals:** frozen review activity is
+    retained on closed-unmerged (rejected) proposal PRs, captured once at (or
+    before) close time.
+11. **Review activity on merged proposals:** the approval history is retained
+    on merged (accepted) proposal PRs, frozen at merge — the historical record
+    of who approved the proposal. Merged KDP proposal PRs capture their
+    review/comment snapshots at classification time (no files call needed);
+    pre-refactor caches are backfilled once by `migrate_cache` (~2 requests
+    per PR, requires a client/token).
 12. **Token policy:** `init` / `refresh` require `GITHUB_TOKEN` (Strimzi init
     alone is ~500 requests vs the 60/hr unauthenticated limit); `update` works
     unauthenticated (~5–15 requests per project per run).
@@ -228,13 +247,13 @@ For each PR (from `list_pulls(state="all")` + `get_pull_files`):
   - `merged_on` = PR `merged_at`
   - `web_url` = blob URL; `pr_url` = PR URL
   - `last_modified_on` = max(merge date, any amendment PR dates)
-  - Votes: reviews captured at merge time are frozen and kept (historical
-    record of who approved)
+  - Review activity: derived from the review/comment snapshots captured
+    at merge time (frozen, historical record of who approved)
   - `activity_status` = None
 - **Open (under discussion):**
   - `id` = None (sequential repos) or PR number (Kroxylicious)
   - `pr_number` = PR number; display as `PR #N` when `id` is None
-  - votes from reviews (mapping in Design Decisions §5)
+  - review activity derived from reviews + comments (Design Decisions §5)
   - `last_activity` = max(`updated_at`, last push, last issue comment,
     last review); `activity_status` via the shared threshold logic
 - **Closed-unmerged (rejected):**
@@ -266,7 +285,8 @@ Cache file per project (`cache/{sip,ship,kdp}_proposals_cache.json`):
       "head_sha": "",
       "frozen": true,
       "reviews_snapshot": [],
-      "comments_snapshot": []
+      "comments_snapshot": [],
+      "snapshots_fetched": true
     }
   }
 }
@@ -347,7 +367,8 @@ alongside kafka/flink.
 
 - `templates/github-index.html.jinja`: clone of `flink-index.html.jinja`,
   parameterised by project name, prefix, and proposal list. Columns:
-  `#` (number or `PR #N`), Title, State, Authors, Created, Votes (+1/0/-1),
+  `#` (number or `PR #N`), Title, State, Authors, Created, review columns
+  (Accepted / Commented / Requested Changes — unique users with tooltips),
   Activity indicator (open proposals only), Info link. **Rows sorted by
   `created_on` descending.** Keep the existing client-side filter controls
   (state/author filters) adapted as needed.
@@ -419,7 +440,8 @@ Add after the flink steps:
   - Lifecycle: rejected → reopened → under discussion; sequential numbering
     (no number until merge, number assigned on merge); KDP numbering
     (PR number at all stages); frozen votes on close/merge.
-  - Votes: `APPROVED`/`CHANGES_REQUESTED`/`COMMENTED` mapping, voter + ts.
+  - Review activity: column semantics (approval terminal, author/bots
+    excluded, latest timestamp per user per column).
   - Incremental update: stops paging at the watermark boundary (unchanged
     PRs never re-fetched); `head_sha` gating (label-only `updated_at` bump
     triggers no file re-fetch, real push does); close transition captures the

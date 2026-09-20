@@ -69,9 +69,9 @@ ossip/
      - Tracks projects whose improvement proposals live as pull requests on GitHub
      - `common/github_config.py`: per-project config (repo, prefix, proposal file location, numbering scheme)
      - `common/github.py`: thin GitHub REST client (`requests` + `get_with_retries`), Link-header pagination, rate-limit handling, codeload tarball download
-     - `common/github_process.py`: PR classification (proposal / amendment / plumbing), state derivation (merged → accepted, open → under discussion, closed unmerged → rejected), cache building with incremental update (watermark on `updated_at`, `head.sha` change detection, freeze/reopen semantics)
+     - `common/github_process.py`: PR classification (proposal / amendment / plumbing), state derivation (merged → accepted, open → under discussion, closed unmerged → rejected), cache building with incremental update (watermark on `updated_at`, `head.sha` change detection, freeze/reopen semantics), review-activity derivation, cache migration (`migrate_cache`)
      - `common/github_output.py`: HTML index/detail rendering + JSON API emission (reuses Kafka/Flink templates)
-     - `common/github_models.py`: cache/pydantic models (reviews snapshot, amendments)
+     - `common/github_models.py`: pydantic models (GithubProposalDetail with reviews + amendments)
      - Token: `GITHUB_TOKEN` env var (required for `init`/`refresh`, optional for `update`)
 
 3. **Data Processing**
@@ -146,20 +146,25 @@ ossip/
 - **Prefix / Prefix-URL Scheme:** SIP / `https://strimzi.io/proposals/{id}.html`
 - **Numbering:** sequential (merged proposals are numbered by the order their
   files land on main)
-- **Votes:** GitHub PR reviews (APPROVED → +1, CHANGES_REQUESTED → -1)
+- **Votes:** GitHub PR reviews → three unique-user columns: Accepted (APPROVED
+  review, terminal), Commented (issue comments / COMMENTED reviews only,
+  author and bots excluded), Requested Changes (CHANGES_REQUESTED, no
+  approval); latest timestamp per user per column
 
 ### StreamsHub (GitHub)
 - **Repo:** `streamshub/proposals` — proposal files at repo root
 - **Prefix:** SHIP
 - **Numbering:** sequential
-- **Votes:** GitHub PR reviews
+- **Votes:** GitHub PR reviews (same three-column scheme as Strimzi)
 
 ### Kroxylicious (GitHub)
 - **Repo:** `kroxylicious/design` — proposal files under `proposals/`
 - **Prefix:** KDP
 - **Numbering:** proposal number == PR number (drafts use `000-<name>.md`
   placeholders that are renamed to the PR number on merge)
-- **Votes:** GitHub PR reviews
+- **Votes:** GitHub PR reviews (same three-column scheme as Strimzi; merged
+  KDP proposal PRs capture review/comment snapshots at classification time —
+  pre-refactor caches are backfilled once by `migrate_cache` during update)
 
 ## Workflow
 
@@ -184,17 +189,20 @@ ossip/
 4. Use when cache is corrupted or processing logic changes
 
 ### Initial Setup (`strimzi/streamshub/kroxylicious init`)
-1. Walk ALL project PRs (classification + state + votes + comments)
+1. Walk ALL project PRs (classification + state + review/comment snapshots)
 2. Download the repo tarball to number merged proposals from the proposal files on main
 3. Save the single-source-of-truth JSON cache (`cache/sip_proposals_cache.json`,
    `cache/ship_proposals_cache.json`, `cache/kdp_proposals_cache.json`)
 4. Requires `GITHUB_TOKEN` (full fetch is ~500-1000 requests)
 
 ### Updates (`strimzi/streamshub/kroxylicious update`)
-1. Incremental: walk PRs newest-first, stop at the watermark (max `updated_at` already seen)
-2. `head.sha` change → re-fetch PR files; label-only bump → refresh reviews/comments only
-3. Close/reopen/merge transitions handled (freeze votes, reconcile merged PRs with the tarball)
-4. Save the JSON cache atomically (temp file + rename)
+1. Migrate the cache if it predates the review-activity format (`migrate_cache`;
+   includes a one-time backfill of merged KDP proposal snapshots — needs
+   `GITHUB_TOKEN` for that part, skipped with a warning otherwise)
+2. Incremental: walk PRs newest-first, stop at the watermark (max `updated_at` already seen)
+3. `head.sha` change → re-fetch PR files; label-only bump → refresh reviews/comments only
+4. Close/reopen/merge transitions handled (freeze review activity, reconcile merged PRs with the tarball)
+5. Save the JSON cache atomically (temp file + rename)
 
 ### Refresh (`strimzi/streamshub/kroxylicious refresh`)
 Same as init (full re-fetch from GitHub). Use when cache is corrupted or
@@ -261,6 +269,21 @@ KIP_PATTERN = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
 # Plumbing: everything else (workflow tweaks, README edits, ...)
 # Unnumbered open proposals display as 'PR #N'; Kroxylicious drafts use the
 # 000-<name>.md placeholder convention (renumbered to the PR number on merge)
+# Merged KDP PRs skip the files call: proposal iff proposals/<PR#>-*.md is
+# on main; their review/comment snapshots are captured at that point
+```
+
+### GitHub Review Activity (three unique-user columns)
+```python
+# accepted:         >= 1 APPROVED review (terminal; approvers never appear
+#                   in the other columns)
+# changes_requested: >= 1 CHANGES_REQUESTED review and no approval
+# commented:        issue comments or COMMENTED reviews only; the PR author
+#                   and bots ([bot] suffix + KNOWN_BOTS) are excluded
+# Each entry keeps the user's latest qualifying timestamp.
+# PENDING reviews never count; DISMISSED approvals no longer count as
+# acceptance but that user's comments still count.
+# Frozen at merge/close time from the PR index snapshots.
 ```
 
 ## File Conventions
@@ -453,8 +476,42 @@ CSV/JSON Cache → Pydantic → JSON API (/api/v1/)
 
 ---
 
-**Last Updated:** 2026-09-20
+**Last Updated:** 2026-10-04
 **Maintainer:** Thomas Cooper
+
+## Recent Changes (2026-10-04)
+
+### Review-Activity Columns for GitHub-Based Proposals (SIP / SHIP / KDP)
+
+**What Changed:**
+- Replaced the mailing-list style +1/0/-1 columns with three unique-user
+  review columns: **Accepted**, **Commented**, **Requested Changes**
+- Semantics: any APPROVED review → Accepted (terminal); CHANGES_REQUESTED
+  without approval → Requested Changes; issue comments or COMMENTED reviews
+  → Commented; the PR author and bot accounts are excluded; the latest
+  qualifying timestamp is kept per user per column; DISMISSED approvals and
+  PENDING reviews are ignored
+- Proposal cache records now store `reviews` (`accepted` / `commented` /
+  `changes_requested`) instead of `votes`; old caches are migrated on the next
+  `update` or `output` run (`migrate_cache` in `common/github_process.py`)
+- Merged KDP proposal PRs now capture their review/comment snapshots at
+  classification time (previously never fetched); pre-refactor caches are
+  backfilled once with a token (~2 requests per PR)
+- JSON API v2: GitHub projects emit `review_count` (summaries) and `reviews`
+  (details) instead of `vote_count` / `votes`; `ApiIndex.version` bumped to 2;
+  new models `ReviewerInfo`, `ReviewSummary`, `ReviewCount`,
+  `GithubProposalSummary`; KIP/FLIP models unchanged
+
+**Modified Files:**
+- `ipper/common/github_process.py` — `derive_review_activity*`, bot filter,
+  merged-KDP snapshot capture, `migrate_cache` + backfill
+- `ipper/common/github_output.py`, `github_models.py`, `models.py`,
+  `api_output.py`, `github_cli.py`
+- `templates/github-index.html.jinja`, `templates/github-more-info.html.jinja`
+- Tests: `test_github.py`, `test_github_output.py`, `test_models.py`,
+  `test_api_output.py`, `test_json_api_integration.py`
+
+---
 
 ## Recent Changes (2026-09-20)
 

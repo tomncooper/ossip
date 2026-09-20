@@ -368,7 +368,7 @@ class TestApiIndexIntegration:
             index_data = json.load(f)
 
         index = ApiIndex(**index_data)
-        assert index.version == 1
+        assert index.version == 2
         assert len(index.projects) == 2
         assert "kafka" in index.projects
         assert "flink" in index.projects
@@ -444,7 +444,7 @@ class TestApiIndexIntegration:
             index_data = json.load(f)
 
         index = ApiIndex(**index_data)
-        assert index.version == 1
+        assert index.version == 2
         assert len(index.projects) == 0
         assert index.last_updated  # Should still have a timestamp
 
@@ -525,7 +525,7 @@ class TestSchemaValidation:
             index_data = json.load(f)
 
         index = ApiIndex(**index_data)
-        assert index.version == 1
+        assert index.version == 2
         assert len(index.projects) == 1
 
 

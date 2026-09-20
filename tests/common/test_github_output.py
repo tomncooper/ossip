@@ -19,7 +19,7 @@ def make_record(
     id: int | None = 157,
     pr_number: int | None = None,
     created_on: str = "2026-01-10",
-    votes: dict | None = None,
+    reviews: dict | None = None,
     amendments: list | None = None,
 ) -> dict:
     if pr_number is None:
@@ -37,7 +37,8 @@ def make_record(
         "last_modified_on": "2026-02-01T00:00:00Z" if state == "accepted" else None,
         "web_url": "https://github.com/o/r/blob/main/x.md",
         "pr_url": f"https://github.com/o/r/pull/{pr_number}",
-        "votes": votes or {"+1": [], "0": [], "-1": []},
+        "reviews": reviews
+        or {"accepted": [], "commented": [], "changes_requested": []},
         "last_activity": None,
         "activity_status": "green" if state == "under discussion" else None,
         "last_activity_age": "2 days" if state == "under discussion" else None,
@@ -82,10 +83,12 @@ class TestIndexRendering:
                     id=None,
                     pr_number=247,
                     created_on="2026-02-05",
-                    votes={
-                        "+1": [{"name": "dev", "timestamp": "2026-02-08T00:00:00Z"}],
-                        "0": [],
-                        "-1": [],
+                    reviews={
+                        "accepted": [
+                            {"name": "dev", "timestamp": "2026-02-08T00:00:00Z"}
+                        ],
+                        "commented": [],
+                        "changes_requested": [],
                     },
                 ),
                 "pr-248": make_record(
@@ -129,7 +132,7 @@ class TestIndexRendering:
         assert "✅" in html
         assert "❌" in html
 
-    def test_vote_tooltip(self, tmp_path):
+    def test_review_tooltip(self, tmp_path):
         output = tmp_path / "strimzi.html"
         render_index_page(STRIMZI_CONFIG, self._cache(), str(output))
         html = output.read_text()
@@ -153,18 +156,18 @@ class TestDetailRendering:
         assert (detail_dir / "SIP-157.html").exists()
         assert (detail_dir / "SIP-PR-247.html").exists()
 
-    def test_detail_page_contains_metadata_and_votes(self, tmp_path):
+    def test_detail_page_contains_metadata_and_reviews(self, tmp_path):
         cache = {
             "last_updated": "2026-02-10T00:00:00Z",
             "proposals": {
                 "157": make_record(
                     "157",
-                    votes={
-                        "+1": [
+                    reviews={
+                        "accepted": [
                             {"name": "committer", "timestamp": "2026-02-01T00:00:00Z"}
                         ],
-                        "0": [],
-                        "-1": [],
+                        "commented": [],
+                        "changes_requested": [],
                     },
                     amendments=[
                         {
@@ -185,6 +188,9 @@ class TestDetailRendering:
         assert "2026-02-01T00:00:00Z" in html
         assert "PR #250" in html
         assert "Merged" in html
+        assert "Accepted" in html
+        assert "Requested Changes" in html
+        assert "1 user" in html
 
 
 class TestJsonApi:
@@ -199,10 +205,16 @@ class TestJsonApi:
                     id=None,
                     pr_number=247,
                     created_on="2026-02-05",
-                    votes={
-                        "+1": [{"name": "dev", "timestamp": "2026-02-08T00:00:00Z"}],
-                        "0": [],
-                        "-1": [],
+                    reviews={
+                        "accepted": [
+                            {"name": "dev", "timestamp": "2026-02-08T00:00:00Z"}
+                        ],
+                        "commented": [
+                            {"name": "bob", "timestamp": "2026-02-07T00:00:00Z"}
+                        ],
+                        "changes_requested": [
+                            {"name": "carol", "timestamp": "2026-02-06T00:00:00Z"}
+                        ],
                     },
                 ),
             },
@@ -227,7 +239,20 @@ class TestJsonApi:
         assert detail["pr_number"] == 247
         assert detail["state"] == "under discussion"
         assert detail["activity_status"] == "green"
-        assert detail["votes"]["plus_one"][0]["name"] == "dev"
+        assert detail["reviews"]["accepted"][0]["login"] == "dev"
+        assert detail["reviews"]["accepted"][0]["timestamp"] == "2026-02-08T00:00:00Z"
+        assert detail["reviews"]["commented"][0]["login"] == "bob"
+        assert detail["reviews"]["changes_requested"][0]["login"] == "carol"
+        assert "votes" not in detail
+
+        # summary carries integer review counts, not vote counts
+        pr247_summary = next(p for p in summary["proposals"] if p["pr_number"] == 247)
+        assert pr247_summary["review_count"] == {
+            "accepted": 1,
+            "commented": 1,
+            "changes_requested": 1,
+        }
+        assert "vote_count" not in pr247_summary
 
         merged_detail = json.loads((api_dir / "sips" / "157.json").read_text())
         assert merged_detail["id"] == 157

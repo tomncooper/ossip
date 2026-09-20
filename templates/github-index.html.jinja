@@ -28,9 +28,9 @@
             <th>Status</th>
             <th>Author(s)</th>
             <th>Created</th>
-            <th>+1</th>
-            <th>0</th>
-            <th>-1</th>
+            <th>Accepted</th>
+            <th>Commented</th>
+            <th>Requested Changes</th>
             <th>More Info</th>
         </tr>
         </thead>
@@ -51,14 +51,14 @@
             {% endif %}
             <td class="author-cell">{{ row.authors|join(", ") }}</td>
             <td>{{ row.created_on }}</td>
-            {% for vote_key in ["+1", "0", "-1"] %}
-            {% set voters = row.votes[vote_key] %}
-            {% if voters %}
-            <td class="{{ 'vote-positive' if vote_key == '+1' else 'vote-negative' if vote_key == '-1' else 'vote-neutral' }}">
-                <div class="tooltip">{{ voters|length }}
+            {% for column, css_class in [("accepted", "vote-positive"), ("commented", "vote-neutral"), ("changes_requested", "vote-negative")] %}
+            {% set users = row.reviews[column] %}
+            {% if users %}
+            <td class="{{ css_class }}">
+                <div class="tooltip">{{ users|length }}
                     <span class="tooltiptext">
-                        {% for voter in voters %}
-                        {{ voter.name }}<br><em>{{ voter.timestamp }}</em><br>
+                        {% for user in users %}
+                        {{ user.name }}<br><em>{{ user.timestamp }}</em><br>
                         {% endfor %}
                     </span>
                 </div>

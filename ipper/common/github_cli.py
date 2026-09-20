@@ -26,6 +26,7 @@ from ipper.common.github_process import (
     cache_path_for,
     init_cache,
     load_cache,
+    migrate_cache,
     save_cache,
     update_cache,
 )
@@ -96,6 +97,7 @@ def run_update_cmd(config: GithubProjectConfig, args: Namespace) -> None:
     logger.info("Updating %s proposal cache (incremental)", config.key)
     cache = load_cache(cache_path)
     client = _build_client(config, require_token=False)
+    cache = migrate_cache(config, cache, client)
     try:
         cache = update_cache(config, cache, client)
     except GithubClientError as ex:
@@ -119,6 +121,7 @@ def run_output_cmd(config: GithubProjectConfig, args: Namespace) -> None:
         sys.exit(1)
 
     cache = load_cache(cache_file)
+    migrate_cache(config, cache)
 
     render_index_page(
         config, cache, args.index_html, detail_dir=Path(args.detail_dir).name

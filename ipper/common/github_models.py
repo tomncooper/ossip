@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from ipper.common.models import ProposalDetail
+from ipper.common.models import ProposalDetailBase, ReviewSummary
 
 
 class Amendment(BaseModel):
@@ -19,18 +19,18 @@ class Amendment(BaseModel):
     date: str
 
 
-class GithubProposalDetail(ProposalDetail):
+class GithubProposalDetail(ProposalDetailBase):
     """Detail model for GitHub-tracked proposals (SIP/SHIP/KDP).
 
-    Extends ProposalDetail with GitHub-specific fields.
-
     Attributes:
-        pr_number: Originating pull request number (inherited, always set)
         merged_on: Merge timestamp (ISO 8601) or None for unmerged proposals
         pr_url: URL to the originating pull request
         amendments: List of amendment PRs that modified the merged proposal
+        reviews: Unique reviewers per interaction type with latest
+            timestamps
     """
 
     merged_on: str | None = None
     pr_url: str | None = None
     amendments: list[Amendment] = []
+    reviews: ReviewSummary
