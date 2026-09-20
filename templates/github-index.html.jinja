@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ project_name }} Improvement Proposals</title>
+    <title>{{ display_title }}</title>
     <link rel="stylesheet" href="style.css">
     <script>(function(){var t=localStorage.getItem('ossip-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
 </head>
 
 <body>
-    <h1>{{ project_name }} Improvement Proposals ({{ prefix }}s)</h1>
+    <h1>{{ display_title }}</h1>
     <div class="nav-bar">
         <div class="nav-item"><a href="index.html">Back to OSSIP</a></div>
         <div class="nav-item">GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></div>
@@ -54,7 +54,7 @@
             {% for column, css_class in [("accepted", "vote-positive"), ("commented", "vote-neutral"), ("changes_requested", "vote-negative")] %}
             {% set users = row.reviews[column] %}
             {% if users %}
-            <td class="{{ css_class }}">
+            <td class="{{ css_class }}" style="text-align: center;">
                 <div class="tooltip">{{ users|length }}
                     <span class="tooltiptext">
                         {% for user in users %}
@@ -64,7 +64,7 @@
                 </div>
             </td>
             {% else %}
-            <td>0</td>
+            <td style="text-align: center;">0</td>
             {% endif %}
             {% endfor %}
             <td><a href="{{ row.detail_url }}">info</a></td>

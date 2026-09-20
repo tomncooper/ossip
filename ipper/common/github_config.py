@@ -29,6 +29,8 @@ class GithubProjectConfig:
             captures the proposal number
         excluded_files: Filenames matching the pattern but not being proposals
         cache_filename: Committed cache file (under cache/)
+        index_title: Optional override for the index page title; defaults to
+            "<name> Improvement Proposals (<prefix>s)"
     """
 
     key: str
@@ -41,6 +43,14 @@ class GithubProjectConfig:
     proposal_pattern: re.Pattern[str]
     excluded_files: frozenset[str]
     cache_filename: str
+    index_title: str | None = None
+
+    @property
+    def display_title(self) -> str:
+        """Title shown on the index page (heading and <title> tag)."""
+        if self.index_title:
+            return self.index_title
+        return f"{self.name} Improvement Proposals ({self.prefix}s)"
 
     @property
     def proposal_dir_prefix(self) -> str:
@@ -95,6 +105,7 @@ KROXYLICIOUS_CONFIG = GithubProjectConfig(
     proposal_pattern=PROPOSAL_PATTERN,
     excluded_files=EXCLUDED_FILES,
     cache_filename="kdp_proposals_cache.json",
+    index_title="Kroxylicious Design Proposals (KDPs)",
 )
 
 GITHUB_PROJECT_CONFIGS: dict[str, GithubProjectConfig] = {
