@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-20T14:03:18Z",
+  "last_updated": "2026-09-20T16:41:08Z",
   "proposals": {
     "pr-245": {
       "pr_number": 245,
@@ -10710,11 +10710,33 @@
           "patch": "@@ -13,7 +13,7 @@ This repository lists proposals for the Strimzi project. A template for new prop\n | 155 | [Projected Service Account Tokens in Additional Volumes](./155-projected-service-account-tokens-in-additional-volumes.md) |\n | 154 | [Consolidating the `KafkaRebalance` API for extensibility](./154-kafkarebalance-custom-resource-consolidation.md) |\n | 153 | [Strimzi-native Configurable Certificate Key Strength](./153-configurable-ca-key-size.md) |\n-| 152 | [Use ubi10-micro as a base image](./152-use-ubi10-as-base-image.md) |\n+| 152 | [Use ubi9-micro as a base image](./152-use-ubi9-micro-as-base-image.md) |\n | 151 | [Support broker cordoning in auto-rebalancing on scale-down](./151-broker-cordoning-scale-down.md) |\n | 150 | [Configurable Security for Internal Kafka Cluster Communication](./150-configurable-security-of-internal-communication.md) |\n | 149 | [Maven mirror support for Kafka Connect builds](./149-connect-build-maven-mirror.md) |"
         }
       ],
-      "updated_at": "2026-09-19T19:56:34Z",
+      "updated_at": "2026-09-20T16:14:18Z",
       "head_sha": "5b1ba956e3d50f8ecc68da6da00045e48286214a",
       "frozen": false,
-      "reviews_snapshot": [],
-      "comments_snapshot": []
+      "reviews_snapshot": [
+        {
+          "name": "scholzj",
+          "state": "APPROVED",
+          "timestamp": "2026-09-19T19:21:36Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "APPROVED",
+          "timestamp": "2026-09-19T19:24:34Z"
+        },
+        {
+          "name": "see-quick",
+          "state": "APPROVED",
+          "timestamp": "2026-09-19T19:56:34Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "APPROVED",
+          "timestamp": "2026-09-20T16:14:18Z"
+        }
+      ],
+      "comments_snapshot": [],
+      "snapshots_fetched": true
     },
     "245": {
       "state": "open",
@@ -56639,5 +56661,5 @@
       ]
     }
   },
-  "watermark": "2026-09-19T19:56:34Z"
+  "watermark": "2026-09-20T16:14:18Z"
 }
