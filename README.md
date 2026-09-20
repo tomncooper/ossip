@@ -8,6 +8,13 @@ This repo holds scripts for generating a website which collects and enriches the
 Currently supported projects are:
 - [Apache Kafka](https://kafka.apache.org/) project's [Kafka Improvement Proposals (KIPs)](https://cwiki.apache.org/confluence/display/kafka/kafka+improvement+proposals)
 - [Apache Flink](https://flink.apache.org/) project's [Flink Improvement Proposals (FLIPs)](https://cwiki.apache.org/confluence/display/FLINK/Flink+Improvement+Proposals)
+- [Strimzi](https://strimzi.io/) project's [Strimzi Improvement Proposals (SIPs)](https://github.com/strimzi/proposals)
+- [StreamsHub](https://streamshub.io/) project's [StreamsHub Improvement Proposals (SHIPs)](https://github.com/streamshub/proposals)
+- [Kroxylicious](https://kroxylicious.io/) project's [Kroxylicious Design Proposals (KDPs)](https://github.com/kroxylicious/design)
+
+The Kafka and Flink pipelines read from Apache Confluence wikis and mailing
+list archives; the Strimzi, StreamsHub and Kroxylicious pipelines read
+proposal PRs from GitHub repositories.
 
 ## JSON API and OSSIP Skill
 
@@ -23,6 +30,12 @@ The OSSIP project provides a JSON API for programmatic access to KIP and FLIP da
 - `https://ossip.dev/api/v1/kafka/kips/{id}.json` — Individual KIP detail
 - `https://ossip.dev/api/v1/flink/flips.json` — All Flink FLIPs (summary)
 - `https://ossip.dev/api/v1/flink/flips/{id}.json` — Individual FLIP detail
+- `https://ossip.dev/api/v1/strimzi/sips.json` — All Strimzi SIPs (summary)
+- `https://ossip.dev/api/v1/strimzi/sips/{id}.json` — Individual SIP detail
+- `https://ossip.dev/api/v1/streamshub/ships.json` — All StreamsHub SHIPs (summary)
+- `https://ossip.dev/api/v1/streamshub/ships/{id}.json` — Individual SHIP detail
+- `https://ossip.dev/api/v1/kroxylicious/kdps.json` — All Kroxylicious KDPs (summary)
+- `https://ossip.dev/api/v1/kroxylicious/kdps/{id}.json` — Individual KDP detail
 - `https://ossip.dev/api/v1/schemas/` — JSON Schema definitions
 
 ### OSSIP Skill for AI Agents
@@ -160,6 +173,37 @@ To reprocess ALL Flink mbox files from scratch (useful when processing logic cha
 $ uv run python ipper/main.py flink refresh
 ```
 
+### Downloading and processing SIP/SHIP/KDP data (GitHub projects)
+
+Strimzi, StreamsHub and Kroxylicious track their proposals with pull requests
+on GitHub, so there is no wiki/mail pipeline - just proposal data and output.
+
+`init` and `refresh` do a full fetch from GitHub and **require a
+`GITHUB_TOKEN` environment variable** (a full Strimzi fetch costs ~500
+requests against the 60/hour unauthenticated limit):
+
+```bash
+$ export GITHUB_TOKEN=ghp_...   # https://github.com/settings/tokens
+$ uv run python ipper/main.py strimzi init
+$ uv run python ipper/main.py streamshub init
+$ uv run python ipper/main.py kroxylicious init
+```
+
+`update` is incremental (typically ~5-15 requests per project per run) and
+works unauthenticated:
+
+```bash
+$ uv run python ipper/main.py strimzi update
+$ uv run python ipper/main.py streamshub update
+$ uv run python ipper/main.py kroxylicious update
+```
+
+To reprocess from scratch (same as init):
+
+```bash
+$ uv run python ipper/main.py strimzi refresh
+```
+
 ### Building the site
 
 #### Quick Local Build
@@ -188,7 +232,16 @@ To create the Flink site html with individual FLIP pages:
 $ uv run python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips
 ```
 
-This generates a main index page and individual FLIP detail pages in the specified output directory.
+To create the GitHub-project site html with individual detail pages (example
+for Strimzi; use `streamshub`/`ships` and `kroxylicious`/`kdps` for the
+others):
+
+```bash
+$ uv run python ipper/main.py strimzi output cache/sip_proposals_cache.json site_files/strimzi.html site_files/sips
+```
+
+This generates a main index page and individual detail pages in the specified output directory.
+Pass `--api-dir site_files/api/v1/strimzi` to also emit the JSON API files.
 
 You will also need to copy over the static files from the `templates` directory to the `site_files` directory:
 

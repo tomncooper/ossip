@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from ipper.common.constants import NOT_SET_STR, UNKNOWN_STR
+from ipper.common.github_models import GithubProposalDetail
 from ipper.common.models import (
     ApiIndex,
     FlipDetail,
@@ -91,6 +92,22 @@ def write_json_file(
     path.write_text(json_content)
 
 
+def proposal_detail_filename(proposal: ProposalDetail) -> str:
+    """Compute the base filename (without extension) for a proposal detail file.
+
+    Numbered proposals use their id; unnumbered GitHub proposals (sequential
+    repos before merge) fall back to their PR number.
+    """
+    if proposal.id is not None:
+        return str(proposal.id)
+    if proposal.pr_number is not None:
+        return f"PR-{proposal.pr_number}"
+    raise ValueError(
+        f"Proposal {proposal.title!r} has neither id nor pr_number; "
+        "cannot determine detail filename"
+    )
+
+
 def write_proposal_details(proposals: Sequence[ProposalDetail], dir_path: Path) -> None:
     """Write individual JSON files for each proposal.
 
@@ -99,7 +116,7 @@ def write_proposal_details(proposals: Sequence[ProposalDetail], dir_path: Path) 
         dir_path: Directory to write proposal JSON files to
     """
     for proposal in proposals:
-        file_path = dir_path / f"{proposal.id}.json"
+        file_path = dir_path / f"{proposal_detail_filename(proposal)}.json"
         write_json_file(proposal, file_path)
 
 
@@ -122,12 +139,13 @@ def write_schemas(dir_path: Path) -> None:
     schema_dir = dir_path / "schemas"
     schema_dir.mkdir(parents=True, exist_ok=True)
 
-    # Export schemas for the four main API models
+    # Export schemas for the main API models
     models_to_export: list[tuple[type[BaseModel], str]] = [
         (ApiIndex, "ApiIndex.schema.json"),
         (ProjectSummary, "ProjectSummary.schema.json"),
         (KipDetail, "KipDetail.schema.json"),
         (FlipDetail, "FlipDetail.schema.json"),
+        (GithubProposalDetail, "GithubProposalDetail.schema.json"),
     ]
 
     for model_class, filename in models_to_export:
@@ -157,6 +175,9 @@ def generate_api_index(base_dir: Path) -> None:
     project_configs = [
         ("kafka", "kafka/kips.json", "Kafka", "KIP"),
         ("flink", "flink/flips.json", "Flink", "FLIP"),
+        ("strimzi", "strimzi/sips.json", "Strimzi", "SIP"),
+        ("streamshub", "streamshub/ships.json", "StreamsHub", "SHIP"),
+        ("kroxylicious", "kroxylicious/kdps.json", "Kroxylicious", "KDP"),
     ]
 
     # Scan for each project

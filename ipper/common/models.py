@@ -62,9 +62,11 @@ class ProposalSummary(BaseModel):
             tracking
         detail_url: URL to the full detail JSON file
         web_url: URL to the canonical wiki page
+        pr_number: GitHub pull request number for GitHub-tracked proposals, or
+            None for wiki-tracked proposals
     """
 
-    id: int
+    id: int | None
     title: str
     state: str
     created_by: str
@@ -74,6 +76,7 @@ class ProposalSummary(BaseModel):
     activity_status: str | None
     detail_url: str
     web_url: str
+    pr_number: int | None = None
 
 
 class ProposalDetail(BaseModel):
@@ -95,9 +98,11 @@ class ProposalDetail(BaseModel):
         web_url: URL to the canonical wiki page
         activity_status: Activity level indicator or None
         votes: Full vote details with voter names and timestamps
+        pr_number: GitHub pull request number for GitHub-tracked proposals, or
+            None for wiki-tracked proposals
     """
 
-    id: int
+    id: int | None
     title: str
     state: str
     created_by: str
@@ -111,6 +116,7 @@ class ProposalDetail(BaseModel):
     web_url: str
     activity_status: str | None
     votes: VoteSummary
+    pr_number: int | None = None
 
 
 class KipDetail(ProposalDetail):

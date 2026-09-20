@@ -44,7 +44,26 @@ class TestGetWithRetriesSuccess:
         )
 
         mock_get.assert_called_once_with(
-            "https://example.com/api", params={"limit": "100"}, timeout=60
+            "https://example.com/api",
+            params={"limit": "100"},
+            timeout=60,
+            headers=None,
+        )
+
+    def test_passes_headers(self, mocker):
+        mock_get = mocker.patch(
+            "ipper.common.http.requests.get", return_value=_response()
+        )
+
+        get_with_retries(
+            "https://example.com/api", headers={"Authorization": "Bearer t"}
+        )
+
+        mock_get.assert_called_once_with(
+            "https://example.com/api",
+            params=None,
+            timeout=30,
+            headers={"Authorization": "Bearer t"},
         )
 
     def test_non_transient_error_status_returned(self, mocker):

@@ -53,6 +53,21 @@ jobs:
       - name: Update FLIP mailing list data (incremental)
         run: uv run python ipper/main.py flink update
 
+      - name: Update Strimzi proposal data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: uv run python ipper/main.py strimzi update
+
+      - name: Update StreamsHub proposal data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: uv run python ipper/main.py streamshub update
+
+      - name: Update Kroxylicious proposal data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: uv run python ipper/main.py kroxylicious update
+
       - name: Copy static page to site_files
         run: |
           mkdir site_files
@@ -77,6 +92,21 @@ jobs:
         continue-on-error: true
         run: uv run python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips --api-dir site_files/api/v1/flink
 
+      - name: Build the Strimzi site
+        id: strimzi-build
+        continue-on-error: true
+        run: uv run python ipper/main.py strimzi output cache/sip_proposals_cache.json site_files/strimzi.html site_files/sips --api-dir site_files/api/v1/strimzi
+
+      - name: Build the StreamsHub site
+        id: streamshub-build
+        continue-on-error: true
+        run: uv run python ipper/main.py streamshub output cache/ship_proposals_cache.json site_files/streamshub.html site_files/ships --api-dir site_files/api/v1/streamshub
+
+      - name: Build the Kroxylicious site
+        id: kroxylicious-build
+        continue-on-error: true
+        run: uv run python ipper/main.py kroxylicious output cache/kdp_proposals_cache.json site_files/kroxylicious.html site_files/kdps --api-dir site_files/api/v1/kroxylicious
+
       - name: Generate API index
         run: |
           uv run python -c "
@@ -94,8 +124,17 @@ jobs:
           if [ "${{ steps.flink-build.outcome }}" = "failure" ]; then
             echo "::warning::Flink build failed — JSON API will not include FLIP data"
           fi
-          if [ "${{ steps.kafka-build.outcome }}" = "failure" ] && [ "${{ steps.flink-build.outcome }}" = "failure" ]; then
-            echo "::error::Both Kafka and Flink builds failed"
+          if [ "${{ steps.strimzi-build.outcome }}" = "failure" ]; then
+            echo "::warning::Strimzi build failed — JSON API will not include SIP data"
+          fi
+          if [ "${{ steps.streamshub-build.outcome }}" = "failure" ]; then
+            echo "::warning::StreamsHub build failed — JSON API will not include SHIP data"
+          fi
+          if [ "${{ steps.kroxylicious-build.outcome }}" = "failure" ]; then
+            echo "::warning::Kroxylicious build failed — JSON API will not include KDP data"
+          fi
+          if [ "${{ steps.kafka-build.outcome }}" = "failure" ] && [ "${{ steps.flink-build.outcome }}" = "failure" ] && [ "${{ steps.strimzi-build.outcome }}" = "failure" ] && [ "${{ steps.streamshub-build.outcome }}" = "failure" ] && [ "${{ steps.kroxylicious-build.outcome }}" = "failure" ]; then
+            echo "::error::All project builds failed"
             exit 1
           fi
 

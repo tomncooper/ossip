@@ -8,7 +8,9 @@
 - **Dependency Management:** uv (modern Python package manager)
 - **Deployment:** GitHub Pages (via GitHub Actions)
 - **Live Site:** [ossip.dev](https://ossip.dev/)
-- **Current Status:** Both Apache Kafka (KIP) and Apache Flink (FLIP) are fully supported
+- **Current Status:** Apache Kafka (KIP) and Apache Flink (FLIP) fully
+  supported via wiki/mailing lists; Strimzi (SIP), StreamsHub (SHIP) and
+  Kroxylicious (KDP) supported via the GitHub PR pipeline
 
 ## Tools
 
@@ -22,9 +24,12 @@ Always use Context7 MCP when I need library/API documentation, code generation, 
 ossip/
 ├── ipper/              # Main Python package
 │   ├── main.py        # CLI entry point
-│   ├── common/        # Shared utilities and constants
+│   ├── common/        # Shared utilities and constants (incl. GitHub proposal pipeline)
 │   ├── kafka/         # Kafka Improvement Proposals (KIP) processing
-│   └── flink/         # Flink Improvement Proposals (FLIP) processing
+│   ├── flink/         # Flink Improvement Proposals (FLIP) processing
+│   ├── strimzi/       # Strimzi Improvement Proposals (SIP) — GitHub-based
+│   ├── streamshub/    # StreamsHub Improvement Proposals (SHIP) — GitHub-based
+│   └── kroxylicious/  # Kroxylicious Design Proposals (KDP) — GitHub-based
 ├── templates/         # Jinja2 HTML templates
 ├── cache/            # Local data cache (gitignored)
 ├── site_files/       # Generated static site files
@@ -34,8 +39,11 @@ ossip/
 ### Core Components
 
 1. **CLI Interface** (`ipper/main.py`)
-   - Argument parsing with subcommands for each project (kafka, flink)
+   - Argument parsing with subcommands for each project (kafka, flink, strimzi, streamshub, kroxylicious)
    - Commands: `init`, `update`, `refresh`, `wiki`, `output`
+   - The three GitHub-backed projects (strimzi/streamshub/kroxylicious) share
+     one implementation in `common/github_cli.py`, dispatched with their
+     `GithubProjectConfig`
 
 2. **Data Collection Layer**
    - **Wiki Scrapers** (`kafka/wiki.py`, `flink/wiki.py`, `common/wiki.py`)
@@ -56,6 +64,15 @@ ossip/
      - Enables automatic detection of binding votes even without "(binding)" marker
      - Uses exact email matching + fuzzy name matching (70% threshold)
      - Caches committer data for 7 days to minimize downloads
+
+   - **GitHub Proposal Pipeline** (`common/github*.py` + `strimzi/`, `streamshub/`, `kroxylicious/`)
+     - Tracks projects whose improvement proposals live as pull requests on GitHub
+     - `common/github_config.py`: per-project config (repo, prefix, proposal file location, numbering scheme)
+     - `common/github.py`: thin GitHub REST client (`requests` + `get_with_retries`), Link-header pagination, rate-limit handling, codeload tarball download
+     - `common/github_process.py`: PR classification (proposal / amendment / plumbing), state derivation (merged → accepted, open → under discussion, closed unmerged → rejected), cache building with incremental update (watermark on `updated_at`, `head.sha` change detection, freeze/reopen semantics)
+     - `common/github_output.py`: HTML index/detail rendering + JSON API emission (reuses Kafka/Flink templates)
+     - `common/github_models.py`: cache/pydantic models (reviews snapshot, amendments)
+     - Token: `GITHUB_TOKEN` env var (required for `init`/`refresh`, optional for `update`)
 
 3. **Data Processing**
    - **Pandas DataFrames** for tabular data manipulation
@@ -124,6 +141,26 @@ ossip/
 - **Output:** Main index page plus individual FLIP detail pages
 - **KEYS:** https://downloads.apache.org/flink/KEYS (PGP keys of committers)
 
+### Strimzi (GitHub)
+- **Repo:** `strimzi/proposals` — proposal files at repo root
+- **Prefix / Prefix-URL Scheme:** SIP / `https://strimzi.io/proposals/{id}.html`
+- **Numbering:** sequential (merged proposals are numbered by the order their
+  files land on main)
+- **Votes:** GitHub PR reviews (APPROVED → +1, CHANGES_REQUESTED → -1)
+
+### StreamsHub (GitHub)
+- **Repo:** `streamshub/proposals` — proposal files at repo root
+- **Prefix:** SHIP
+- **Numbering:** sequential
+- **Votes:** GitHub PR reviews
+
+### Kroxylicious (GitHub)
+- **Repo:** `kroxylicious/design` — proposal files under `proposals/`
+- **Prefix:** KDP
+- **Numbering:** proposal number == PR number (drafts use `000-<name>.md`
+  placeholders that are renamed to the PR number on merge)
+- **Votes:** GitHub PR reviews
+
 ## Workflow
 
 ### Initial Setup (`kafka init` / `flink init`)
@@ -146,21 +183,43 @@ ossip/
 3. Regenerate `kip_mentions.csv` / `flip_mentions.csv`
 4. Use when cache is corrupted or processing logic changes
 
+### Initial Setup (`strimzi/streamshub/kroxylicious init`)
+1. Walk ALL project PRs (classification + state + votes + comments)
+2. Download the repo tarball to number merged proposals from the proposal files on main
+3. Save the single-source-of-truth JSON cache (`cache/sip_proposals_cache.json`,
+   `cache/ship_proposals_cache.json`, `cache/kdp_proposals_cache.json`)
+4. Requires `GITHUB_TOKEN` (full fetch is ~500-1000 requests)
+
+### Updates (`strimzi/streamshub/kroxylicious update`)
+1. Incremental: walk PRs newest-first, stop at the watermark (max `updated_at` already seen)
+2. `head.sha` change → re-fetch PR files; label-only bump → refresh reviews/comments only
+3. Close/reopen/merge transitions handled (freeze votes, reconcile merged PRs with the tarball)
+4. Save the JSON cache atomically (temp file + rename)
+
+### Refresh (`strimzi/streamshub/kroxylicious refresh`)
+Same as init (full re-fetch from GitHub). Use when cache is corrupted or
+processing logic changes.
+
 ### Output Generation
-1. Load cached data (`kip_mentions.csv` for Kafka, `flip_wiki_cache.json` + `flip_mentions.csv` for Flink)
+1. Load cached data (`kip_mentions.csv` for Kafka, `flip_wiki_cache.json` + `flip_mentions.csv` for Flink, `sip/ship/kdp_proposals_cache.json` for the GitHub projects)
 2. Render Jinja2 templates with enriched data
 3. Generate standalone HTML files with:
    - Main index page showing ALL proposals (not filtered by state)
-   - Individual detail pages for each proposal (KIP-XXX.html or FLIP-XXX.html)
+   - Individual detail pages for each proposal (KIP-XXX.html, FLIP-XXX.html,
+     SIP-XXX.html / SIP-PR-N.html for unnumbered open proposals, etc.)
+4. Emit JSON API files (`write_proposal_details`, `write_schemas`, `generate_api_index`)
 
 ### CI/CD Pipeline (`.github/workflows/publish.yaml`)
 - **Trigger:** Push to main branch or daily cron (09:30 UTC)
 - **Steps:**
   1. Install Python 3.12 and uv
   2. Run `kafka update` and `flink update` (both incremental, including mailing lists)
-  3. Generate HTML files from cached data (kafka.html and flink.html + individual KIP/FLIP pages)
-  4. Commit updated cache files back to repository
-  5. Deploy to GitHub Pages
+  3. Run `strimzi/streamshub/kroxylicious update` (incremental; `GITHUB_TOKEN`
+     env passed from secrets — optional, update works unauthenticated)
+  4. Generate HTML files from cached data (kafka.html, flink.html,
+     strimzi/streamshub/kroxylicious.html + individual detail pages + JSON API)
+  5. Commit updated cache files back to repository
+  6. Deploy to GitHub Pages
 
 ## Important Patterns
 
@@ -194,12 +253,25 @@ class KIPMentionType(Enum):
 KIP_PATTERN = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
 ```
 
+### GitHub PR Classification
+```python
+# Proposal: PR adds a numbered proposal file (NNN-*.md in the configured
+# location, excluding 000-template.md / README.md)
+# Amendment: PR modifies/renames a proposal file that is already merged on main
+# Plumbing: everything else (workflow tweaks, README edits, ...)
+# Unnumbered open proposals display as 'PR #N'; Kroxylicious drafts use the
+# 000-<name>.md placeholder convention (renumbered to the PR number on merge)
+```
+
 ## File Conventions
 
 - **Cache Directory:** `cache/` (not committed to git except main cache files)
 - **Main Cache Files:**
   - Kafka: `cache/mailbox_files/kip_mentions.csv` (single source of truth)
   - Flink: `cache/flip_wiki_cache.json`
+  - Strimzi: `cache/sip_proposals_cache.json` · StreamsHub:
+    `cache/ship_proposals_cache.json` · Kroxylicious:
+    `cache/kdp_proposals_cache.json` (single source of truth)
   - Metadata: `cache/kip_mentions_metadata.json`, `cache/flip_mentions_metadata.json`
   - **Committer KEYS:** `cache/keys/kafka_keys.json`, `cache/keys/flink_keys.json`
 - **Mbox Files:** `cache/mailbox_files/*.mbox` (downloaded archives)
@@ -243,6 +315,28 @@ uv run python ipper/main.py kafka output standalone \
 uv run python ipper/main.py flink output \
   cache/flip_wiki_cache.json site_files/flink.html site_files/flips
 
+# Initialize Strimzi/StreamsHub/Kroxylicious proposal data (requires GITHUB_TOKEN)
+uv run python ipper/main.py strimzi init
+uv run python ipper/main.py streamshub init
+uv run python ipper/main.py kroxylicious init
+
+# Update Strimzi/StreamsHub/Kroxylicious proposal data (incremental)
+uv run python ipper/main.py strimzi update
+uv run python ipper/main.py streamshub update
+uv run python ipper/main.py kroxylicious update
+
+# Generate Strimzi HTML (shows ALL SIPs + individual SIP pages)
+uv run python ipper/main.py strimzi output \
+  cache/sip_proposals_cache.json site_files/strimzi.html site_files/sips
+
+# Generate StreamsHub HTML
+uv run python ipper/main.py streamshub output \
+  cache/ship_proposals_cache.json site_files/streamshub.html site_files/ships
+
+# Generate Kroxylicious HTML
+uv run python ipper/main.py kroxylicious output \
+  cache/kdp_proposals_cache.json site_files/kroxylicious.html site_files/kdps
+
 # Run linting checks
 uv run ruff check .
 ```
@@ -250,11 +344,13 @@ uv run ruff check .
 ## Testing & Quality
 
 The project includes:
-- **84 comprehensive tests** covering all core functionality
+- **456 comprehensive tests** covering all core functionality
 - Type hints throughout (checked with MyPy)
 - Code formatting with Black
 - Linting with Pylint and Ruff
 - Test coverage for KEYS parsing, fuzzy matching, and vote detection
+- Test coverage for the GitHub pipeline (client, classification, incremental
+  updates, HTML/JSON output, CLI wiring)
 
 **Always run `uv run ruff check .` after making code changes to ensure code quality.**
 
@@ -271,6 +367,16 @@ The project includes:
 - **Format:** mbox (Unix mailbox format)
 - **Access:** Public, monthly archives
 
+### GitHub REST API (Strimzi / StreamsHub / Kroxylicious)
+- **Base URL:** `https://api.github.com/repos/{owner}/{repo}`
+- **Tarball:** `https://codeload.github.com/{owner}/{repo}/tar.gz/refs/heads/{branch}`
+- **Authentication:** `GITHUB_TOKEN` via `Authorization: Bearer` header
+  (required for `init`/`refresh` full fetches, optional for incremental `update`)
+- **Rate Limiting:** 60 req/hour unauthenticated, 5,000 req/hour authenticated;
+  client raises `GithubRateLimitError` when the quota is exhausted
+- **Endpoints used:** pulls list (paginated), pull files/reviews/issue comments,
+  single pull, repo tarball
+
 ## AI Agent Guidelines
 
 ### When Working on This Project:
@@ -282,7 +388,9 @@ The project includes:
 5. **Test with small data first** - Use `--days 30` for testing instead of full 365-day downloads
 6. **Cache awareness** - Understand the caching strategy to avoid unnecessary API calls
 7. **HTML templates** - Modify Jinja2 templates for UI changes, not Python code
-8. **Project structure** - Each supported project (kafka, flink) has its own submodule under `ipper/`
+8. **Project structure** - Each supported project (kafka, flink, strimzi,
+   streamshub, kroxylicious) has its own submodule under `ipper/`; the three
+   GitHub-backed ones share `ipper/common/github*.py`
 9. **Run linting after code changes** - Always run `uv run ruff check .` after making code changes to catch issues early
 
 ### Common Tasks:
@@ -298,10 +406,12 @@ The project includes:
 Confluence Wiki API → BeautifulSoup → Pandas → JSON Cache (wiki data)
 Mailing List API → mbox Parser → Pandas → CSV Cache (mentions)
 Apache KEYS API → PGP Parser → JSON Cache (committers)
+GitHub REST API (PRs) → PR Classification → JSON Cache (proposals)
   ↓
 Committer Index + Vote Detection → Enhanced vote counting
   ↓
 CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
+CSV/JSON Cache → Pydantic → JSON API (/api/v1/)
 ```
 
 **Caching Architecture:**
@@ -343,8 +453,48 @@ CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 
 ---
 
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-09-20
 **Maintainer:** Thomas Cooper
+
+## Recent Changes (2026-09-20)
+
+### GitHub-Based Proposal Tracking (SIP / SHIP / KDP)
+
+**What Changed:**
+- Added support for three projects whose improvement proposals live as GitHub
+  pull requests: Strimzi (SIP), StreamsHub (SHIP) and Kroxylicious (KDP)
+- New shared GitHub pipeline under `ipper/common/`: config, REST client,
+  PR classification/state machine, HTML + JSON output, CLI wiring
+- New per-project packages: `ipper/strimzi/`, `ipper/streamshub/`,
+  `ipper/kroxylicious/` (thin CLI dispatchers over `common/github_cli.py`)
+- JSON API extended: `/api/v1/{project}/{sip,ship,kdp}s.json` + detail files,
+  `GithubProposalDetail` schema; `ProposalSummary`/`ProposalDetail` gained
+  nullable `id` and `pr_number`
+- New templates `github-index.html.jinja` / `github-more-info.html.jinja`
+- CI (`publish.yaml`) runs per-project updates and builds with token support
+
+**New Files:**
+- `ipper/common/github.py`, `github_config.py`, `github_process.py`,
+  `github_models.py`, `github_output.py`, `github_cli.py`
+- `ipper/{strimzi,streamshub,kroxylicious}/main.py`
+- `templates/github-index.html.jinja`, `templates/github-more-info.html.jinja`
+- `tests/common/test_github.py`, `tests/common/test_github_output.py`,
+  `tests/{strimzi,streamshub,kroxylicious}/test_main.py`
+
+**CLI Commands:**
+```bash
+export GITHUB_TOKEN=ghp_...   # required for init/refresh
+uv run python ipper/main.py strimzi init|update|refresh|output
+uv run python ipper/main.py streamshub init|update|refresh|output
+uv run python ipper/main.py kroxylicious init|update|refresh|output
+```
+
+**Benefits:**
+- Same UX as KIP/FLIP pages for three more communities
+- JSON API consistency across all five projects
+- Incremental updates keep GitHub API usage low (~5-15 requests/run)
+
+---
 
 ## Recent Changes (2026-02-15)
 

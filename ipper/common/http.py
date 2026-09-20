@@ -29,6 +29,7 @@ def get_with_retries(
     url: str,
     params: Mapping[str, Any] | None = None,
     timeout: int = 30,
+    headers: Mapping[str, str] | None = None,
     max_retries: int = DEFAULT_MAX_RETRIES,
     backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
 ) -> requests.Response:
@@ -42,6 +43,7 @@ def get_with_retries(
         url: The URL to fetch
         params: Optional query-string parameters
         timeout: Per-attempt request timeout in seconds
+        headers: Optional request headers (e.g. Authorization)
         max_retries: Number of retries after the initial attempt
         backoff_factor: Exponential backoff base in seconds
 
@@ -57,7 +59,7 @@ def get_with_retries(
     for attempt in range(1, max_attempts + 1):
         try:
             response: requests.Response = requests.get(
-                url, params=params, timeout=timeout
+                url, params=params, timeout=timeout, headers=headers
             )
             if response.status_code in RETRY_STATUS_CODES:
                 raise requests.HTTPError(
