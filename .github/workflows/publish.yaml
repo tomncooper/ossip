@@ -17,6 +17,14 @@ on:
     branches:
       - main
 
+# Merging a PR that touches both templates/ and Python code fires both the
+# 'push' and 'workflow_run' triggers at once. Two concurrent runs would both
+# commit updated caches to main and the second push would be rejected as
+# non-fast-forward. Queue runs instead so they never overlap.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
