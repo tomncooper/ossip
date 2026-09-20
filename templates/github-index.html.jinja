@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project_name }} Improvement Proposals</title>
+    <link rel="stylesheet" href="style.css">
+    <script>(function(){var t=localStorage.getItem('ossip-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+</head>
+
+<body>
+    <h1>{{ project_name }} Improvement Proposals ({{ prefix }}s)</h1>
+    <div class="nav-bar">
+        <div class="nav-item"><a href="index.html">Back to OSSIP</a></div>
+        <div class="nav-item">GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></div>
+        <div class="nav-item">Last Updated: {{ date }}</div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div id="filter-controls"></div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>{{ prefix }}</th>
+            <th>Title</th>
+            <th>State</th>
+            <th>Status</th>
+            <th>Author(s)</th>
+            <th>Created</th>
+            <th>Accepted</th>
+            <th>Commented</th>
+            <th>Requested Changes</th>
+            <th>More Info</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+        <tr data-state="{{ row.state|e }}" data-authors='{{ row.authors|tojson }}'>
+            <td>{% if row.web_url %}<a href="{{ row.web_url }}">{{ row.display_id }}</a>{% else %}{{ row.display_id }}{% endif %}</td>
+            <td>{{ row.title }}</td>
+            <td>{{ row.state }}</td>
+            {% if row.activity_status %}
+            <td style="background-color:{{ row.activity_status }};">
+                <div class="tooltip">&nbsp;
+                    <span class="tooltiptext">{% if row.last_activity_age %}Last activity {{ row.last_activity_age }} ago{% else %}No activity recorded{% endif %}</span>
+                </div>
+            </td>
+            {% else %}
+            <td style="text-align: center; font-size: 1.5em;">{{ row.emoji }}</td>
+            {% endif %}
+            <td class="author-cell">{{ row.authors|join(", ") }}</td>
+            <td>{{ row.created_on }}</td>
+            {% for column, css_class in [("accepted", "vote-positive"), ("commented", "vote-neutral"), ("changes_requested", "vote-negative")] %}
+            {% set users = row.reviews[column] %}
+            {% if users %}
+            <td class="{{ css_class }}">
+                <div class="tooltip">{{ users|length }}
+                    <span class="tooltiptext">
+                        {% for user in users %}
+                        {{ user.name }}<br><em>{{ user.timestamp }}</em><br>
+                        {% endfor %}
+                    </span>
+                </div>
+            </td>
+            {% else %}
+            <td>0</td>
+            {% endif %}
+            {% endfor %}
+            <td><a href="{{ row.detail_url }}">info</a></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Filter JavaScript -->
+    <script src="assets/table-filter.js?v=2"></script>
+    <script>
+        TableFilter.init({
+            tableSelector: 'table',
+            filterContainerId: 'filter-controls',
+            columns: [
+                { id: 'state', label: 'State', dataAttr: 'data-state' },
+                { id: 'author', label: 'Author', dataAttr: 'data-authors', multi: true }
+            ]
+        });
+    </script>
+    {% include '_footer.html' %}
+    <script src="assets/theme-toggle.js"></script>
+</body>
+
+</html>

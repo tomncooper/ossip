@@ -1,12 +1,11 @@
 import datetime as dt
 import logging
 import re
-from enum import Enum
 from pathlib import Path
 from typing import cast
 
 from jinja2 import Environment, FileSystemLoader, Template
-from pandas import DataFrame, Series, Timedelta, Timestamp, to_datetime
+from pandas import DataFrame, Series, Timestamp
 
 from ipper.common.api_output import (
     confluence_date_to_iso_date,
@@ -30,7 +29,7 @@ from ipper.common.models import (
     VoterInfo,
     VoteSummary,
 )
-from ipper.common.utils import calculate_age
+from ipper.common.utils import ActivityStatus, calculate_activity_status, calculate_age
 from ipper.common.wiki import APACHE_CONFLUENCE_DATE_FORMAT
 from ipper.kafka.mailing_list import get_most_recent_mention_by_type
 
@@ -42,19 +41,17 @@ KAFKA_MAIN_PAGE_TEMPLATE = "kafka-index.html.jinja"
 KIP_RAW_INFO_PAGE_TEMPLATE = "kip-more-info.html.jinja"
 
 
-class KIPStatus(Enum):
-    """Enum representing the possible values of a KIP's status"""
+# The activity status thresholds are shared with the GitHub-based proposal
+# tracking pipelines (SIP/SHIP/KDP); KIPStatus is kept as an alias so that
+# existing imports and templates keep working.
+KIPStatus = ActivityStatus
 
-    BLUE = ("blue", Timedelta(weeks=0))
-    GREEN = ("green", Timedelta(weeks=4))
-    YELLOW = ("yellow", Timedelta(weeks=12))
-    RED = ("red", Timedelta(days=365))
-    BLACK = ("black", Timedelta.max)
 
-    def __init__(self, text: str, duration: Timedelta) -> None:
-        super().__init__()
-        self.text = text
-        self.duration = duration
+def calculate_status(last_mention: Timestamp) -> KIPStatus:
+    """Calculates the appropriate KIPStatus instance based on the time
+    difference between now and the last mention."""
+
+    return calculate_activity_status(last_mention)
 
 
 # A single row of the data used to render the Kafka index page (the output
@@ -63,25 +60,6 @@ KipStatusEntry = dict[
     str,
     int | str | None | KIPStatus | list[dict[str, str]] | list[str],
 ]
-
-
-def calculate_status(last_mention: Timestamp) -> KIPStatus:
-    """Calculates the appropriate KIPStatus instance based on the time
-    difference between now and the last mention."""
-
-    now: Timestamp = to_datetime(dt.datetime.now(dt.UTC), utc=True)
-    diff: Timedelta = now - last_mention
-
-    if diff <= KIPStatus.GREEN.duration:
-        return KIPStatus.GREEN
-
-    if diff <= KIPStatus.YELLOW.duration:
-        return KIPStatus.YELLOW
-
-    if diff <= KIPStatus.RED.duration:
-        return KIPStatus.RED
-
-    return KIPStatus.BLACK
 
 
 def get_state_emoji(state: str) -> str:
@@ -125,7 +103,8 @@ def create_status_dict(
     kip_wiki_info: dict[int, dict[str, int | str | list[str]]],
 ) -> list[KipStatusEntry]:
     """Calculate a status for each KIP. For KIPs under discussion, calculate status
-    based on how recently it was mentioned in email subject. For other KIPs, use emoji."""
+    based on how recently it was mentioned in email subject. For other KIPs, use emoji.
+    """
 
     recent_mentions: DataFrame = get_most_recent_mention_by_type(kip_mentions)
 

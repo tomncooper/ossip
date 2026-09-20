@@ -335,7 +335,7 @@ class TestApiIndexIntegration:
         Verifies:
         - index.json has correct project count
         - last_updated is correct
-        - schemas directory exists with 4 schema files
+        - schemas directory exists with 5 schema files
         """
         api_dir = tmp_path / "api"
 
@@ -368,7 +368,7 @@ class TestApiIndexIntegration:
             index_data = json.load(f)
 
         index = ApiIndex(**index_data)
-        assert index.version == 1
+        assert index.version == 2
         assert len(index.projects) == 2
         assert "kafka" in index.projects
         assert "flink" in index.projects
@@ -389,19 +389,20 @@ class TestApiIndexIntegration:
         # Should be in ISO format
         dt.datetime.fromisoformat(index.last_updated.replace("Z", "+00:00"))
 
-        # Verify schemas directory exists with 4 schema files
+        # Verify schemas directory exists with 5 schema files
         schemas_dir = api_dir / "schemas"
         assert schemas_dir.exists()
         assert schemas_dir.is_dir()
 
         schema_files = list(schemas_dir.glob("*.json"))
-        assert len(schema_files) == 4
+        assert len(schema_files) == 5
 
         expected_schemas = {
             "ApiIndex.schema.json",
             "ProjectSummary.schema.json",
             "KipDetail.schema.json",
             "FlipDetail.schema.json",
+            "GithubProposalDetail.schema.json",
         }
         actual_schemas = {f.name for f in schema_files}
         assert actual_schemas == expected_schemas
@@ -443,14 +444,14 @@ class TestApiIndexIntegration:
             index_data = json.load(f)
 
         index = ApiIndex(**index_data)
-        assert index.version == 1
+        assert index.version == 2
         assert len(index.projects) == 0
         assert index.last_updated  # Should still have a timestamp
 
         # Schemas should still be generated
         schemas_dir = api_dir / "schemas"
         assert schemas_dir.exists()
-        assert len(list(schemas_dir.glob("*.json"))) == 4
+        assert len(list(schemas_dir.glob("*.json"))) == 5
 
 
 class TestSchemaValidation:
@@ -524,7 +525,7 @@ class TestSchemaValidation:
             index_data = json.load(f)
 
         index = ApiIndex(**index_data)
-        assert index.version == 1
+        assert index.version == 2
         assert len(index.projects) == 1
 
 

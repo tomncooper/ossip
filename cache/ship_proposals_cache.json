@@ -1,0 +1,1206 @@
+{
+  "last_updated": "2026-09-20T14:03:17Z",
+  "proposals": {
+    "pr-12": {
+      "pr_number": 12,
+      "pr_url": "https://github.com/streamshub/proposals/pull/12",
+      "title": "Proposal to adopt streamshub.io as the canonical namespace for the Console",
+      "created_by": "tomncooper",
+      "authors": [
+        "tomncooper"
+      ],
+      "created_on": "2026-09-09",
+      "state": "under discussion",
+      "web_url": "https://github.com/streamshub/proposals/pull/12",
+      "last_activity": "2026-09-16T14:36:26Z",
+      "activity_status": "green",
+      "last_activity_age": "3 days",
+      "amendments": [],
+      "frozen": false,
+      "id": null,
+      "reviews": {
+        "accepted": [],
+        "commented": [
+          {
+            "name": "MikeEdgar",
+            "timestamp": "2026-09-10T15:25:49Z"
+          }
+        ],
+        "changes_requested": []
+      }
+    },
+    "pr-4": {
+      "pr_number": 4,
+      "pr_url": "https://github.com/streamshub/proposals/pull/4",
+      "title": "Add Streamshub Console Helm charts proposal",
+      "created_by": "jankalinic",
+      "authors": [
+        "jankalinic"
+      ],
+      "created_on": "2026-03-05",
+      "state": "not accepted",
+      "web_url": "https://github.com/streamshub/proposals/pull/4",
+      "last_activity": "2026-04-29T13:26:35Z",
+      "activity_status": null,
+      "last_activity_age": null,
+      "amendments": [],
+      "frozen": true,
+      "id": null,
+      "reviews": {
+        "accepted": [],
+        "commented": [
+          {
+            "name": "MikeEdgar",
+            "timestamp": "2026-04-21T12:27:13Z"
+          },
+          {
+            "name": "Frawless",
+            "timestamp": "2026-04-07T19:51:22Z"
+          },
+          {
+            "name": "tomncooper",
+            "timestamp": "2026-03-11T17:03:15Z"
+          },
+          {
+            "name": "aswinayyolath",
+            "timestamp": "2026-03-10T04:35:22Z"
+          }
+        ],
+        "changes_requested": []
+      }
+    },
+    "1": {
+      "pr_number": 3,
+      "pr_url": "https://github.com/streamshub/proposals/pull/3",
+      "title": "StreamsHub Quick-Start Kustomize Repository",
+      "created_by": "tomncooper",
+      "authors": [
+        "tomncooper"
+      ],
+      "created_on": "2026-03-03",
+      "state": "accepted",
+      "web_url": "https://github.com/streamshub/proposals/blob/main/001-quickstart-kustomize-repo.md",
+      "last_activity": null,
+      "activity_status": null,
+      "last_activity_age": null,
+      "amendments": [],
+      "frozen": true,
+      "key": "1",
+      "id": 1,
+      "merged_on": "2026-03-11T14:44:42Z",
+      "last_modified_on": "2026-03-11T14:44:42Z",
+      "file_path": "001-quickstart-kustomize-repo.md",
+      "reviews": {
+        "accepted": [
+          {
+            "name": "Frawless",
+            "timestamp": "2026-03-10T19:58:52Z"
+          },
+          {
+            "name": "MikeEdgar",
+            "timestamp": "2026-03-10T17:42:33Z"
+          },
+          {
+            "name": "jankalinic",
+            "timestamp": "2026-03-10T16:45:28Z"
+          },
+          {
+            "name": "kornys",
+            "timestamp": "2026-03-10T08:57:01Z"
+          },
+          {
+            "name": "aswinayyolath",
+            "timestamp": "2026-03-09T16:57:47Z"
+          }
+        ],
+        "commented": [
+          {
+            "name": "ppatierno",
+            "timestamp": "2026-03-04T08:31:17Z"
+          }
+        ],
+        "changes_requested": []
+      }
+    },
+    "2": {
+      "pr_number": 2,
+      "pr_url": "https://github.com/streamshub/proposals/pull/2",
+      "title": "StreamsHub MCP: Strimzi MCP Server",
+      "created_by": "kornys",
+      "authors": [
+        "kornys"
+      ],
+      "created_on": "2026-02-25",
+      "state": "accepted",
+      "web_url": "https://github.com/streamshub/proposals/blob/main/002-streamshub-mcp-strimzi.md",
+      "last_activity": null,
+      "activity_status": null,
+      "last_activity_age": null,
+      "amendments": [],
+      "frozen": true,
+      "key": "2",
+      "id": 2,
+      "merged_on": "2026-03-26T06:39:25Z",
+      "last_modified_on": "2026-03-26T06:39:25Z",
+      "file_path": "002-streamshub-mcp-strimzi.md",
+      "reviews": {
+        "accepted": [
+          {
+            "name": "tomncooper",
+            "timestamp": "2026-03-24T17:07:05Z"
+          },
+          {
+            "name": "martinstrasil",
+            "timestamp": "2026-03-18T13:22:24Z"
+          },
+          {
+            "name": "Frawless",
+            "timestamp": "2026-03-13T11:23:51Z"
+          }
+        ],
+        "commented": [
+          {
+            "name": "MikeEdgar",
+            "timestamp": "2026-03-11T15:17:44Z"
+          },
+          {
+            "name": "ppatierno",
+            "timestamp": "2026-03-09T10:06:45Z"
+          }
+        ],
+        "changes_requested": []
+      }
+    },
+    "3": {
+      "pr_number": 11,
+      "pr_url": "https://github.com/streamshub/proposals/pull/11",
+      "title": "Donation of streamshub-mcp to the Strimzi Organization",
+      "created_by": "Frawless",
+      "authors": [
+        "Frawless"
+      ],
+      "created_on": "2026-08-03",
+      "state": "accepted",
+      "web_url": "https://github.com/streamshub/proposals/blob/main/003-donate-streamshub-mcp-to-strimzi.md",
+      "last_activity": null,
+      "activity_status": null,
+      "last_activity_age": null,
+      "amendments": [],
+      "frozen": true,
+      "key": "3",
+      "id": 3,
+      "merged_on": "2026-09-15T19:27:59Z",
+      "last_modified_on": "2026-09-15T19:27:59Z",
+      "file_path": "003-donate-streamshub-mcp-to-strimzi.md",
+      "reviews": {
+        "accepted": [
+          {
+            "name": "alexcreasy",
+            "timestamp": "2026-08-19T13:43:30Z"
+          },
+          {
+            "name": "kornys",
+            "timestamp": "2026-08-03T13:20:25Z"
+          },
+          {
+            "name": "MikeEdgar",
+            "timestamp": "2026-08-03T13:04:36Z"
+          }
+        ],
+        "commented": [
+          {
+            "name": "tomncooper",
+            "timestamp": "2026-08-03T15:06:39Z"
+          }
+        ],
+        "changes_requested": []
+      }
+    }
+  },
+  "pr_index": {
+    "12": {
+      "state": "open",
+      "classification": "proposal",
+      "proposal_key": "pr-12",
+      "files": [
+        {
+          "sha": "8b1a3a1a0eb23283c43ca623e1d0c0f6be4063f6",
+          "filename": "003-streamshub-io-namespace-migration.md",
+          "status": "added",
+          "additions": 236,
+          "deletions": 0,
+          "changes": 236,
+          "blob_url": "https://github.com/streamshub/proposals/blob/361b0c1c838c5f9f3d5cf8c2777d20c307bad5e7/003-streamshub-io-namespace-migration.md",
+          "raw_url": "https://github.com/streamshub/proposals/raw/361b0c1c838c5f9f3d5cf8c2777d20c307bad5e7/003-streamshub-io-namespace-migration.md",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/003-streamshub-io-namespace-migration.md?ref=361b0c1c838c5f9f3d5cf8c2777d20c307bad5e7",
+          "patch": "@@ -0,0 +1,236 @@\n+# StreamsHub Console: Adopt `streamshub.io` as the Canonical Namespace\n+\n+This proposal applies to the StreamsHub Console project (the `streamshub/console` repository).\n+It recommends adopting `streamshub.io`, the domain now owned by the StreamsHub organization, as the canonical namespace for the Console project's public identifiers:\n+\n+1. The Maven `groupId`, changing from `com.github.streamshub` to `io.streamshub`.\n+2. The Console operator's Kubernetes CRD API group, changing from `console.streamshub.github.com` to `console.streamshub.io`.\n+\n+Both identifiers today derive from the project's GitHub location (`github.com/streamshub`) rather than from a domain the organization controls.\n+The two changes are the same underlying decision so they are proposed together.\n+The `groupId` change is a mechanical, low-risk rename with no external consumers.\n+The CRD API group change is a public API change affecting existing Console operator installations, so the bulk of this proposal is a migration plan for users who already have the Console CRD deployed.\n+\n+## Current situation\n+\n+### Maven `groupId`\n+\n+The Console repository is a Maven multi-module build whose `groupId` is `com.github.streamshub` across all modules (`root`, `api`, `common`, `coverage`, `operator`, `systemtests` and `ui`).\n+The Java packages for the first-party source follow the same base package (`com.github.streamshub.console.*` and `com.github.streamshub.systemtests.*`).\n+\n+Nothing has ever been published under this `groupId`.\n+There is no `distributionManagement`, no Sonatype/OSSRH configuration, no artifact-signing plugin and no publish step in CI (the release build runs with `-Dmaven.deploy.skip=true`).\n+In other words, there are no external consumers of these Maven coordinates today.\n+\n+### Console CRD API group\n+\n+The Console operator registers its custom resource under the API group `console.streamshub.github.com`, currently at version `v1alpha1`:\n+\n+```java\n+@Version(\"v1alpha1\")\n+@Group(\"console.streamshub.github.com\")\n+public class Console extends CustomResource<ConsoleSpec, ConsoleStatus> implements Namespaced\n+```\n+\n+Users interact with this via manifests such as:\n+\n+```yaml\n+apiVersion: console.streamshub.github.com/v1alpha1\n+kind: Console\n+metadata:\n+  name: my-console\n+```\n+\n+Unlike the Maven `groupId`, this identifier does have real-world exposure.\n+The operator has a continuous release history and is distributed through an OLM bundle and catalog (`console-operator-bundle` and `console-operator-catalog`) with an upgrade channel graph chaining releases together.\n+It is also installable directly from manifests with `kubectl apply`.\n+We know that there are clusters with `Console` custom resources already deployed under `console.streamshub.github.com/v1alpha1`, some via OLM Subscriptions that may upgrade automatically.\n+\n+Kubernetes has no in-place mechanism to rename a CRD's API group.\n+A CRD's identity is `<plural>.<group>`, so changing the group is equivalent to introducing a brand-new resource type.\n+So this makes the change a genuine public API change requiring a migration plan, rather than just a documentation update.\n+\n+## Motivation\n+\n+`streamshub.io` is now owned by the StreamsHub organization.\n+Both `com.github.streamshub` and `console.streamshub.github.com` were derived from the project's GitHub location, not from a domain the organization actually controls.\n+Neither is a legitimate reverse-domain identifier for an organization-owned project.\n+\n+- Maven Central publishing.\n+  Publishing to Maven Central requires proving ownership of the `groupId` namespace, and that verification is domain-based (a DNS `TXT` record proving control of `streamshub.io`).\n+  A `com.github.streamshub` namespace would instead be verified against a GitHub account, which is the mechanism intended for personal namespaces rather than organization projects.\n+  There is an active [upstream request](https://github.com/streamshub/console/issues/2900) to publish the Console operator's CRD Java classes as reusable artifacts so that downstream tooling can depend on the Console POJOs.\n+  The `groupId` should be settled before that publishing work begins, so that artifacts are never published under a name we intend to abandon.\n+- Consistency and correctness.\n+  Aligning both the Maven and Kubernetes identifiers on `streamshub.io` gives the Console project one coherent, verifiable namespace instead of two GitHub-derived approximations.\n+- Timing.\n+  This is the cheapest possible moment to make the change.\n+  Neither identifier has external consumers that a rename cannot reach today, but that window closes as soon as artifacts are published to Maven Central and as more operator releases accumulate.\n+  Doing both renames together, and now, avoids paying an integration and communication cost twice.\n+\n+## Proposal\n+\n+The two changes differ enormously in risk and effort, so they are described separately.\n+\n+### Part 1: Maven `groupId` (`com.github.streamshub` to `io.streamshub`)\n+\n+This is a purely mechanical change with no migration story, because there are no published artifacts and no external consumers.\n+\n+- Update the `<groupId>` (and the corresponding `<parent>` and inter-module `<dependency>` coordinates) in all module POMs.\n+- Move the Java sources from `com/github/streamshub/...` to `io/streamshub/...`, updating package declarations and imports (an IDE-assisted refactor rather than hand edits).\n+- Update the hard-coded package-path patterns in the build configuration: the Sonar exclusion paths that embed `com/github/streamshub/...` in the root POM, and the JaCoCo exclude patterns that embed the same paths in the `api` and `coverage` POMs.\n+\n+This can land in a single release with no user-facing impact.\n+\n+### Part 2: CRD API group (`console.streamshub.github.com` to `console.streamshub.io`)\n+\n+Two properties of this specific change make it less onerous than other API migrations:\n+\n+- The schema is identical.\n+  Only the group string changes, with no field renames, no annotation-prefix changes and no removed fields.\n+  A user's migration is therefore a pure `apiVersion` swap.\n+- The CRD is `v1alpha1`.\n+  Under Kubernetes API conventions an alpha API carries no long-term compatibility guarantee, which gives the community latitude to choose a pragmatic path rather than a maximally conservative one.\n+\n+The recommended approach is a phased dual-CRD, dual-controller migration with native deprecation and a time-boxed removal.\n+It works identically for OLM-managed and plain-manifest (`kubectl apply`) installations.\n+\n+It should be noted upfront that Kubernetes' built-in version-conversion machinery cannot help here.\n+Conversion webhooks convert only between versions within a single group, not across groups, and `kube-storage-version-migrator` likewise operates within a single group.\n+Neither applies to a cross-group rename.\n+\n+#### Phase 1: Dual Console CRD serving Operator\n+\n+- Ship a new CRD `consoles.console.streamshub.io` at `v1alpha1` with a identical schema, alongside the existing `consoles.console.streamshub.github.com`.\n+- Run two controllers in the same operator binary, one watching each group, reconciling both identically.\n+  Existing old-group custom resources keep working with zero user action and zero downtime.\n+- Mark the old CRD version deprecated using the native Kubernetes deprecation fields on the version:\n+\n+  ```yaml\n+  - name: v1alpha1\n+    served: true\n+    storage: true\n+    deprecated: true\n+    deprecationWarning: \"console.streamshub.github.com/v1alpha1 is deprecated; use console.streamshub.io/v1alpha1 instead\"\n+  ```\n+\n+  This surfaces a warning in `kubectl` output and in the API-server audit log automatically, which is an established standard Kubernetes operating signal, in addition to any operator-log or Kubernetes Event warnings the operator emits for remaining old-group resources.\n+- Update all user-facing references to the new group: documentation, example manifests and the `README`.\n+- OLM: the ClusterServiceVersion declares both CRDs as `owned`, with RBAC covering both groups, so OLM continues to manage the old CRD through the transition and does not drop it mid-upgrade.\n+- Plain manifests: ship both CRD manifests and grant both groups in the operator's `ClusterRole` for the duration of the migration window.\n+- Guard against duplicate management: because both controllers run at once, the operator detects when a Console of the same name exists under both groups and refuses to reconcile the one that is not already managing the running child resources, reporting the conflict on its status.\n+  This ensures the two controllers never fight over the same child `Deployment`, `Service` and so on, and it gives the user a clear signal to finish the migration by removing the old resource.\n+  This guard is the safety mechanism for the migration approach in Phase 2.\n+  It is incompatible with the operator-assisted adoption approach described under Rejected alternatives, which deliberately relies on both resources existing at once. \n+  \n+Implementation note.\n+The operator framework binds each controller to a single custom resource type, so serving a second API group means running a second controller rather than teaching one controller two types.\n+Standing up that controller is inexpensive; the weight of the change lies in what the two controllers share.\n+\n+The two controllers do almost exactly the same job, because the schema is the same in both groups.\n+The work of building and reconciling the child resources depends only on the Console's contents, which are identical whichever group it belongs to, so very little of the logic actually cares which type it is acting on.\n+This leaves a straightforward choice: write one shared implementation that serves both groups, or keep two copies, one per group.\n+Because this migration is temporary and the old group is removed in Phase 3, we favour keeping two copies that we will later delete over building a shared abstraction that we would then have to take apart.\n+In practice the new group becomes the main, maintained implementation now, and the old group is added as a second copy that is discarded once the migration is complete.\n+\n+The real design work is not sharing logic but preventing the two controllers from fighting over the same resources.\n+When the operator creates the child resources for a Console, such as its Deployment and Service, it names them after the Console and manages them the same way regardless of which API group the Console belongs to.\n+During the migration window both groups are served at once, so an old-group Console and a new-group Console with the same name produce child resources with the same names.\n+Each controller then sees those children and assumes they are its own to manage, and without protection the two controllers would repeatedly overwrite each other's work.\n+The Phase 1 guard prevents this: it works out which Console actually owns the running children and stops the other controller from touching them until the user completes the migration.\n+This guard, rather than the duplicated reconciliation logic, is the part of Part 2 that carries genuine risk and deserves the most careful design.\n+\n+#### Phase 2: User initiated CRD migration \n+\n+Because the schema is identical, migration for a user is simply changing the `apiVersion` from `console.streamshub.github.com/v1alpha1` to `console.streamshub.io/v1alpha1` in their source manifests and re-applying.\n+\n+However, there is one subtlety to handle.\n+The old and new custom resources are independent Kubernetes objects, and the operator names child resources deterministically from the CR name (`<cr-name>-<resource>`).\n+So an old-group `my-console` and a new-group `my-console` would both try to manage the same child `Deployment`, `Service` and so on.\n+\n+To handle this, a user would need to perform a brief planned restart per Console. \n+This approach has the advantage of requiring no extra operator code.\n+We will document a per-Console delete-old then apply-new sequence: export the existing CR, change its `apiVersion`, delete the old CR (which garbage-collects its children via owner references) then apply the new CR (which the operator recreates children for).\n+This incurs a single Console UI restart per instance.\n+It is justified because the Console is an administrative and observability UI with high downtime tolerance, and because the CRD is alpha.\n+It requires no additional operator code, is fully auditable and is GitOps-friendly.\n+If both resources briefly coexist (for example when a GitOps sync creates the new resource before pruning the old one), the Phase 1 guard prevents them from fighting over children and reports what to do.\n+\n+The operator should not create new-group CRs on the user's behalf.\n+Doing so produces objects that the user's GitOps controller does not own, which causes drift and adoption conflicts.\n+Migration is user-driven and declarative.\n+\n+#### Phase 3: Removal of old group CRDs\n+\n+- Remove the old-group controller and remove the old CRD from the operator deliverables.\n+- OLM: the CSV drops the old CRD from `owned`.\n+  Plain manifests: the old CRD manifest and its `ClusterRole` entry are removed.\n+- Neither OLM nor `kubectl` deletes an existing CRD automatically.\n+  OLM deliberately never removes owned CRDs, to prevent data loss.\n+  So we will need to document a manual administrator cleanup once migration is confirmed as complete: verify none remain, then delete the old CRD.\n+\n+  ```console\n+  $ kubectl get consoles.console.streamshub.github.com -A     # expect: no resources\n+  $ kubectl delete crd consoles.console.streamshub.github.com\n+  ```\n+\n+### Open questions\n+\n+These are the points the community should settle when reviewing this proposal:\n+\n+- Downtime tolerance.\n+  The recommended migration accepts a brief restart per Console.\n+  Whether zero-downtime is a hard requirement is worth confirming, since requiring it would mean revisiting the operator-assisted adoption approach in Rejected alternatives.\n+- Deprecation window length.\n+  How many releases the old group remains served before removal (for example two to three minor releases).\n+- Bundling with the anticipated `v1beta1` field cleanup.\n+  Several fields in the current schema are already marked deprecated for removal in the next version of the API.\n+  Bundling that cleanup with this rename would mean users go through one disruptive migration instead of two.\n+  However, a cross-group rename and a within-group version bump are different mechanisms (the latter can use a conversion webhook), so bundling them raises complexity and risk.\n+  This is worth an explicit decision either way.\n+- OLM channel.\n+  Whether Phase 1 ships on the existing `alpha` channel or a new channel.\n+- Duplicate-management guard.\n+  Whether the reconcile-time guard described in Phase 1 is the chosen safety model, or whether the community prefers a validating admission webhook that rejects a same-named duplicate at creation time.\n+\n+## Affected/not affected projects\n+\n+Only the `streamshub/console` repository is affected.\n+\n+- The Maven `groupId` change touches every module in that repository (`root`, `api`, `common`, `coverage`, `operator`, `systemtests` and `ui`).\n+  Note that `ui` is not part of the Maven reactor and currently points at a stale parent version, so it must be updated by hand rather than swept up by a reactor-wide build.\n+- The CRD API group change touches the `operator` module, its RBAC and OLM bundle manifests, the CI workflows that reference the generated CRD file by name, the system tests (which currently hard-code the CRD file name) and the documentation and example manifests.\n+\n+No other project in the StreamsHub organization references either identifier, so no other project is affected.\n+Third-party operator and CRD dependencies used by the Console operator (Strimzi and Fabric8) are unrelated and unaffected.\n+\n+## Compatibility\n+\n+- Maven `groupId`: source-compatible with everything, because there are no existing consumers to break.\n+  This is why it can be a straightforward one-release change.\n+- CRD API group: this is a breaking change to a public API, which is precisely why the phased plan above exists.\n+  During Phase 1 both groups are served, so nothing breaks for existing users until they choose to migrate.\n+  Kubernetes' native version-conversion mechanisms (conversion webhooks and `kube-storage-version-migrator`) do not apply to a cross-group rename.\n+  All in-repo references to the old group must be updated in lock-step during Phase 1: the operator `ClusterRole`, the OLM bundle CSVs and channel definitions, the generated CRD manifest file names, the system-test that hard-codes the CRD file name and the documentation and example manifests.\n+\n+## Rejected alternatives\n+\n+- Splitting this into two separate proposals (Maven `groupId` alone and CRD group alone).\n+  Rejected: they are the same underlying decision, adopting `streamshub.io` as the canonical namespace, and reviewers benefit from weighing them and the prior art together.\n+- A hard cutover in the style of cert-manager: back up all resources, uninstall the old CRDs, reinstall, then restore under the new group.\n+  cert-manager did this for its `certmanager.k8s.io` to `cert-manager.io` rename and it was painful, but that migration also changed schemas, renamed annotation prefixes and removed fields in the same release, which forced the heavyweight process.\n+  Our change is a pure group swap with an identical schema and no annotations, so a declarative `apiVersion` re-apply during a dual-serve window is sufficient.\n+  The heavyweight process is not warranted here.\n+- Conversion webhooks or `kube-storage-version-migrator`.\n+  Rejected as technically inapplicable: both operate strictly within a single API group.\n+- Having the operator auto-create new-group CRs on users' behalf.\n+  Rejected: it creates objects outside the user's GitOps ownership, causing drift and adoption conflicts.\n+  Migration should be user-driven and declarative.\n+- Operator-assisted adoption for zero-downtime migration.\n+  When a new-group CR appears matching an existing old-group CR (same namespace and name), the operator adopts the existing child resources by re-parenting their owner references to the new CR instead of recreating them, then marks the old CR as superseded.\n+  Rejected: it requires meaningfully more reconciler code, introduces more edge cases and it is incompatible with the Phase 1 duplicate-management guard, which relies on the two resources never being reconciled at the same time.\n+  The recommended brief-restart migration is sufficient given the Console's high downtime tolerance and the alpha status of the CRD.\n+  It should be pursued only if the community decides zero-downtime is a hard requirement.\n+- Supporting both CRD API groups indefinitely.\n+  Rejected: it carries an ongoing maintenance burden (two controllers and either duplicated or generified dependents) and confuses users.\n+  A time-boxed deprecation, signalled with the native `deprecated` and `deprecationWarning` fields, is preferred."
+        },
+        {
+          "sha": "6f415b1463d6e59f2b49e7fce9401ed0b42ca927",
+          "filename": "README.md",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 0,
+          "changes": 1,
+          "blob_url": "https://github.com/streamshub/proposals/blob/361b0c1c838c5f9f3d5cf8c2777d20c307bad5e7/README.md",
+          "raw_url": "https://github.com/streamshub/proposals/raw/361b0c1c838c5f9f3d5cf8c2777d20c307bad5e7/README.md",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/README.md?ref=361b0c1c838c5f9f3d5cf8c2777d20c307bad5e7",
+          "patch": "@@ -15,4 +15,5 @@ File name format and numbering is validated by the CI workflow defined in [valid\n | 000 | [StreamsHub Proposal Template](./000-template.md)                                 |\n | 001 | [StreamsHub Quick-start Kustomize Repository](./001-quickstart-kustomize-repo.md) |\n | 002 | [StreamsHub MCP: Strimzi MCP proposal](./002-streamshub-mcp-strimzi.md)           |\n+| 003 | [StreamsHub Console: Adopt `streamshub.io` as the Canonical Namespace](./003-streamshub-io-namespace-migration.md) |\n "
+        }
+      ],
+      "updated_at": "2026-09-16T14:36:26Z",
+      "head_sha": "361b0c1c838c5f9f3d5cf8c2777d20c307bad5e7",
+      "frozen": false,
+      "reviews_snapshot": [
+        {
+          "name": "MikeEdgar",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-10T15:24:16Z"
+        },
+        {
+          "name": "MikeEdgar",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-10T15:25:49Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-14T11:04:01Z"
+        }
+      ],
+      "comments_snapshot": []
+    },
+    "11": {
+      "state": "merged",
+      "classification": "proposal",
+      "proposal_key": "3",
+      "files": [
+        {
+          "sha": "452e2d8af10e5bb5fdf1660acb1e62ed8960bd67",
+          "filename": "003-donate-streamshub-mcp-to-strimzi.md",
+          "status": "added",
+          "additions": 66,
+          "deletions": 0,
+          "changes": 66,
+          "blob_url": "https://github.com/streamshub/proposals/blob/6638e4f2bdaa41d939d5f658f585f21079b44cce/003-donate-streamshub-mcp-to-strimzi.md",
+          "raw_url": "https://github.com/streamshub/proposals/raw/6638e4f2bdaa41d939d5f658f585f21079b44cce/003-donate-streamshub-mcp-to-strimzi.md",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/003-donate-streamshub-mcp-to-strimzi.md?ref=6638e4f2bdaa41d939d5f658f585f21079b44cce",
+          "patch": "@@ -0,0 +1,66 @@\n+# Donation of streamshub-mcp to the Strimzi Organization\n+\n+This proposal seeks formal agreement from StreamsHub to donate the [streamshub-mcp](https://github.com/streamshub/streamshub-mcp) repository to the [Strimzi](https://github.com/strimzi) organization.\n+\n+## Current situation\n+\n+The streamshub-mcp project was created under the StreamsHub organization as described in [proposal 002](./002-streamshub-mcp-strimzi.md).\n+It provides a Model Context Protocol (MCP) server for managing and troubleshooting Strimzi-managed Apache Kafka clusters.\n+The repository contains the Strimzi MCP server application along with shared modules (`common`, `metrics-prometheus`, `loki-log-provider`).\n+\n+## Motivation\n+\n+- The Strimzi community has expressed interest in adopting the MCP server as part of the Strimzi ecosystem.\n+- The MCP server is Strimzi-specific tooling \u2014 hosting it under the Strimzi organization provides better alignment with its primary domain.\n+- Moving the project under Strimzi opens it to a broader contributor base and tighter integration with Strimzi's development and release processes.\n+\n+## Proposal\n+\n+The entire `streamshub-mcp` repository, including all modules (`common`, `metrics-prometheus`, `loki-log-provider`, `strimzi-mcp`, `systemtest`), will be transferred to the Strimzi GitHub organization.\n+\n+The donation is subject to the following conditions:\n+\n+### Availability\n+\n+All released components of MCP servers within Strimzi org has to be publicly available.\n+The destination may differ based on what Strimzi will be using for their artifacts (`quay.io` vs `ghcr.io` for example), but it has to be available for anyone.\n+Any upcoming features, improvements, or code changes has to be public as well.\n+\n+### Write access\n+\n+David Kornel must be granted component owner to the donated repository.\n+Jakub Stejskal is already a Strimzi maintainer and requires no additional access.\n+\n+### Modules reusability\n+\n+The following modules - `streamshub-mcp-common`, `metrics-prometheus`, `loki-log-provider` - must be published to Maven Central so that modules can be used by external consumers without needing to build from source or fork the Strimzi repository.\n+\n+### Pluggable interfaces\n+\n+The following pluggable interfaces must remain as extensible SPI/CDI contracts, allowing alternative implementations to be provided without forking:\n+\n+- **Metrics** \u2014 `MetricsProvider` interface with provider selection via `mcp.metrics.provider` configuration.\n+- **Logs** \u2014 `LogCollectorProvider` interface with provider selection via `mcp.log.provider` configuration.\n+- **Auth** \u2014 currently not implemented, but users has to have option to replace auth & authz mechanism with their own implementation.\n+- **Guardrails** \u2014 `GuardrailFilter` interface for request/response filtering (input validation, rate limiting, log redaction, response size limits).\n+\n+### Kafka MCP server\n+\n+There is a plan to develop a Kafka MCP server providing direct access to Apache Kafka internals (topics, consumer groups, broker configuration).\n+Whether this server will live alongside the Strimzi MCP server in the donated repository or remain in StreamsHub will be subject to further discussion with the Strimzi community.\n+\n+## Affected/not affected projects\n+\n+### Affected\n+\n+- [streamshub-mcp](https://github.com/streamshub/streamshub-mcp) \u2014 transferred to the Strimzi organization.\n+- [streamshub-site](https://github.com/streamshub/streamshub-site) - all upcoming releases will be done in Strimzi org and release page will be eventually hosted on Strimzi website.\n+\n+### Not affected\n+\n+- All other StreamsHub projects remain unchanged.\n+\n+## Compatibility\n+\n+Existing users of the MCP server are not affected.\n+The MCP protocol contract and Kubernetes API interactions remain the same regardless of which GitHub organization hosts the source code."
+        },
+        {
+          "sha": "52baca06fd3f4ad9d46e13cace4534684d51f9fe",
+          "filename": "README.md",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 0,
+          "changes": 1,
+          "blob_url": "https://github.com/streamshub/proposals/blob/6638e4f2bdaa41d939d5f658f585f21079b44cce/README.md",
+          "raw_url": "https://github.com/streamshub/proposals/raw/6638e4f2bdaa41d939d5f658f585f21079b44cce/README.md",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/README.md?ref=6638e4f2bdaa41d939d5f658f585f21079b44cce",
+          "patch": "@@ -15,4 +15,5 @@ File name format and numbering is validated by the CI workflow defined in [valid\n | 000 | [StreamsHub Proposal Template](./000-template.md)                                 |\n | 001 | [StreamsHub Quick-start Kustomize Repository](./001-quickstart-kustomize-repo.md) |\n | 002 | [StreamsHub MCP: Strimzi MCP proposal](./002-streamshub-mcp-strimzi.md)           |\n+| 003 | [Donation of streamshub-mcp to Strimzi](./003-donate-streamshub-mcp-to-strimzi.md) |\n "
+        }
+      ],
+      "updated_at": "2026-09-15T19:31:06Z",
+      "head_sha": "6638e4f2bdaa41d939d5f658f585f21079b44cce",
+      "frozen": true,
+      "reviews_snapshot": [
+        {
+          "name": "MikeEdgar",
+          "state": "APPROVED",
+          "timestamp": "2026-08-03T13:04:36Z"
+        },
+        {
+          "name": "kornys",
+          "state": "APPROVED",
+          "timestamp": "2026-08-03T13:20:25Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-08-03T13:23:47Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-08-03T13:39:01Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-08-03T15:06:39Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-08-03T18:41:50Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-08-03T19:17:46Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-08-03T19:20:00Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-08-03T19:43:13Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-08-07T18:59:34Z"
+        },
+        {
+          "name": "alexcreasy",
+          "state": "APPROVED",
+          "timestamp": "2026-08-19T13:43:30Z"
+        }
+      ],
+      "comments_snapshot": [
+        {
+          "name": "Frawless",
+          "timestamp": "2026-08-07T18:58:29Z"
+        },
+        {
+          "name": "Frawless",
+          "timestamp": "2026-08-28T22:30:38Z"
+        },
+        {
+          "name": "Frawless",
+          "timestamp": "2026-09-15T19:27:50Z"
+        }
+      ]
+    },
+    "4": {
+      "state": "closed",
+      "classification": "proposal",
+      "proposal_key": "pr-4",
+      "files": [
+        {
+          "sha": "ab1f4164edbbb088e58dd5d21bbc1f42816bc1ff",
+          "filename": ".idea/.gitignore",
+          "status": "added",
+          "additions": 10,
+          "deletions": 0,
+          "changes": 10,
+          "blob_url": "https://github.com/streamshub/proposals/blob/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/.idea%2F.gitignore",
+          "raw_url": "https://github.com/streamshub/proposals/raw/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/.idea%2F.gitignore",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/.idea%2F.gitignore?ref=2d3960d900c9b6ef138f79e94b193bd3f84e28ed",
+          "patch": "@@ -0,0 +1,10 @@\n+# Default ignored files\n+/shelf/\n+/workspace.xml\n+# Ignored default folder with query files\n+/queries/\n+# Datasource local storage ignored files\n+/dataSources/\n+/dataSources.local.xml\n+# Editor-based HTTP Client requests\n+/httpRequests/"
+        },
+        {
+          "sha": "99d82244d2e2dcacc325a875017b7bae72383fe6",
+          "filename": ".idea/checkstyle-idea.xml",
+          "status": "added",
+          "additions": 15,
+          "deletions": 0,
+          "changes": 15,
+          "blob_url": "https://github.com/streamshub/proposals/blob/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/.idea%2Fcheckstyle-idea.xml",
+          "raw_url": "https://github.com/streamshub/proposals/raw/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/.idea%2Fcheckstyle-idea.xml",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/.idea%2Fcheckstyle-idea.xml?ref=2d3960d900c9b6ef138f79e94b193bd3f84e28ed",
+          "patch": "@@ -0,0 +1,15 @@\n+<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n+<project version=\"4\">\n+  <component name=\"CheckStyle-IDEA\" serialisationVersion=\"2\">\n+    <checkstyleVersion>13.3.0</checkstyleVersion>\n+    <scanScope>JavaOnly</scanScope>\n+    <option name=\"thirdPartyClasspath\" />\n+    <option name=\"activeLocationIds\" />\n+    <option name=\"locations\">\n+      <list>\n+        <ConfigurationLocation id=\"bundled-sun-checks\" type=\"BUNDLED\" scope=\"All\" description=\"Sun Checks\">(bundled)</ConfigurationLocation>\n+        <ConfigurationLocation id=\"bundled-google-checks\" type=\"BUNDLED\" scope=\"All\" description=\"Google Checks\">(bundled)</ConfigurationLocation>\n+      </list>\n+    </option>\n+  </component>\n+</project>\n\\ No newline at end of file"
+        },
+        {
+          "sha": "42957fafd0653d82d6466e4c0ea645b2ec081be1",
+          "filename": ".idea/misc.xml",
+          "status": "added",
+          "additions": 6,
+          "deletions": 0,
+          "changes": 6,
+          "blob_url": "https://github.com/streamshub/proposals/blob/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/.idea%2Fmisc.xml",
+          "raw_url": "https://github.com/streamshub/proposals/raw/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/.idea%2Fmisc.xml",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/.idea%2Fmisc.xml?ref=2d3960d900c9b6ef138f79e94b193bd3f84e28ed",
+          "patch": "@@ -0,0 +1,6 @@\n+<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n+<project version=\"4\">\n+  <component name=\"ProjectRootManager\" version=\"2\" languageLevel=\"JDK_21\" default=\"true\" project-jdk-name=\"homebrew-21\" project-jdk-type=\"JavaSDK\">\n+    <output url=\"file://$PROJECT_DIR$/out\" />\n+  </component>\n+</project>\n\\ No newline at end of file"
+        },
+        {
+          "sha": "67e5bb19fd3a1f6c3d6d0e1184e462a1edfacc69",
+          "filename": ".idea/modules.xml",
+          "status": "added",
+          "additions": 8,
+          "deletions": 0,
+          "changes": 8,
+          "blob_url": "https://github.com/streamshub/proposals/blob/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/.idea%2Fmodules.xml",
+          "raw_url": "https://github.com/streamshub/proposals/raw/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/.idea%2Fmodules.xml",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/.idea%2Fmodules.xml?ref=2d3960d900c9b6ef138f79e94b193bd3f84e28ed",
+          "patch": "@@ -0,0 +1,8 @@\n+<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n+<project version=\"4\">\n+  <component name=\"ProjectModuleManager\">\n+    <modules>\n+      <module fileurl=\"file://$PROJECT_DIR$/streamshub-proposals.iml\" filepath=\"$PROJECT_DIR$/streamshub-proposals.iml\" />\n+    </modules>\n+  </component>\n+</project>\n\\ No newline at end of file"
+        },
+        {
+          "sha": "830674470f8052bb64c64a5b513f5df2815a70c1",
+          "filename": ".idea/vcs.xml",
+          "status": "added",
+          "additions": 7,
+          "deletions": 0,
+          "changes": 7,
+          "blob_url": "https://github.com/streamshub/proposals/blob/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/.idea%2Fvcs.xml",
+          "raw_url": "https://github.com/streamshub/proposals/raw/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/.idea%2Fvcs.xml",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/.idea%2Fvcs.xml?ref=2d3960d900c9b6ef138f79e94b193bd3f84e28ed",
+          "patch": "@@ -0,0 +1,7 @@\n+<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n+<project version=\"4\">\n+  <component name=\"VcsDirectoryMappings\">\n+    <mapping directory=\"\" vcs=\"Git\" />\n+    <mapping directory=\"$PROJECT_DIR$\" vcs=\"Git\" />\n+  </component>\n+</project>\n\\ No newline at end of file"
+        },
+        {
+          "sha": "2edb47e42c468749bfa8097f7e61583a7a3dd634",
+          "filename": "003-streamshub-console-helm.md",
+          "status": "added",
+          "additions": 122,
+          "deletions": 0,
+          "changes": 122,
+          "blob_url": "https://github.com/streamshub/proposals/blob/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/003-streamshub-console-helm.md",
+          "raw_url": "https://github.com/streamshub/proposals/raw/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/003-streamshub-console-helm.md",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/003-streamshub-console-helm.md?ref=2d3960d900c9b6ef138f79e94b193bd3f84e28ed",
+          "patch": "@@ -0,0 +1,122 @@\n+# Helm Installation Support for StreamsHub Console\n+\n+This proposal outlines adding official Helm chart support for the StreamsHub Console operator. \n+It provides a standardized installation method and establishes CRD lifecycle management patterns.\n+\n+## Current situation\n+\n+There is currently no official Helm chart for the StreamsHub Console operator or its associated Custom Resources. \n+Among the broader StreamsHub stack, only Strimzi provides an official Helm chart.\n+Components such as Strimzi, Prometheus, and other dependencies each maintain their own Helm charts through their respective upstream projects.\n+\n+## Motivation\n+\n+Helm is widely adopted as the standard packaging mechanism for k8s applications.\n+A large portion of the k8s ecosystem - including GitOps platforms (e.g. Argo CD) and cloud provider marketplaces - relies on Helm as the primary installation mechanism.\n+\n+By introducing an official Helm chart for the Console operator, StreamsHub could:\n+\n+- **Lower the barrier to adoption** for teams already using Helm-based workflows and environments\n+- **Enable fine-tuned configuration** with value overrides, environment-specific configuration, and lifecycle management via Helm\n+- **Align with ecosystem standards**, making StreamsHub easier to discover and integrate\n+\n+## Proposal\n+\n+The proposal is to create and maintain an official Helm chart for the **StreamsHub Console Operator** - managing its deployment, RBAC, service accounts, and associated configuration.\n+\n+### Scope of initial chart\n+\n+The initial implementation should be deliberately scoped and simple. It should cover:\n+\n+- Operator's `Deployment`, `ServiceAccount`, `ClusterRole`, and `ClusterRoleBinding`\n+- CRD installation - see the [CRD Management](#crd-management) section below for the chosen approach\n+\n+The chart will **not** attempt to manage external dependencies such as Strimzi, Kafka, Prometheus, or other stack components in this initial phase.\n+Those components have well-maintained charts and can be addressed in a separate proposal.\n+ \n+> Note on Prometheus: although Prometheus is a significant dependency for the Console, it has a well-maintained upstream chart and introduces operator-level complexity (CRDs, RBAC) that is out of scope here. Including it is deferred to a possible future proposal.\n+ \n+### Chart hosting\n+ \n+The chart will live **within the `console` repository**, consistent with how Strimzi manages its Helm chart.\n+This keeps chart changes co-located with operator changes, making it straightforward to keep the chart in sync with new operator releases and to run system tests that validate the chart against each new version.\n+ \n+Charts will be published to a Helm repository (GitHub Pages or an OCI registry such as Quay or DockerHub) and listed on Artifact Hub following each release.\n+\n+### Chart versioning\n+ \n+Chart versioning will be **independent from the operator version**.\n+ \n+Chart and operator versions will naturally diverge over time - for example, when a chart only fix is needed without an operator release.\n+Starting from an independent versioning scheme avoids confusion from the outset.\n+Chart versioning will follow the format <CONSOLE_VERSION>-<CHART_PATCH> (e.g. 1.0.0 for the initial release, 1.0.0-1 if a chart-only fix follows).\n+This keeps the chart version anchored to the specific operator release it targets, while still allowing chart only patch releases without requiring an operator release. \n+A clear mapping between chart versions and compatible operator versions will be maintained on the release page and in the documentation.\n+\n+## CRD management\n+\n+CRD lifecycle management in Helm has known limitations that need to be addressed explicitly.\n+\n+### The core CRDs problem\n+\n+Helm's built-in CRD support - placing CRDs in the `crds/` directory - has two significant limitations:\n+\n+1. **CRDs in `crds/` are not upgraded during `helm upgrade`**. This creates version drift risk: a new operator release may depend on an updated CRD schema or a new stored version that is not present in the cluster after a routine upgrade.\n+2. **CRDs in subcharts are silently skipped**. If this chart is later used as a subchart in an umbrella chart, Helm only processes CRDs from the top-level chart's `crds/` directory. Any CRDs in subchart `crds/` directories are silently ignored on install, meaning the Console CRDs would not be present when the operator tries to reconcile.\n+\n+### Solution\n+\n+CRDs will be managed using the **`crds/` directory pattern**, consistent with how Strimzi manages its CRDs.\n+\n+CRDs are installed automatically on `helm install`. The CRD upgrade limitation must be explicitly documented: users must manually apply updated CRDs before upgrading the operator chart (e.g. `kubectl apply -f crds/`).\n+This is the exactly same pattern Strimzi uses and is an understood trade-off in the Helm ecosystem.\n+\n+## Delivery\n+\n+- Chart to be hosted within the `console` repository, under a `helm/` or `charts/` directory\n+- Chart published to a Helm repository (GitHub Pages or OCI variants like Quay / DockerHub) + Artifact Hub following each release\n+- **Chart versioning to be independent from the operator version**, with a clear version compatibility mapping maintained in documentation and release notes\n+- A GitHub Actions workflow will lint the chart using `helm lint` on every pull request and release, catching templating errors and schema violations early\n+- A minimal deployment test will run on each push, spinning up a lightweight k8s cluster (kind or minikube) and verifying that the operator deploys and reaches a healthy state\n+- Chart releases will be automated using GitHub Actions, allowing the chart to be tested and published to the StreamsHub Helm repository following each release\n+\n+# Affected/not affected projects\n+\n+**Affected:**\n+- `console` - primary subject of this proposal; the operator chart will live within this repository\n+- `documentation` - installation guides will need updating to include Helm-based instructions, including the CRD manual upgrade procedure\n+\n+**Not affected:**\n+- Strimzi, Apicurio, Prometheus, and other stack components - remain independently managed\n+\n+## Compatibility\n+\n+- CRD management will follow Helm community best practices (CRDs in `crds/` directory) to avoid conflicts with existing CRD installations\n+- The CRD upgrade limitation is a known trade-off and will be clearly documented; users must manually apply updated CRDs before running `helm upgrade`\n+- The chart will declare a minimum supported k8s version consistent with the operator's existing requirements\n+- Chart versioning follows semantic versioning independently from the operator; breaking value changes will result in a major version bump and will be documented in a compatibility/migration guide\n+\n+## Rejected alternatives\n+ \n+**CR instance management via Helm (deferred)**\n+ \n+An earlier version of this proposal included managing the Console Custom Resource (CR) instance as part of the Helm chart, exposing its configuration as Helm values.\n+This was removed from scope. Managing operator CRs via Helm leads to an unbounded configuration surface - every field of the CR becomes a potential Helm value, requiring huge ongoing maintenance and branching logic.\n+Strimzi does not manage its CRs via Helm for the same reasons.\n+Teams that want to manage their Console CR via GitOps workflows can do so directly against the CRD using standard tooling.\n+\n+**StreamsHub umbrella chart (deferred to a separate proposal)**\n+\n+Including an umbrella chart that composes Strimzi, Kafka, Prometheus, and other dependencies was considered but removed from this proposal.\n+The CRD lifecycle limitations - upgrade skipping, silent subchart skipping, and the complexity of keeping a multi-operator stack in sync are not trivial and deserve a dedicated proposal and design discussion.\n+Any future umbrella chart proposal should address the subchart CRD visibility problem directly; the dedicated `streamshub-crds` chart pattern is a possible future candidate solution, but it has too much overhead for this proposal.\n+\n+**CRD hook Job approach**\n+\n+A hook Job for CRD management was considered but deferred in favour of the simpler `crds/` directory pattern for the initial release.\n+The hook approach adds operational complexity and RBAC requirements that are not justified at this stage.\n+\n+**Dedicated `helm-charts` repository**\n+ \n+Hosting the chart in a standalone `helm-charts` repository was considered but rejected in favour of keeping it within the `console` repository.\n+This location makes it easier to keep the chart in sync with operator releases and to run tests that validate the chart against each new version.\n\\ No newline at end of file"
+        },
+        {
+          "sha": "352790d283167b0ba753e2bd4c838e2e4a673ac2",
+          "filename": "README.md",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 0,
+          "changes": 1,
+          "blob_url": "https://github.com/streamshub/proposals/blob/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/README.md",
+          "raw_url": "https://github.com/streamshub/proposals/raw/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/README.md",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/README.md?ref=2d3960d900c9b6ef138f79e94b193bd3f84e28ed",
+          "patch": "@@ -15,4 +15,5 @@ File name format and numbering is validated by the CI workflow defined in [valid\n | 000 | [StreamsHub Proposal Template](./000-template.md)                                 |\n | 001 | [StreamsHub Quick-start Kustomize Repository](./001-quickstart-kustomize-repo.md) |\n | 002 | [StreamsHub MCP: Strimzi MCP proposal](./002-streamshub-mcp-strimzi.md)           |\n+| 003 | [StreamsHub Console Helm](./003-streamshub-console-helm.md)                       |\n "
+        },
+        {
+          "sha": "33b20cbc027ee2538cdddee9167f86d420a25fe9",
+          "filename": "streamshub-proposals.iml",
+          "status": "added",
+          "additions": 11,
+          "deletions": 0,
+          "changes": 11,
+          "blob_url": "https://github.com/streamshub/proposals/blob/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/streamshub-proposals.iml",
+          "raw_url": "https://github.com/streamshub/proposals/raw/2d3960d900c9b6ef138f79e94b193bd3f84e28ed/streamshub-proposals.iml",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/streamshub-proposals.iml?ref=2d3960d900c9b6ef138f79e94b193bd3f84e28ed",
+          "patch": "@@ -0,0 +1,11 @@\n+<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n+<module type=\"JAVA_MODULE\" version=\"4\">\n+  <component name=\"NewModuleRootManager\" inherit-compiler-output=\"true\">\n+    <exclude-output />\n+    <content url=\"file://$MODULE_DIR$\">\n+      <sourceFolder url=\"file://$MODULE_DIR$/.github/scripts\" isTestSource=\"false\" />\n+    </content>\n+    <orderEntry type=\"inheritedJdk\" />\n+    <orderEntry type=\"sourceFolder\" forTests=\"false\" />\n+  </component>\n+</module>\n\\ No newline at end of file"
+        }
+      ],
+      "updated_at": "2026-04-29T13:26:36Z",
+      "head_sha": "2d3960d900c9b6ef138f79e94b193bd3f84e28ed",
+      "frozen": true,
+      "reviews_snapshot": [
+        {
+          "name": "aswinayyolath",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-10T04:21:07Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-10T04:35:22Z"
+        },
+        {
+          "name": "jankalinic",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-10T16:24:38Z"
+        },
+        {
+          "name": "jankalinic",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-10T16:31:36Z"
+        },
+        {
+          "name": "jankalinic",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-10T16:34:41Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-11T17:03:15Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-04-01T14:09:25Z"
+        },
+        {
+          "name": "jankalinic",
+          "state": "COMMENTED",
+          "timestamp": "2026-04-07T12:19:03Z"
+        },
+        {
+          "name": "jankalinic",
+          "state": "COMMENTED",
+          "timestamp": "2026-04-07T12:19:14Z"
+        },
+        {
+          "name": "jankalinic",
+          "state": "COMMENTED",
+          "timestamp": "2026-04-07T12:19:22Z"
+        },
+        {
+          "name": "jankalinic",
+          "state": "COMMENTED",
+          "timestamp": "2026-04-07T12:19:24Z"
+        },
+        {
+          "name": "jankalinic",
+          "state": "COMMENTED",
+          "timestamp": "2026-04-07T12:19:27Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-04-07T19:44:38Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-04-07T19:47:58Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-04-07T19:51:22Z"
+        },
+        {
+          "name": "MikeEdgar",
+          "state": "COMMENTED",
+          "timestamp": "2026-04-21T12:27:13Z"
+        }
+      ],
+      "comments_snapshot": [
+        {
+          "name": "jankalinic",
+          "timestamp": "2026-03-10T16:44:57Z"
+        },
+        {
+          "name": "jankalinic",
+          "timestamp": "2026-04-29T13:26:35Z"
+        }
+      ]
+    },
+    "2": {
+      "state": "merged",
+      "classification": "proposal",
+      "proposal_key": "2",
+      "files": [
+        {
+          "sha": "53757faac70427586c99994c90924ed01b7dcb45",
+          "filename": "002-streamshub-mcp-strimzi.md",
+          "status": "added",
+          "additions": 709,
+          "deletions": 0,
+          "changes": 709,
+          "blob_url": "https://github.com/streamshub/proposals/blob/18b23e43b0ce9d70496989db1c16c71003ac03a0/002-streamshub-mcp-strimzi.md",
+          "raw_url": "https://github.com/streamshub/proposals/raw/18b23e43b0ce9d70496989db1c16c71003ac03a0/002-streamshub-mcp-strimzi.md",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/002-streamshub-mcp-strimzi.md?ref=18b23e43b0ce9d70496989db1c16c71003ac03a0",
+          "patch": "@@ -0,0 +1,709 @@\n+# StreamsHub MCP: Strimzi MCP Server\n+\n+A Model Context Protocol (MCP) server that gives DevOps engineers read-only tools, resources, and prompt templates to get information about their Strimzi Operator and Operands deployments on Kubernetes.\n+LLM clients connect to this MCP server and use its capabilities to answer questions about Strimzi infrastructure in natural language.\n+\n+## Current situation\n+\n+Right now, DevOps engineers need to use many different tools to check their Strimzi Kafka deployments.\n+They have to:\n+\n+- Run `kubectl` commands to check Kafka clusters, KafkaTopics, and other Strimzi resources.\n+- Look through many logs, from many different pods, either directly in Kubernetes or via external log aggregator tooling.\n+- Check states of the metrics before and after a specific incident occurs.\n+- Figure out how different Strimzi resources relate to each other.\n+- Spend precious time gathering context when something goes wrong (collecting logs, metrics, operands states, etc.).\n+\n+## Motivation\n+\n+Strimzi simplifies Kafka management on Kubernetes a lot, but it is still very complex.\n+When something goes wrong, engineers need to connect information from many places (custom resource statuses, operator logs, broker and controller pod logs, metrics, and network configuration) to figure out what happened.\n+Doing this manually takes a lot of time and is easy to get wrong, especially under pressure.\n+\n+An MCP server helps with this by giving LLMs structured access to all of this data through Strimzi specific tools.\n+The MCP server itself does not diagnose issues \u2014 it is a data provider that returns clean, filtered, and structured information.\n+The LLM, guided by [prompt templates](#mcp-prompt-templates) that encode Strimzi expertise (what to check, in what order, and what specific conditions or log patterns indicate problems), interprets the data, correlates findings across resources and logs, and produces a diagnosis.\n+Instead of running dozens of `kubectl` commands and mentally connecting the results, engineers can describe the problem in natural language and let the LLM gather and connect the information.\n+\n+Where we see the most value:\n+\n+- **Incident response**: Instead of manually running `kubectl get kafka`, `kubectl describe kafkanodepool`, `kubectl logs` and piecing together the picture, the LLM gathers all relevant context at once.\n+  For example: \"My Kafka cluster in namespace `production` has been NotReady for 10 minutes, what's wrong?\" triggers resource status checks, operator log analysis, and pod health inspection in seconds.\n+- **Onboarding and knowledge sharing**: Engineers who don't know Strimzi and Kafka well yet can still diagnose problems because the prompt templates guide the LLM through the same steps an experienced engineer would follow.\n+\n+### Why not just use kubectl with an LLM?\n+\n+Just giving an LLM access to `kubectl` has several limitations:\n+\n+- **Too much noise in context**: Raw Kubernetes YAML includes managed fields, annotations, last-applied-configuration, and other metadata that fills up the LLM context without adding diagnostic value.\n+  A typical `kubectl get kafka -o yaml` response is too many lines, some of it is noise.\n+- **Security risks**: A generic `kubectl` tool with write access can modify or delete resources.\n+  An LLM might run destructive commands if prompted maliciously or just by misunderstanding.\n+  Existing tools like the [containers/kubernetes-mcp-server](https://github.com/containers/kubernetes-mcp-server) allow CRUD operations, which is not something we want in production.\n+- **No guided diagnosis**: A generic tool doesn't know which Strimzi conditions mean problems or which logs are relevant.\n+  Without [prompt templates](#mcp-prompt-templates), the LLM has no structured debugging process and may miss important things.\n+\n+## Use Cases & Example Interactions\n+\n+Below are typical DevOps questions and how the MCP server helps answer them.\n+In these examples, the user selects an [MCP Prompt Template](#mcp-prompt-templates) that tells the LLM what tools to call and in what order.\n+The user can also attach [MCP Resources](#mcp-resources) to provide the LLM with additional context about the cluster.\n+\n+### \"Why is my Kafka cluster not ready?\"\n+\n+**User question**: \"The Kafka cluster `my-cluster` in namespace `kafka-prod` has been NotReady for 15 minutes. What's going on?\"\n+\n+**MCP flow** (user selects the `diagnose-cluster-issue` prompt template, which guides the LLM to call the following tools):\n+1. `get_kafka_cluster` - reads Kafka CR status and conditions, finds `NotReady` condition with reason\n+2. `get_strimzi_operator_logs` - reads Strimzi operator logs filtered to the relevant time window and namespace, finds reconciliation errors\n+3. `get_kafka_cluster_pods` - checks broker pod statuses, finds one pod in CrashLoopBackOff\n+4. LLM correlates findings and decides pod logs are needed\n+5. `get_kafka_cluster_logs` - reads logs from the failing pod (including previous container logs), finds OOM kill\n+\n+**Expected output summary**: broker-2 is in CrashLoopBackOff due to OOM kills (container memory limit is 2Gi but the JVM heap requires more), which is blocking the cluster reconciliation.\n+The suggestion would be to increase the memory limit in the KafkaNodePool resource.\n+\n+### \"Show me all Kafka clusters across namespaces\"\n+\n+**User question**: \"Give me an overview of all Kafka deployments in the cluster.\"\n+\n+**MCP flow**:\n+1. `list_kafka_clusters` - discovers all Kafka CRs across namespaces\n+2. `get_kafka_cluster` - reads status of each cluster (batched)\n+3. `get_strimzi_operator` - checks Strimzi operator deployment status\n+\n+**Expected output summary**: A table of clusters with their namespace, version, number of brokers, readiness status, and any warning conditions.\n+\n+### \"What are the bootstrap addresses and TLS configuration?\"\n+\n+**User question**: \"How do I connect to `my-cluster` from outside the Kubernetes cluster?\"\n+\n+**MCP flow**:\n+1. `get_kafka_bootstrap_servers` - reads listener configurations from Kafka CR status\n+2. `get_kafka_cluster_certificates` - reads TLS certificate metadata (expiry dates, issuer, SANs) from Strimzi-managed secrets and authentication type configured on listeners (requires opt-in sensitive Role)\n+\n+**Expected output summary**: Each listener with its type (internal/external), bootstrap address, port, TLS status, and authentication method.\n+For external listeners, also the route/ingress hostname and the certificate expiry date.\n+\n+### \"Why did broker pods restart overnight?\"\n+\n+**User question**: \"I noticed broker pods restarted overnight, what happened?\"\n+\n+**MCP flow** (the prompt template instructs the LLM to ask for a time range when the user doesn't specify one):\n+1. LLM asks - \"Between what hours?\" - user answers \"2am and 4am\"\n+2. `get_kafka_cluster_pods` - reads pod restart counts and last termination reasons\n+3. `get_kafka_cluster_logs` - reads previous container logs (from before the restart) for affected pods\n+4. `get_strimzi_operator_logs` - checks if the operator triggered a rolling update in that time window\n+\n+**Expected output summary**: Whether restarts were caused by an operator-initiated rolling update (configuration change, certificate renewal) or by pod failures (OOM, liveness probe timeout).\n+\n+### \"Are there any problematic KafkaTopics?\"\n+\n+**User question**: \"Check if there are any KafkaTopics with issues in namespace `kafka-prod`.\"\n+\n+**MCP flow**:\n+1. `list_kafka_topics` - finds all KafkaTopic CRs in the namespace (paginated if there are many)\n+2. `get_kafka_topic` - reads status and conditions for each topic, filters for non-Ready topics\n+3. LLM reports - 150 topics found, 3 are not Ready. Shows details for each problematic topic.\n+\n+**Expected output summary**: 3 KafkaTopics have issues \u2014 `orders-events` has a `NotReady` condition due to insufficient brokers for the configured replication factor, `audit-log` has a stalled reconciliation, and `temp-test` has a config mismatch between the CR spec and the actual topic config.\n+\n+## Proposal\n+\n+The Strimzi MCP server lives in the `streamshub-mcp` project as the first module in a mono-repo.\n+It is built with [Quarkus](https://quarkus.io/) and uses the [Fabric8 Kubernetes Client](https://github.com/fabric8io/kubernetes-client) with the [Strimzi API](https://github.com/strimzi/strimzi-kafka-operator/tree/main/api) for typed access to Strimzi custom resources.\n+See the [Implementation](#implementation) section for the full technology stack.\n+\n+### Project Structure (mono-repo)\n+\n+The `streamshub-mcp` project is a Maven multi-module project where each MCP server is an independent module that produces its own container image.\n+\n+```\n+streamshub-mcp/\n+\u251c\u2500\u2500 pom.xml                    # Parent POM with shared dependencies and build config\n+\u251c\u2500\u2500 common/                    # Shared utilities (K8s client helpers, DTO base classes, security utilities)\n+\u251c\u2500\u2500 strimzi-mcp/               # Strimzi MCP server module (this proposal)\n+\u251c\u2500\u2500 kafka-mcp/                 # Future: Kafka-level MCP server (topics, consumer groups, etc.)\n+\u251c\u2500\u2500 console-mcp/               # Future: Console MCP server\n+\u2514\u2500\u2500 kroxylicious-mcp/          # Future: Kroxylicious MCP server\n+```\n+\n+Each module is independently deployable as a separate container image.\n+This way we avoid polluting the LLM context with unrelated tool definitions, so each MCP server focuses on a single domain.\n+Shared logic (Kubernetes client config, DTO serialization, security utilities, log filtering) lives in the `common` module.\n+\n+**KRaft only**: Strimzi MCP server is designed for Kafka clusters running in KRaft mode.\n+It won't support ZooKeeper-based deployments, as Strimzi already uses KRaft as the standard.\n+\n+**Infrastructure only**: Strimzi MCP server works only at the Kubernetes level.\n+It reads Strimzi custom resources, pod status, configurations, and logs.\n+It can read metrics exposed by broker and controller pods via HTTP endpoints (Strimzi Metrics Reporter or JMX exporter), but it does NOT connect to Kafka via the Kafka protocol.\n+It does NOT access topic data, consumer groups, or perform any Kafka admin operations.\n+A separate `kafka-mcp` module would cover Kafka protocol-level functionality in the future.\n+\n+### MCP Tools\n+\n+Each tool accepts structured JSON input validated against a JSON Schema and returns a structured DTO response.\n+\n+#### Resource Discovery\n+- **List Strimzi Resources**: Find Strimzi operands across namespaces.\n+  Initial scope: Kafka, KafkaNodePool, KafkaTopic, and Strimzi operator.\n+  Other CRs (KafkaUser, KafkaConnect, KafkaConnector, KafkaBridge, KafkaRebalance, KafkaMirrorMaker2) can be added in a follow-up proposal.\n+  Accepts optional namespace and label selector filters.\n+  For resource types that can exist in large numbers (KafkaTopic), results are paginated with a configurable page size to avoid oversized responses.\n+- **Check Resource Status**: Read status, conditions, and observed generation from supported Strimzi custom resources.\n+- **Operator Status**: Get Strimzi operator deployment status, version, and readiness.\n+\n+#### Network and Connectivity\n+- **Find Bootstrap Servers**: Read Kafka bootstrap server addresses from the Kafka CR status.\n+  Returns listener type, address, port, and protocol.\n+- **Cluster Certificates**: Read TLS certificate metadata (expiry date, issuer, SANs) and authentication type from Strimzi-managed Kubernetes secrets (`get_kafka_cluster_certificates`).\n+  Requires the opt-in sensitive Role. See [Output sanitization](#security--rbac) for details on what is excluded.\n+\n+#### Logs and Pod Info\n+- **Read Logs**: Get logs from Kafka broker and controller pods, Strimzi operator, and other Strimzi related pods.\n+  See [Log Handling](#log-handling) for filtering, pagination, and security details.\n+- **Pod Status**: Check pod status, restart counts, termination reasons, and resource allocation (CPU, memory, storage requests/limits).\n+\n+#### Metrics\n+- **Read Metrics**: Access metrics for diagnostic purposes.\n+  See [Metrics Strategy](#metrics-strategy) for details on supported approaches.\n+\n+#### Composite Diagnosis\n+- **Diagnose Cluster**: A server-driven diagnostic tool that internally gathers data from multiple sources (CR status, pod status, operator logs, pod logs), uses [Sampling](#sampling-and-elicitation) to ask the LLM to analyze intermediate results, and uses [Elicitation](#sampling-and-elicitation) to ask the user for input when the situation is ambiguous (e.g., multiple clusters found).\n+  Returns a consolidated diagnostic summary in a single tool call.\n+  This complements the fine-grained tools above \u2014 see [Sampling and Elicitation](#sampling-and-elicitation) for details on the two approaches.\n+\n+#### Tool Output Format & Examples\n+\n+Each tool returns data as a structured JSON DTO that removes noise from raw Kubernetes API responses.\n+\n+**What DTOs remove**:\n+- `metadata.managedFields`: internal Kubernetes bookkeeping, typically 100+ lines of noise\n+- `metadata.annotations` with `kubectl.kubernetes.io/last-applied-configuration`: duplicated resource spec\n+- Internal status fields not relevant to diagnostics (e.g., `observedGeneration` is kept, but raw status metadata is removed)\n+- Empty or null fields\n+\n+**What DTOs keep and surface**:\n+- Resource identity: name, namespace, labels\n+- Current status and all conditions with timestamps\n+- Configuration relevant to diagnostics (listeners, storage, replicas, resource limits)\n+- Relationships between resources (which KafkaNodePools belong to which Kafka cluster)\n+\n+##### Example: `get_kafka_cluster` tool\n+\n+**Input**:\n+```json\n+{\n+  \"namespace\": \"kafka-prod\",\n+  \"name\": \"my-cluster\"\n+}\n+```\n+\n+**Output**:\n+```json\n+{\n+  \"name\": \"my-cluster\",\n+  \"namespace\": \"kafka-prod\",\n+  \"kind\": \"Kafka\",\n+  \"kafkaVersion\": \"4.2.0\",\n+  \"readiness\": \"NotReady\",\n+  \"conditions\": [\n+    {\n+      \"type\": \"NotReady\",\n+      \"status\": \"True\",\n+      \"reason\": \"PodNotReady\",\n+      \"message\": \"1 out of 3 brokers not ready\",\n+      \"lastTransitionTime\": \"2025-05-10T14:32:00Z\"\n+    }\n+  ],\n+  \"listeners\": [\n+    {\n+      \"name\": \"plain\",\n+      \"type\": \"internal\",\n+      \"bootstrapAddress\": \"my-cluster-kafka-bootstrap.kafka-prod.svc:9092\"\n+    },\n+    {\n+      \"name\": \"tls\",\n+      \"type\": \"route\",\n+      \"bootstrapAddress\": \"my-cluster-kafka-tls-bootstrap-kafka-prod.apps.example.com:443\"\n+    }\n+  ],\n+  \"replicas\": {\n+    \"expected\": 3,\n+    \"ready\": 2\n+  }\n+}\n+```\n+\n+##### Example: `get_kafka_cluster_pods` tool\n+\n+**Input**:\n+```json\n+{\n+  \"namespace\": \"kafka-prod\",\n+  \"clusterName\": \"my-cluster\",\n+  \"component\": \"kafka\"\n+}\n+```\n+\n+**Output**:\n+```json\n+{\n+  \"pods\": [\n+    {\n+      \"name\": \"my-cluster-broker-0\",\n+      \"nodePool\": \"broker\",\n+      \"phase\": \"Running\",\n+      \"ready\": true,\n+      \"restartCount\": 0,\n+      \"resources\": {\n+        \"cpuRequest\": \"1\",\n+        \"cpuLimit\": \"2\",\n+        \"memoryRequest\": \"4Gi\",\n+        \"memoryLimit\": \"4Gi\"\n+      }\n+    },\n+    {\n+      \"name\": \"my-cluster-broker-2\",\n+      \"nodePool\": \"broker\",\n+      \"phase\": \"Running\",\n+      \"ready\": false,\n+      \"restartCount\": 5,\n+      \"lastTerminationReason\": \"OOMKilled\",\n+      \"lastTerminationTime\": \"2025-05-10T14:30:00Z\",\n+      \"resources\": {\n+        \"cpuRequest\": \"1\",\n+        \"cpuLimit\": \"2\",\n+        \"memoryRequest\": \"2Gi\",\n+        \"memoryLimit\": \"2Gi\"\n+      }\n+    }\n+  ]\n+}\n+```\n+\n+#### Error Handling\n+\n+When a tool encounters an error, it returns an MCP error response with `isError: true` and a message describing the problem.\n+Quarkus MCP Server handles this automatically \u2014 exceptions thrown by tool methods are converted into error responses.\n+\n+Common error scenarios:\n+- **Resource not found**: The requested Kafka cluster, KafkaNodePool, or KafkaTopic does not exist. The tool returns a clear \"not found\" message with the resource type, name, and namespace.\n+- **Namespace not accessible**: The MCP server's ServiceAccount does not have RBAC permissions for the requested namespace. The tool returns a permission denied error.\n+- **Kubernetes API unreachable**: The cluster API server is down or the MCP server lost connectivity. The tool returns a connection error.\n+- **Request timeout**: A Kubernetes API call takes too long (e.g., listing thousands of KafkaTopics). The tool returns a timeout error with a suggestion to narrow the query (e.g., add a namespace filter).\n+\n+The LLM receives these error responses and can decide how to proceed \u2014 retry with different parameters, ask the user for clarification, or report the issue.\n+\n+### MCP Resources\n+\n+MCP Resources give LLM clients structured context that they can attach to conversations without explicit tool calls.\n+When a user says \"I'm working on cluster X in namespace Y\", the client can attach the relevant resource and the LLM has immediate context.\n+\n+Quarkus MCP Server supports resources and resource templates out of the box, see the [Implementing Resources](https://docs.quarkiverse.io/quarkus-mcp-server/dev/guides-implementing-resources.html) guide.\n+\n+Defined resource URIs:\n+\n+- `strimzi://kafka.strimzi.io/namespaces/{namespace}/kafkas/{name}/status` - Current status and conditions of a Kafka cluster, including readiness, version, listener addresses, and reconciliation state.\n+- `strimzi://kafka.strimzi.io/namespaces/{namespace}/kafkas/{name}/topology` - Cluster topology: node pools, broker IDs, roles, rack assignments, and replica counts.\n+- `strimzi://kafka.strimzi.io/namespaces/{namespace}/kafkanodepools/{name}/status` - KafkaNodePool status, ready replicas, roles, and storage configuration.\n+- `strimzi://kafka.strimzi.io/namespaces/{namespace}/kafkatopics/{name}/status` - KafkaTopic status, conditions, and topic configuration (partitions, replicas, config overrides).\n+- `strimzi://operator.strimzi.io/namespaces/{namespace}/clusteroperator/{name}/status` - Strimzi operator deployment status, version, and managed namespaces.\n+\n+The URI hierarchy follows the Kubernetes API structure (`{apiGroup}/namespaces/{namespace}/{resource}/{name}`) so that the resource paths are familiar to Kubernetes users.\n+The operator URI uses the same pattern for consistency, even though the operator is a Kubernetes Deployment, not a Strimzi CRD.\n+\n+Dedicated MCP Resource URIs for other Strimzi CRs (KafkaConnect, KafkaUser, etc.) are out of scope for the initial implementation and can be added later.\n+\n+#### Resource Subscriptions\n+\n+MCP clients can subscribe to resource changes.\n+When a Strimzi resource status changes (e.g., a Kafka cluster goes from Ready to NotReady), the MCP server notifies subscribed clients.\n+This lets LLM agents detect and investigate issues without polling.\n+\n+For example, an agent subscribed to `strimzi://kafka.strimzi.io/namespaces/production/kafkas/my-cluster/status` gets a notification when the cluster status changes.\n+The subscription notifies about any status change \u2014 the client is responsible for reading the updated resource, checking the details, and deciding whether to act (e.g., start diagnosis if the cluster became NotReady).\n+\n+### MCP Prompt Templates\n+\n+Prompt templates encode the practical expertise of an experienced Strimzi engineer as a sequence of diagnostic steps.\n+For example, an engineer knows that a `NotReady` Kafka CR usually means checking KafkaNodePool replica counts first, then operator logs, then pod logs \u2014 prompt templates tell the LLM to follow that same process, even if the user doesn't know Strimzi internals.\n+\n+Quarkus MCP Server supports prompt templates via the `@Prompt` annotation, see the [Implementing Prompts](https://docs.quarkiverse.io/quarkus-mcp-server/dev/guides-implementing-prompts.html) guide.\n+\n+#### Incident Diagnosis Template\n+\n+Template name: `diagnose-cluster-issue`\n+\n+Parameters: `cluster_name`, `namespace` (optional), `symptom` (optional)\n+\n+When the user selects this template, the MCP server generates a prompt message that guides the LLM through a structured diagnostic workflow.\n+Below is an example of what the generated prompt can look like:\n+\n+```\n+You are diagnosing a Kafka cluster issue for cluster `my-cluster` in namespace `kafka-prod`.\n+The reported symptom is: NotReady for 15 minutes.\n+\n+Follow these steps in order. After each step, analyze the results before proceeding to the next.\n+\n+## Step 1: Check Kafka cluster status\n+Use `get_kafka_cluster` to retrieve the cluster status and conditions.\n+Look for: NotReady conditions, stalled reconciliation,\n+mismatched observed/expected generation, warning conditions.\n+\n+## Step 2: Check KafkaNodePool statuses\n+Use `list_kafka_node_pools` to list all node pools for this cluster.\n+For any pool that looks unhealthy, use `get_kafka_node_pool` for details.\n+Look for: pools with fewer ready replicas than expected,\n+pools in non-Ready state, role mismatches.\n+\n+## Step 3: Check Strimzi operator\n+Use `list_strimzi_operators` to find the operator managing this cluster.\n+Use `get_strimzi_operator_logs` with `sinceMinutes: 15` to read recent operator logs.\n+Look for: reconciliation errors, exceptions, warnings related to\n+`my-cluster`, repeated error patterns.\n+\n+## Step 4: Check pod health\n+Use `get_kafka_cluster_pods` to check all pods for the cluster.\n+Look for: CrashLoopBackOff, Pending pods, high restart counts,\n+pods not in Running phase, containers not ready.\n+\n+## Step 5: Read pod logs from unhealthy pods\n+For any unhealthy pods found in Step 4, use `get_kafka_cluster_logs`\n+with keywords `[\"ERROR\", \"Exception\", \"OOM\"]` and `sinceMinutes: 15` to get recent error logs.\n+Look for: OOM kill messages, disk full errors, connection refused,\n+`OutOfMemoryError`, `IOException`.\n+\n+## Step 6: Correlate and summarize\n+Correlate the findings from all steps.\n+Distinguish between:\n+- Operator-initiated changes (rolling updates, certificate renewal, configuration changes)\n+- Infrastructure failures (OOM, disk full, node issues)\n+- Configuration errors (invalid resource specs, missing secrets)\n+\n+Provide a clear summary of the root cause and actionable recommendations.\n+```\n+\n+The prompt template tells the LLM exactly which tools to call, what to look for in the results, and how to correlate findings across steps.\n+The tool names in the template match the actual MCP tool names registered by the server.\n+\n+#### Connectivity Troubleshooting Template\n+\n+Template name: `troubleshoot-connectivity`\n+\n+Parameters: `namespace`, `cluster_name`, `listener_name` (optional)\n+\n+Guides the LLM to check listener configuration, bootstrap addresses, TLS certificate validity, authentication settings, and related Kubernetes services/routes.\n+\n+### Sampling and Elicitation\n+\n+The MCP server supports two approaches to diagnostic workflows:\n+\n+**Client-driven (prompt templates + fine-grained tools)**: The user selects a [prompt template](#mcp-prompt-templates), which the LLM then follows \u2014 calling fine-grained tools one by one (`get_kafka_cluster`, `get_kafka_cluster_logs`, etc.), reasoning about results between calls, and asking the user for clarification when needed.\n+This works with every MCP client since prompt templates are just text and tools are standard MCP tool calls.\n+\n+**Server-driven (composite tools with Sampling and Elicitation)**: The composite `diagnose_cluster` tool internally orchestrates multiple steps.\n+During execution, it uses two MCP features to interact with the client:\n+\n+- [Sampling](https://modelcontextprotocol.io/specification/2025-11-25/client/sampling): The server sends intermediate data (e.g., CR status + operator logs gathered so far) to the LLM and asks it to analyze the findings and decide whether deeper investigation (e.g., pod logs) is needed \u2014 all within a single tool call.\n+- [Elicitation](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation): The server asks the user for input mid-execution, for example \"Which namespace?\" when the query is ambiguous, or \"What time range?\" before retrieving logs.\n+\n+This provides a more streamlined experience with fewer round trips, but requires MCP client support for Sampling and Elicitation.\n+Composite tools gracefully fall back when the client doesn't support these features (e.g., skipping Sampling and returning raw data, or using default values instead of Elicitation).\n+\n+Quarkus MCP Server already [supports both features](https://docs.quarkiverse.io/quarkus-mcp-server/dev/guides-client-integration.html).\n+Both are injected as parameters into `@Tool` methods and used via a builder API.\n+\n+### Implementation\n+\n+#### Technology\n+- **Quarkus**: Java framework with fast startup, low memory usage, and native compilation support.\n+- **Fabric8 Kubernetes Client**: Java library for Kubernetes API access and custom resource support.\n+- **Strimzi API**: Java library built on top of Fabric8 for typed access to Strimzi custom resources.\n+- **Quarkus MCP Server**: Provides MCP protocol support and tool definition framework. Supports both SSE (Server-Sent Events) and Streamable HTTP transports out of the box.\n+- **Quarkus extensions**: Logging (JSON output), Config (environment-based configuration), Health (liveness and readiness endpoints).\n+\n+#### Pluggable Architecture\n+\n+The proposal mentions three pluggable systems: [log providers](#log-handling), [metrics providers](#metrics-strategy), and [guardrail filters](#prompt-injection-protection).\n+All three use Quarkus CDI (Contexts and Dependency Injection) but follow two different patterns:\n+\n+**Providers (logs, metrics)** \u2014 single active implementation, swappable via configuration:\n+\n+1. Define a Java interface for each provider (e.g., `LogProvider`, `MetricsProvider`).\n+2. Implement the default version as a CDI bean (e.g., `KubernetesLogProvider` that reads pod logs via Fabric8, `PodScrapingMetricsProvider` that reads HTTP endpoints).\n+3. Select the active implementation via configuration using Quarkus `@LookupIfProperty` or `@IfBuildProfile` annotations.\n+4. Custom implementations can be packaged as separate Maven modules and added to the container image.\n+\n+For example, a user who wants to use an external log aggregation system would add the provider module to the image and set `mcp.log.provider=custom-provider` in the configuration.\n+The tool layer stays the same regardless of which provider is active.\n+\n+**Filters (guardrails)** \u2014 multiple implementations chained together:\n+\n+1. Define a `GuardrailFilter` interface with an `apply` method.\n+2. Each filter is a CDI bean annotated with `@Priority` to control execution order.\n+3. All filter beans are injected as an ordered list using Quarkus `@Any` with `Instance<GuardrailFilter>`.\n+4. Every request passes through all active filters in priority order \u2014 input validation first, then output sanitization, then any custom filters.\n+\n+This way filters compose rather than replace each other.\n+Each MCP server module can define its own filters with different priorities, and individual filters can be enabled or disabled via configuration.\n+Provider and filter interfaces live in the `common` module so they can be reused by other MCP servers.\n+\n+#### Security & RBAC\n+\n+**Dedicated Service Account and ClusterRole**:\n+The MCP server uses its own Service Account with a minimal ClusterRole.\n+It does NOT use the Strimzi Cluster Operator Service Account.\n+\n+RBAC is split into two layers: a **ClusterRole** for non-sensitive resources (safe to grant cluster-wide) and an optional **Role** for sensitive resources (opt-in per namespace).\n+Both are modeled on the existing [strimzi-view](https://github.com/strimzi/strimzi-kafka-operator/blob/main/packaging/install/strimzi-admin/020-ClusterRole-strimzi-view.yaml) ClusterRole.\n+\n+**ClusterRole** (default, non-sensitive):\n+\n+```yaml\n+apiVersion: rbac.authorization.k8s.io/v1\n+kind: ClusterRole\n+metadata:\n+  name: streamshub-strimzi-mcp\n+  labels:\n+    app: streamshub-strimzi-mcp\n+rules:\n+  # Strimzi custom resources\n+  - apiGroups: [\"kafka.strimzi.io\"]\n+    resources:\n+      - kafkas\n+      - kafkanodepools\n+      - kafkatopics\n+      # - kafkausers # out of initial scope\n+      # - kafkaconnects # out of initial scope\n+      # - kafkaconnectors # out of initial scope\n+      # - kafkabridges # out of initial scope\n+      # - kafkarebalances # out of initial scope\n+      # - kafkamirrormaker2s # out of initial scope\n+    verbs: [\"get\", \"list\", \"watch\"]\n+  - apiGroups: [\"core.strimzi.io\"]\n+    resources:\n+      - strimzipodsets\n+    verbs: [\"get\", \"list\", \"watch\"]\n+  # Strimzi operator and pod status\n+  - apiGroups: [\"apps\"]\n+    resources: [\"deployments\"]\n+    verbs: [\"get\", \"list\"]\n+  # Pods, logs, and services\n+  - apiGroups: [\"\"]\n+    resources: [\"pods\", \"pods/log\", \"services\"]\n+    verbs: [\"get\", \"list\"]\n+  # ConfigMaps (logging overrides, external configuration references)\n+  - apiGroups: [\"\"]\n+    resources: [\"configmaps\"]\n+    verbs: [\"get\", \"list\"]\n+  # Routes (OpenShift)\n+  - apiGroups: [\"route.openshift.io\"]\n+    resources: [\"routes\"]\n+    verbs: [\"get\", \"list\"]\n+  # Ingresses\n+  - apiGroups: [\"networking.k8s.io\"]\n+    resources: [\"ingresses\"]\n+    verbs: [\"get\", \"list\"]\n+  # Leases (operator leader election status)\n+  - apiGroups: [\"coordination.k8s.io\"]\n+    resources: [\"leases\"]\n+    verbs: [\"get\", \"list\"]\n+```\n+\n+**Role** (opt-in per namespace, sensitive resources):\n+\n+```yaml\n+apiVersion: rbac.authorization.k8s.io/v1\n+kind: Role\n+metadata:\n+  name: streamshub-strimzi-mcp-sensitive\n+  namespace: kafka-prod  # deployed per namespace where access is needed\n+  labels:\n+    app: streamshub-strimzi-mcp\n+rules:\n+  - apiGroups: [\"\"]\n+    resources: [\"secrets\"]\n+    verbs: [\"get\"]\n+  # Only required when using the default pod-scraping metrics provider.\n+  - apiGroups: [\"\"]\n+    resources: [\"pods/proxy\"]\n+    verbs: [\"get\"]\n+```\n+\n+The sensitive Role is opt-in: deployers add it only to namespaces where certificate checking or direct metrics scraping is needed.\n+The `secrets` permission only grants `get` (not `list`) because Strimzi secret names follow a predictable pattern derived from the Kafka CR name (e.g., `{cluster}-cluster-ca-cert`, `{cluster}-clients-ca-cert`).\n+Since RBAC cannot restrict access by label, the MCP server enforces an application-level check: it only requests secrets whose names match the Strimzi naming convention and verifies the `strimzi.io/cluster` label on the returned secret before processing it.\n+\n+**Authorization model**:\n+The initial authorization model relies entirely on Kubernetes RBAC \u2014 the MCP server can only access what its Service Account is allowed to.\n+\n+For a single-team setup, one MCP server instance with a ClusterRoleBinding (for the ClusterRole) and RoleBindings (for the sensitive Role in each namespace) gives access to Strimzi resources.\n+\n+For multi-tenant deployments where different teams should only see their own namespaces, the approach is to deploy separate MCP server instances per team, each with:\n+- Its own ServiceAccount.\n+- A namespaced RoleBinding (instead of a ClusterRoleBinding) scoped to that team's namespaces.\n+- The sensitive Role only in namespaces where the team needs certificate or metrics access.\n+- A separate Service endpoint that only the team's LLM clients connect to.\n+\n+This way, team A's MCP server can only see Strimzi resources in team A's namespaces, and team B has no access to team A's data.\n+Access to each MCP server endpoint can be controlled through standard Kubernetes mechanisms (NetworkPolicies, ingress rules, service mesh policies, or a reverse proxy that handles authentication).\n+\n+**MCP-level authentication and authorization**:\n+The MCP protocol supports OAuth 2.1 for authentication and authorization ([spec](https://modelcontextprotocol.io/specification/2025-11-25), [Quarkus OIDC example](https://quarkus.io/blog/secure-mcp-oidc-client/)).\n+This is out of scope for the initial implementation.\n+MCP-level auth/authz (e.g., user identity propagation via OIDC, Kubernetes user impersonation) can be proposed separately later, as it will be reused by other MCP servers in StreamsHub-MCP.\n+This will be especially important when a Kafka MCP is added.\n+The approach should align with how StreamsHub Console handles authorization.\n+\n+**Output sanitization**:\n+- TLS secrets: Only certificate metadata is returned (expiry date, issuer, SANs).\n+  Private keys and certificate bodies are never included in tool responses.\n+- Secrets: Only secret names and types are returned, never secret data.\n+- Logs: See [Log Handling](#log-handling) for filtering and sensitive data redaction details.\n+\n+#### Prompt Injection Protection\n+\n+All tool inputs are validated against JSON Schemas with strict type checking, enum constraints, and pattern matching.\n+For example, namespace and resource name inputs are validated against Kubernetes naming conventions (`[a-z0-9]([-a-z0-9]*[a-z0-9])?`).\n+\n+Tool outputs are structured DTOs, not raw strings, so there is less risk of prompt injection through resource content.\n+Fields that could contain user-controlled content (labels, annotations, log messages) are sanitized by stripping control characters and limiting length.\n+\n+Each tool has a maximum response size so it won't fill up the LLM context.\n+\n+Input validation and output sanitization are implemented as a pluggable filter chain \u2014 see [Pluggable Architecture](#pluggable-architecture) for how filters are chained together using CDI `@Priority` ordering.\n+This way the filters can be shared across all MCP modules in the mono-repo, and more advanced guardrails can be added as additional filter beans without changing the tool implementations.\n+\n+#### Log Handling\n+\n+Log retrieval needs some care to avoid returning too much data or leaking sensitive information:\n+\n+- **Server-side filtering**: Logs are filtered server-side before being returned \u2014 the MCP server does the filtering, not the LLM.\n+  Supported filters:\n+  - **Severity level**: Filter by log level (ERROR, WARN, INFO) to return only relevant entries. This depends on parsing the log format (log4j2 for Strimzi operator, configurable for Kafka brokers) and is best-effort.\n+  - **Time range**: `sinceSeconds`, `sinceMinutes`, or `sinceTime` parameters to limit logs to a specific window.\n+  - **Pod name**: Target specific pods instead of retrieving logs from all pods.\n+  - **Keyword matching**: A `keywords` parameter accepts a list of keywords to return only matching lines (e.g., `[\"Exception\", \"ERROR\", \"OOM\"]` to get only error-related output).\n+    The server converts keywords to safe, pre-validated patterns internally \u2014 users never supply raw regex.\n+- **Aggregation**: Error messages are grouped by pod and deduplicated when the same message repeats.\n+  So instead of returning 500 identical lines, the tool returns the message once with a count.\n+- **Previous container logs**: Supported for diagnosing crashed or restarted pods (`previous: true` parameter).\n+- **Pagination and size limits**: Logs are returned as a JSON array of strings within the tool response.\n+  A `tailLines` parameter caps the number of log lines returned per request (default: 200).\n+  For pagination, the client can pass `sinceTime` (timestamp of the last log line received) to retrieve subsequent entries.\n+  The server is stateless \u2014 it does not track which lines were previously sent.\n+  To determine if more data is available, the server requests one more line than `tailLines` \u2014 if it gets back more, it sets `hasMore = true` in the response and returns only the requested amount.\n+- **Request throttling**: Log requests are rate-limited to protect the Kubernetes API server from too much load.\n+- **Sensitive data redaction**: Log lines are scanned for common sensitive patterns (bearer tokens, passwords, connection strings, API keys) and redacted before being returned.\n+  The default redaction patterns are configurable, and users can add custom patterns via configuration to cover application-specific sensitive data.\n+\n+**Pluggable log provider**: Log retrieval should be implemented behind a provider interface so that different backends can be used.\n+The default implementation reads logs directly from Kubernetes pod logs via the Fabric8 client.\n+Other providers (e.g., for external log aggregation systems) can be added later and selected via configuration.\n+This keeps the tool layer independent of the log source.\n+\n+**Limitations**: Direct pod log reading only provides current and previous container logs.\n+For production use cases that require querying historical logs, a provider for an external log aggregation system would be needed.\n+This is not part of the initial implementation and should be proposed in a follow-up proposal.\n+\n+#### Metrics Strategy\n+\n+**Pluggable metrics provider**: Metrics retrieval should be implemented behind a provider interface, same as [log retrieval](#log-handling).\n+The default implementation reads metrics directly from broker and controller pod HTTP endpoints, using either the [Strimzi Metrics Reporter](https://github.com/strimzi/metrics-reporter) or the Kafka JMX exporter depending on user configuration.\n+Other providers (e.g., for Prometheus or other metrics systems) can be added later and selected via configuration.\n+\n+**Prometheus API integration** (querying an existing Prometheus instance for historical and aggregated metrics) **is explicitly out of scope** for this proposal and can be added as a separate metrics provider later.\n+\n+**Caveats**:\n+- Metrics port - The server auto-detects the metrics port from the pod spec container ports (Strimzi Metrics Reporter defaults to 8080, JMX exporter typically 9404).\n+- Custom metric names - Strimzi and Kafka metric names can be customized by users.\n+  The MCP server can read the `metricsConfig` from the Kafka CR, which references a ConfigMap with the JMX exporter or Metrics Reporter configuration, to discover metric name mappings programmatically.\n+- RBAC - Direct pod scraping needs `get` on `pods/proxy` (included in the optional sensitive Role, not the default ClusterRole).\n+- Direct pod scraping only gives point-in-time metrics, no historical data.\n+  For historical data, a Prometheus provider would be needed.\n+- Scraping load - Direct pod scraping adds load to the broker/controller pods.\n+  During incidents this could make things worse, so metrics requests should be rate-limited (same as log requests).\n+  For production use, a centralized metrics system that has already collected the data is preferred.\n+\n+Metrics are mostly useful during ad-hoc incident investigation, for example \"Is the broker under heavy load?\", \"What's the replication lag?\", \"Are there under-replicated partitions?\".\n+For ongoing monitoring, existing alerting infrastructure (Prometheus alerts, Grafana) is still the primary tool.\n+\n+**Future extensibility**: Integrations with external logging and metrics systems are not part of this proposal and should be proposed separately.\n+The pluggable provider architecture for both logs and metrics makes it possible to add such integrations without rewriting the core.\n+\n+### Deployment & Delivery\n+\n+The Strimzi MCP server is delivered as a container image built with Quarkus (JVM or native).\n+\n+**Deployment options**:\n+- Kubernetes Deployment manifest (provided in the project repository).\n+- Helm chart (future).\n+\n+**Deployment resources**:\n+- A Deployment with the MCP server container.\n+- A dedicated ServiceAccount.\n+- A ClusterRole (or Role for namespace-scoped deployments) and corresponding binding.\n+- A Service for MCP client access.\n+\n+**Configuration**:\n+Everything is configured via environment variables:\n+- `MCP_NAMESPACES` - Comma-separated list of namespaces to watch (empty = all namespaces).\n+- `MCP_LOG_TAIL_LINES` - Default `tailLines` value for log requests (default: 200).\n+\n+**Scalability**:\n+The MCP server is stateless \u2014 it holds no session data between requests.\n+Multiple replicas can run behind a Kubernetes Service for horizontal scaling.\n+Multiple LLM clients can connect simultaneously since Quarkus handles concurrent requests out of the box.\n+\n+**Health endpoints**:\n+- `/q/health/live` - liveness probe.\n+- `/q/health/ready` - readiness probe (checks Kubernetes API connectivity).\n+\n+## Differentiation from Existing Tools\n+\n+Several generic Kubernetes MCP servers already exist, like [containers/kubernetes-mcp-server](https://github.com/containers/kubernetes-mcp-server).\n+The Strimzi MCP server differs from these in several ways:\n+\n+| Aspect | Generic K8s MCP | Strimzi MCP                                           |\n+|--------|----------------|-------------------------------------------------------|\n+| **Access model** | Often includes CRUD operations | Read-only by design                                   |\n+| **Output format** | Raw Kubernetes YAML/JSON | Strimzi specific DTOs with noise removed              |\n+| **Guided diagnosis** | None, LLM must interpret raw resources | Prompt templates encode Strimzi debugging expertise   |\n+| **Resource relationships** | Flat resource listing | Understands Kafka \u2192 KafkaNodePool \u2192 Pod relationships |\n+| **Security** | Full cluster access common | Minimal read-only RBAC, output sanitization           |\n+| **Log handling** | Raw log dumps | Filtered, aggregated, redacted, size-limited          |\n+\n+The Strimzi MCP server is complementary to generic Kubernetes MCP tools and doesn't replace them.\n+\n+## Compatibility\n+\n+- **Strimzi versions** - Targets Strimzi 0.51.x and newer, using the `v1` Strimzi API exclusively.\n+  The `v1beta2` API is not supported \u2014 this avoids maintaining compatibility with deprecated CRD versions.\n+- **Kubernetes versions** - Kubernetes 1.30+ and OpenShift 4.16+.\n+- **MCP protocol** - Follows the current MCP specification.\n+  Can be updated when MCP evolves.\n+- **Kubernetes distributions** - Works with OpenShift, EKS, GKE, AKS, and other Kubernetes distributions.\n+\n+## Affected projects\n+\n+N/A, this is a new project under StreamsHub.\n+\n+## Rejected alternatives\n+\n+### Option 1: Custom CLI Tool instead of MCP\n+\n+A custom CLI tool could provide Strimzi specific commands as a shortcut for kubectl, including structured output formats like JSON or YAML.\n+LLM agents can use CLI tools, so a CLI could work with LLMs.\n+However, MCP and CLI serve different use cases:\n+- MCP keeps the processing server-side, so the client only needs an MCP connection \u2014 no local kubectl access, kubeconfig, or Strimzi CLI installation required.\n+- MCP Prompt Templates provide multistep diagnostic workflows that combine multiple tools and resources into a guided sequence, while CLI help describes individual commands without orchestrating them together.\n+- MCP Resources allow the server to proactively push updated state to the client, while a CLI requires the LLM to repeatedly poll for changes.\n+\n+A CLI could be a useful complement to MCP in the future, but for the initial use case (LLM-driven diagnosis) MCP is a better fit.\n+\n+### Option 2: Use existing generic Kubernetes MCP server\n+\n+Existing tools like [containers/kubernetes-mcp-server](https://github.com/containers/kubernetes-mcp-server) were considered but lack read-only access guarantees, Strimzi-specific output filtering, and guided diagnosis.\n+See the [Differentiation from Existing Tools](#differentiation-from-existing-tools) table for a detailed comparison.\n\\ No newline at end of file"
+        },
+        {
+          "sha": "2c15bf1560b35b3e8baaa46902de0899e092380f",
+          "filename": "README.md",
+          "status": "modified",
+          "additions": 5,
+          "deletions": 4,
+          "changes": 9,
+          "blob_url": "https://github.com/streamshub/proposals/blob/18b23e43b0ce9d70496989db1c16c71003ac03a0/README.md",
+          "raw_url": "https://github.com/streamshub/proposals/raw/18b23e43b0ce9d70496989db1c16c71003ac03a0/README.md",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/README.md?ref=18b23e43b0ce9d70496989db1c16c71003ac03a0",
+          "patch": "@@ -10,8 +10,9 @@ A template for new proposals can be found [here](./000-template.md).\n File names should follow the format `NNN-title.md` where `NNN` is a three digit number that is incremented for each new proposal.\n File name format and numbering is validated by the CI workflow defined in [validate-proposals.yml](./.github/workflows/validate-proposals.yml).\n \n-| #   | Title                                                                              |\n-|:--: |:-----------------------------------------------------------------------------------|\n-| 000 | [StreamsHub Proposal Template](./000-template.md)                                  |\n-| 001 | [StreamsHub Quick-start Kustomize Repository](./001-quickstart-kustomize-repo.md)  |\n+|  #  | Title                                                                             |\n+|:---:|:----------------------------------------------------------------------------------|\n+| 000 | [StreamsHub Proposal Template](./000-template.md)                                 |\n+| 001 | [StreamsHub Quick-start Kustomize Repository](./001-quickstart-kustomize-repo.md) |\n+| 002 | [StreamsHub MCP: Strimzi MCP proposal](./002-streamshub-mcp-strimzi.md)           |\n "
+        }
+      ],
+      "updated_at": "2026-03-26T06:39:34Z",
+      "head_sha": "18b23e43b0ce9d70496989db1c16c71003ac03a0",
+      "frozen": true,
+      "reviews_snapshot": [
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-25T12:03:30Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-25T13:44:09Z"
+        },
+        {
+          "name": "MikeEdgar",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-25T14:04:30Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-25T14:42:46Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-25T14:45:51Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-25T14:47:20Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-25T16:24:37Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-25T17:45:17Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-25T17:47:08Z"
+        },
+        {
+          "name": "MikeEdgar",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-25T18:19:38Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-25T18:34:59Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-26T08:41:55Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-26T08:42:51Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-26T08:43:37Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-26T09:01:40Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-26T09:02:20Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-26T09:02:42Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "CHANGES_REQUESTED",
+          "timestamp": "2026-02-26T17:08:20Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-02-27T15:29:27Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-03T12:52:36Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-03T12:55:51Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T09:44:52Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T13:22:58Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T13:28:27Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T13:31:35Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T15:21:15Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T15:26:04Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T08:11:43Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T08:11:59Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T08:12:09Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T08:12:28Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T10:05:50Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T10:06:45Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T10:14:59Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T10:28:48Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T10:32:01Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T10:35:07Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "DISMISSED",
+          "timestamp": "2026-03-10T10:58:57Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "DISMISSED",
+          "timestamp": "2026-03-10T12:43:00Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-10T18:09:32Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-10T20:02:20Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-10T20:03:54Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-10T20:06:16Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-10T20:08:38Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-11T07:47:21Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "DISMISSED",
+          "timestamp": "2026-03-11T11:49:18Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-11T14:49:03Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-11T14:52:36Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-11T15:00:33Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-11T15:03:24Z"
+        },
+        {
+          "name": "MikeEdgar",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-11T15:17:44Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-12T08:17:42Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-12T08:17:55Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-12T08:18:14Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "DISMISSED",
+          "timestamp": "2026-03-12T09:04:35Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-12T16:09:48Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "APPROVED",
+          "timestamp": "2026-03-13T11:23:51Z"
+        },
+        {
+          "name": "martinstrasil",
+          "state": "APPROVED",
+          "timestamp": "2026-03-18T13:22:24Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "APPROVED",
+          "timestamp": "2026-03-24T17:07:05Z"
+        }
+      ],
+      "comments_snapshot": [
+        {
+          "name": "kornys",
+          "timestamp": "2026-02-26T08:53:51Z"
+        },
+        {
+          "name": "kornys",
+          "timestamp": "2026-02-27T09:21:00Z"
+        },
+        {
+          "name": "Frawless",
+          "timestamp": "2026-02-27T11:21:19Z"
+        },
+        {
+          "name": "kornys",
+          "timestamp": "2026-03-25T07:41:29Z"
+        }
+      ]
+    },
+    "3": {
+      "state": "merged",
+      "classification": "proposal",
+      "proposal_key": "1",
+      "files": [
+        {
+          "sha": "a81ac3441c91ae4d56b787d8dfb8045105d18e90",
+          "filename": "001-quickstart-kustomize-repo.md",
+          "status": "added",
+          "additions": 379,
+          "deletions": 0,
+          "changes": 379,
+          "blob_url": "https://github.com/streamshub/proposals/blob/d14e1cfd89a7246428d6021407c0e39a7713e494/001-quickstart-kustomize-repo.md",
+          "raw_url": "https://github.com/streamshub/proposals/raw/d14e1cfd89a7246428d6021407c0e39a7713e494/001-quickstart-kustomize-repo.md",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/001-quickstart-kustomize-repo.md?ref=d14e1cfd89a7246428d6021407c0e39a7713e494",
+          "patch": "@@ -0,0 +1,379 @@\n+# StreamsHub Quick-Start Kustomize Repository\n+\n+The aim of the StreamsHub organization is to support developers in creating event driven architectures. \n+There are several complementary open-source technologies that are often used together to provide the infrastructure for these architectures.\n+This \"event stack\" consists of:\n+\n+- Strimzi Kafka Operator and related components (Kafka Clusters, Kafka Connect, Kafka Bridge, etc.)\n+- Apicurio Schema Registry\n+- StreamsHub Web Console\n+- Kroxylicious Kafka Proxy\n+\n+As laid out in the [current situation](#current-situation) section below, the process for installing all these components is disjointed and complex.\n+If a developer wants to quickly assess whether this stack is appropriate for them or to test any one of the components as part of a wider stack they have to jump through several different hoops and customizations. \n+What is needed is a single, opinionated installation method which deploys a minimum viable event stack. \n+\n+This proposal recommends creating a centralized [Kustomize](https://kustomize.io/)-based repository within the StreamsHub GitHub organization that provides a unified quick-start experience for deploying the event-streaming stack on a local ephemeral (minikube, KIND, etc) or development Kubernetes cluster. \n+The repository would allow developers to install the full stack; including Strimzi, Kafka, Apicurio Registry and StreamsHub Console, using only `kubectl`, with no additional tooling required.\n+Installation follows a two-phase approach: first deploying operators and CRDs, then deploying operands, each with a single `kubectl apply -k` command pointing at the GitHub-hosted Kustomize configurations.\n+\n+It should be noted that this proposal is **not** about recommending a production deployment method. \n+It is not about providing a mechanism to cover all possible deployment configurations, upgrade paths or security setups. \n+This proposal is about providing the lowest resistance way to deploy a minimum viable event-streaming infrastructure stack. \n+However, in future, we may provide a more comprehensive stack deployment method using one of the approaches discussed in the [rejected alternatives](#rejected-alternatives) section. \n+This would, of course, be covered by a separate proposal.\n+\n+## Current situation\n+\n+Currently, each component of the event stack has its own installation approach, documentation location and set of manual steps. \n+There is no unified quick-start that brings them together.\n+\n+### Strimzi\n+\n+Strimzi provides [quick-start instructions](https://strimzi.io/quickstarts/) for Minikube, KIND and Docker Desktop. \n+Installation uses a vanity URL, backed by a Netlify Function, that patches the namespace into the relevant resources:\n+\n+```shell\n+kubectl create namespace kafka && kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka\n+```\n+\n+This installs the Strimzi Operator deployment and the CRDs needed for its operands (Kafka, KafkaConnect, etc.).\n+\n+### Kafka\n+\n+A single-node Kafka cluster for development can be deployed using the example files from the Strimzi GitHub repository:\n+\n+```shell\n+kubectl create -f https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/refs/heads/main/examples/kafka/kafka-single-node.yaml -n kafka\n+```\n+\n+This requires the Strimzi Operator to already be installed and the CRDs to be registered.\n+\n+### Strimzi Kafka Bridge\n+\n+The Kafka Bridge can be installed from the Strimzi Operator repository's examples folder. \n+The bootstrap server address must match the deployed Kafka cluster name, if you have used one of the example kafka cluster deployments from the same repo it _should_ work:\n+\n+```shell\n+kubectl create -f https://github.com/strimzi/strimzi-kafka-operator/raw/refs/heads/main/examples/bridge/kafka-bridge.yaml -n kafka\n+```\n+\n+You will then need to figure out the appropriate way to expose the bridge endpoint via Ingress or Route resources in your Kubernetes Cluster.\n+\n+### Strimzi Kafka OAuth\n+\n+Strimzi Kafka OAuth has many possible configurations and its own extensive example folders covering [container](https://github.com/strimzi/strimzi-kafka-oauth/tree/main/examples/docker) and [Kubernetes-based](https://github.com/strimzi/strimzi-kafka-oauth/tree/main/examples/kubernetes) deployments. \n+Even the example deployment using Keycloak as the OAuth provider requires several manual steps to configure realms and other settings. \n+A simple quick-start for this component is not straightforward due to the security-critical nature of the configurations involved.\n+\n+### StreamsHub Console\n+\n+The StreamsHub Console does not have a clear quick-start section on the website or repository README. \n+Installation involves deploying the operator via [OLM](https://olm.operatorframework.io/) or directly:\n+\n+```shell\n+export NAMESPACE=console && export VERSION=0.11.0 && kubectl create namespace $NAMESPACE && curl -sL https://github.com/streamshub/console/releases/download/${VERSION}/streamshub-console-operator.yaml | envsubst | kubectl apply -n ${NAMESPACE} -f -\n+```\n+\n+The Console CR requires a Kafka cluster deployed with a user configured for console access. \n+The default Strimzi Kafka cluster deployment (from the Strimzi examples directory) does not have this, so manual steps are required. \n+Alternatively, unsecured access can be used, but there are no existing examples for this configuration. \n+Accessing the console also requires port-forwarding, which varies depending on the local Kubernetes setup.\n+\n+### Kroxylicious\n+\n+The Kroxylicious Kafka Proxy has [quick-start documentation](https://kroxylicious.io/documentation/0.18.0/html/kroxylicious-operator/#assembly-operator-install-operator) similar in style to Strimzi's. \n+However, users need to download installation artifacts and copy or clone examples from the repository to install the operator and proxy instance.\n+\n+### Apicurio Registry\n+\n+The Apicurio Schema Registry has standalone, [Docker-based quick starts](https://www.apicur.io/registry/getting-started/). \n+The main documentation also describes an [operator-based deployment option](https://www.apicur.io/registry/docs/apicurio-registry/3.1.x/getting-started/assembly-deploying-registry-operator.html) for Kubernetes. \n+There is no simple vanity URL install like Strimzi's. \n+A single install file can be pulled from the GitHub repository, but it requires patching namespaces and other configurations.\n+\n+### Summary\n+\n+In short, a developer wanting to try the full event stack must visit several different websites, use different installation methods (vanity URLs, raw GitHub files, OLM, manual downloads) and write custom scripting or templating to get everything installed and working together. \n+There is no single entry point for the stack as a whole.\n+\n+## Motivation\n+\n+- Fragmented experience: Developers must currently visit multiple websites and use different installation methods to deploy each component of the stack. This creates unnecessary friction for anyone wanting to evaluate or develop against our full event-streaming platform.\n+- Custom integration work: Getting the components to work together (e.g. configuring the Console to connect to a Kafka cluster) requires manual steps and custom scripting that is not documented in any single location.\n+- High barrier to entry: The combination of scattered documentation, different tooling requirements and manual configuration steps means the barrier to trying the full stack is much higher than it needs to be.\n+- Unified entry point: A single, unified quick-start that deploys an opinionated development stack would make the platform significantly more accessible. Developers could go from zero to a working event-streaming environment with just a couple of commands.\n+\n+## Proposal\n+\n+### Introduction\n+\n+[Kustomize](https://kustomize.io/) is the configuration management system built into the `kubectl` client (since v1.14). \n+It allows you to define base configurations and layer overlay patches on top to customize deployments for different environments. \n+Kustomize is commonly used in GitOps workflows, where platform teams define blessed base configurations and users customize only the sections they need.\n+\n+Critically, `kubectl` can install Kustomize layers hosted remotely on GitHub, GitLab or Bitbucket, provided the Kustomize configuration files are in a repository on one of those domains. \n+Since all StreamsHub components are hosted on GitHub, we can provide Kustomize-based development configurations that are installable directly via `kubectl` with no additional tooling.\n+\n+This proposal recommends creating a centralized Kustomize-based repository within the StreamsHub GitHub organization that provides a unified developer quick-start experience for deploying the event-streaming stack on a local ephemeral or remote development Kubernetes cluster. \n+\n+It should be noted that this proposal is **not** about recommending a production deployment method. \n+It is not about providing a mechanism to cover all possible deployment configurations, upgrade paths or security setups. \n+This proposal is about providing the lowest resistance way to deploy a minimum viable event-streaming infrastructure stack for developers to use and assess for their needs. \n+However, in future, we may provide a more comprehensive stack deployment method using one of the approaches discussed in the [rejected alternatives](#rejected-alternatives) section. \n+This would, of course, be covered by a separate proposal.\n+\n+### Prior art\n+\n+To explore what a Kustomize-based quick-start could look like, a proof-of-concept demo repository was created: [https://github.com/tomncooper/strimzi-kustomize](https://github.com/tomncooper/strimzi-kustomize). \n+This repository provides base configurations for the main components and pulls them together into a combined development stack. \n+The approach and structure described in this proposal is informed by the experience of building and testing that demo.\n+\n+### Repository structure\n+\n+The quick-start repository should be organized into two main layers:\n+\n+- Base configs (`base/`): Contains the operator deployments and CRD definitions for each component. These are the resources that must be installed first.\n+- Stack configs (`stack/`): Contains the operand custom resources (Kafka cluster, Registry instance, Console CR, etc.) that depend on the operators being ready.\n+- Overlays (`overlays/`): Optional variant configurations (e.g. multi-node clusters with Cruise Control enabled) that patch the base or stack layers for different scenarios.\n+\n+Each layer has its own `kustomization.yaml` that references the component resources it includes. \n+The stack layer uses remote references to pull in base configurations from the same repository.\n+\n+### Two-phase installation\n+\n+Kubernetes operators must be installed and their CRDs registered before any custom resources (operands) can be created. \n+The quick-start handles this with a two-phase install:\n+\n+Phase 1 \u2014 Operators and CRDs:\n+\n+```shell\n+kubectl apply -k 'https://github.com/streamshub/developer-quickstart//base?ref=main'\n+```\n+\n+Phase 2 \u2014 Operands:\n+\n+```shell\n+kubectl apply -k 'https://github.com/streamshub/developer-quickstart//stack?ref=main'\n+```\n+\n+Users need to wait for the operators in Phase 1 to become ready before running Phase 2. \n+The `?ref=` parameter pins the installation to a specific branch or tag.\n+\n+### Install script\n+\n+To simplify the two-phase process, an optional convenience script can handle the sequencing and readiness checks automatically, as well as give richer progress information:\n+\n+```shell\n+curl -sL https://raw.githubusercontent.com/streamshub/developer-quickstart/main/install.sh | bash\n+```\n+\n+This script would:\n+\n+1. Apply the base layer (operators and CRDs)\n+2. Wait for operator deployments to become ready\n+3. Apply the stack layer (operands)\n+4. Report the status of the deployed components\n+\n+The script is optional, users who cannot/will not pipe directly to bash for security reasons or who prefer to understand and control each step, can use the two `kubectl apply -k` commands directly.\n+\n+### Teardown and cleanup\n+\n+#### Teardown risks\n+\n+Tearing down a Kustomize-based stack requires more care than installing one. \n+Three risks in particular must be addressed:\n+\n+- CRD cascade deletion: Deleting a CRD removes _all_ custom resources of that type cluster-wide, not just those created by the quick-start. On a shared cluster this can destroy resources belonging to other users or namespaces.\n+- Deletion ordering: Operands (custom resources) must be deleted before the operators and CRDs that manage them. However, `kubectl delete -k` does not enforce deletion ordering or wait for resources to be fully removed before proceeding.\n+- Finalizer stalling: Operators typically add finalizers to the custom resources they manage, so that cleanup logic (e.g. deleting StatefulSets, PVCs, secrets) runs before the CR is removed. If an operator is deleted before its CRs, the finalizer controller is gone and the CRs can become stuck in a `Terminating` state indefinitely.\n+\n+#### Resource labeling\n+\n+All resources deployed by the quick-start should carry a common label via the Kustomize `labels` transformer, for example:\n+\n+```yaml\n+labels:\n+  - pairs:\n+      app.kubernetes.io/part-of: streamshub-developer-quickstart\n+    includeSelectors: false\n+```\n+\n+The `labels` transformer is used instead of `commonLabels` because `commonLabels` patches labels into `spec.selector.matchLabels` on Deployments and StatefulSets.\n+These selector fields are immutable after creation in Kubernetes, so if a user later runs `kubectl apply -k` again to update the stack, `commonLabels` could cause \"field is immutable\" errors.\n+Using `includeSelectors: false` applies the label only to `metadata.labels`, which avoids this problem while still supporting all the label-based queries needed for teardown and orphan discovery.\n+\n+Note that `kubectl delete -k` already targets resources precisely, as it renders the kustomization's manifests and deletes by group/version/kind, namespace and name.\n+Therefore, it will only remove the specific resources defined in the overlay, not all custom resources of a given type.\n+Labels are not needed for basic delete via kustomization to work correctly.\n+\n+However, labels help with several key issues: \n+\n+- Shared-cluster detection: They allow us to query for CRs of the managed CRD types that _do not_ carry the quick-start label. If any unlabeled CRs exist for a given operator's CRD types, then we know that operator's CRDs are shared and should be retained. The uninstall script removes only that operator's Deployments, ServiceAccounts, and other non-CRD resources, while operators whose CRDs have no unlabeled CRs are fully removed including their CRDs.\n+- Orphan discovery: After a failed or partial teardown, labels make it straightforward to find leftover quick-start resources across all namespaces:\n+```shell\n+kubectl get all -A -l app.kubernetes.io/part-of=streamshub-developer-quickstart\n+```\n+Note that `kubectl get all` does not cover every resource type (CRDs, ClusterRoles, ClusterRoleBindings, etc.). To find labeled cluster-scoped resources, also run:\n+```shell\n+kubectl get crds,clusterroles,clusterrolebindings -l app.kubernetes.io/part-of=streamshub-developer-quickstart\n+```\n+- Auditing: Labels distinguish quick-start-owned resources from independently deployed ones, which is useful for troubleshooting and capacity planning on shared clusters.\n+\n+#### Two-phase teardown\n+\n+Before tearing down, users on non-ephemeral (minkube, KIND, etc) or shared clusters should check whether non-quick-start custom resources exist on the cluster for each operator's CR types.\n+For example, to check for Strimzi-managed Kafka resources not owned by the quick-start:\n+\n+```shell\n+kubectl get kafkas -A --selector='!app.kubernetes.io/part-of=streamshub-developer-quickstart'\n+```\n+\n+Users should repeat this check for each operator group's CR types (e.g. Apicurio Registry CRs, StreamsHub Console CRs) before proceeding with Phase 2.\n+If any CRs are returned for an operator group, all CRDs for that operator should be retained. \n+Users should not proceed with `kubectl delete -k` for the base layer for that operator's resources and should instead manually delete only the non-CRD resources (Deployments, ServiceAccounts, ClusterRoles, etc.) for that operator.\n+\n+If no unlabeled CRs are found for any operator group, it is safe to proceed with full teardown including CRD deletion.\n+The [uninstall script](#uninstall-script) automates these per-operator-group checks and is recommended for safe teardown.\n+\n+For manual teardown, the process has two phases. \n+Under most scenarios it should be safe to remove the operands (`/stack`) overlay:\n+\n+Phase 1 \u2014 Delete operands:\n+\n+```shell\n+kubectl delete -k 'https://github.com/streamshub/developer-quickstart//stack?ref=main'\n+```\n+\n+If the shared-resource checks above reveal no issues, users can proceed to remove the operator (`/base`) overlay:\n+\n+Phase 2 \u2014 Delete operators and CRDs:\n+\n+Wait for all custom resources to be fully removed before proceeding. \n+This allows the operators to process finalizers and complete their cleanup logic.\n+\n+```shell\n+kubectl delete -k 'https://github.com/streamshub/developer-quickstart//base?ref=main'\n+```\n+\n+Running Phase 2 before Phase 1 completes risks finalizer stalling and, on shared clusters, cascade-deleting CRs that belong to other deployments.\n+\n+#### Uninstall script\n+\n+To complement the `install.sh` convenience script, an `uninstall.sh` script should be provided that automates the sequencing and safety checks:\n+\n+```shell\n+curl -sL https://raw.githubusercontent.com/streamshub/developer-quickstart/main/uninstall.sh | bash\n+```\n+\n+This script would:\n+\n+1. Delete operand custom resources (stack layer)\n+2. Poll until all CRs are fully removed (finalizers cleared, resources gone from the API server)\n+3. Delete operators and CRDs (base layer)\n+4. Verify clean removal and report any resources that remain\n+\n+The script should implement shared-cluster safety checks using per-operator-group CRD deletion:\n+\n+- CRDs are grouped by their parent operator (e.g. all Strimzi CRDs form one group, likewise Apicurio Registry and StreamsHub Console CRDs)\n+- Before deleting CRDs in a group, the script queries for CRs of those types that **do not** carry the quick-start label (see [Resource labeling](#resource-labeling) above)\n+- If any CRD in the group has unlabeled CRs, the entire group is retained. All CRDs for that operator are kept and only the operator's Deployments, ServiceAccounts, ClusterRoles, and other non-CRD resources are removed\n+- Groups with no unlabeled CRs have their CRDs deleted normally as part of the base layer teardown\n+- Report which operator groups were retained and why, so the user can decide on manual cleanup if desired\n+\n+### Initial stack components\n+\n+The initial quick-start should deploy the following components:\n+\n+- Strimzi Kafka Operator \u2014 The operator and its CRDs\n+- Single-node Kafka cluster \u2014 A minimal Kafka deployment suitable for development\n+- Apicurio Registry Operator \u2014 The operator for managing registry instances\n+- In-memory Apicurio Registry instance \u2014 A lightweight registry using in-memory storage (appropriate for development, not production)\n+- StreamsHub Console Operator \u2014 The operator for managing console instances\n+- StreamsHub Console instance \u2014 Configured without authenticated listeners or Prometheus integration initially, to keep the quick-start simple\n+\n+### Future extensibility\n+\n+Kustomize overlays make it straightforward to add new configurations without modifying the base stack:\n+\n+- Kroxylicious overlay: An overlay that adds the Kroxylicious Kafka Proxy to the stack\n+- Namespace customization: Overlays or patches that allow deploying into a user-specified namespace\n+- Kafka Bridge overlay: An overlay that adds the Strimzi Kafka Bridge for HTTP-based Kafka access\n+- Prometheus overlay: An overlay that deploys Prometheus and configures metrics collection from the stack components, enabling the StreamsHub Console's metrics dashboards\n+\n+A _vanity URL_ (e.g. `streamshub.io/install/dev`) could be a future enhancement layered on top of the Kustomize repository. \n+The vanity URL backend could use Kustomize internally to generate the appropriate YAML, accepting parameters for namespace customization and component selection. \n+This would complement rather than replace the direct GitHub-based Kustomize approach.\n+\n+### Considerations\n+\n+- De-facto platform: By creating a combined dev-stack installation, we are creating a de-facto \"platform\" that will need to be tested for compatibility across component releases. Changes to any upstream component could break the stack, so integration testing will be needed.\n+- Dev-to-production risk: An opinionated dev-stack install runs the risk of being adopted for production use. The quick-start should include clear documentation that this is a development-only configuration. Resource limits, security configurations and storage settings are not suitable for production.\n+- OAuth complexity: Strimzi Kafka OAuth has many possible configurations and security-critical settings. A simple quick-start for OAuth-enabled setups may not be advisable as an initial target. It would be prudent to leave this to a more robust deployment system, one that can handle production level configurations.\n+- CRD deletion on shared clusters: CRD deletion is a cluster-scoped operation that cascade-deletes all custom resources of that type across every namespace. The uninstall script will group CRDs by their parent operator and check each group independently for non-quick-start custom resources. If any CRD in an operator's group has unlabeled CRs, all CRDs for that operator are retained and only non-CRD resources are removed. Operator groups with no shared CRD usage will be fully cleaned up including CRD deletion.\n+\n+## Affected/not affected projects\n+\n+### Affected\n+\n+- developer-quickstart (new repository): A new repository to be created in the StreamsHub GitHub organization containing all Kustomize configurations, the install script and documentation.\n+- StreamsHub Console: The Console operator and CR configurations will be referenced in the quick-start. A Console CR configuration that works without authenticated Kafka listeners or Prometheus will need to be defined.\n+\n+### Not affected\n+\n+- Strimzi: No changes to the upstream Strimzi project are required. The quick-start will reference existing Strimzi installation resources.\n+- Apicurio Registry: No changes to the upstream Apicurio Registry project are required. The quick-start will use existing operator installation resources.\n+- Kroxylicious: No changes to the upstream Kroxylicious project are required. Kroxylicious integration is a future overlay target.\n+\n+## Compatibility\n+\n+- Additive overlays: Kustomize overlays allow new components and configurations to be added without breaking existing installations. Users of the base stack are not affected by the addition of new overlays.\n+- Version pinning: The `?ref=` parameter in `kubectl apply -k` URLs allows users to pin to a specific tag or commit. This means users can lock to a known-good version while the repository continues to evolve.\n+- Component version coupling: The stack will bundle specific versions of each component together. These version combinations will need compatibility testing across releases. A compatibility matrix should be maintained in the repository documentation.\n+- Minimum kubectl version: The `labels` transformer with `includeSelectors` support requires Kustomize v5.0, which is bundled with `kubectl` v1.27 or later. Since v1.27 was released in April 2023 and all currently supported Kubernetes versions include it, this is still a low bar but should be documented.\n+\n+## Rejected alternatives\n+\n+### Helm\n+\n+[Helm](https://helm.sh/) is the most widely adopted package manager for Kubernetes. \n+However, of all the components in our stack, only Strimzi has an official Helm chart. \n+We would need to create and maintain charts for Apicurio Registry, StreamsHub Console and Kroxylicious. \n+Ideally these charts would be maintained by the upstream projects themselves. \n+Additionally, CRD lifecycle is awkward in Helm. \n+CRDs in the `crds/` directory are not upgraded on `helm upgrade`, which is a well-known limitation. \n+The two-phase deployment problem still requires careful hook orchestration to ensure operators are ready before operands are applied. \n+Helm also introduces an additional dependency (`helm` CLI) beyond `kubectl`.\n+\n+### Vanity URL\n+\n+A vanity URL (e.g. `streamshub.io/install/dev`) would provide a memorable, user-friendly install command. \n+However, it requires backend infrastructure to host and maintain. \n+It could be a future enhancement layered on top of the Kustomize repository, where the backend uses Kustomize internally to generate YAML and accepts parameters for customization. \n+This is not rejected outright but is not appropriate as the initial approach due to the infrastructure overhead.\n+\n+### OLM\n+\n+[Operator Lifecycle Manager](https://olm.operatorframework.io/) is a viable approach for installing operators and we already have OLM packages for the operators in our stack. \n+However, OLM is primarily designed for operator lifecycle management, and orchestrating the deployment of operands (the custom resources that operators manage) is more complex within the OLM model. \n+OLM could be explored as a complementary approach in the future.\n+\n+### Ansible\n+\n+[Ansible](https://www.ansible.com/) handles ordered, multi-step deployments naturally through task sequencing and readiness polling, which makes it well-suited for the two-phase deployment problem. \n+It can wrap raw Kubernetes manifests, Helm charts or OLM bundles. \n+However, Ansible requires Python and the Ansible package as dependencies, which is a significantly higher barrier to entry than `kubectl` alone. \n+Ansible is not a Kubernetes-native tool, adding a conceptual layer that developers unfamiliar with it would need to learn. \n+For a quick-start aimed at minimizing friction, the additional dependency is a significant drawback.\n+\n+### CLI\n+\n+A dedicated CLI tool (e.g. `streamshub dev install --target=minikube --addon http-bridge`) would provide a polished, customizable installation experience. \n+However, it creates another installation method to support and maintain, takes users away from the underlying Kubernetes primitives they need to understand, and carries significant scope-creep risk as feature requests accumulate. \n+A CLI could be considered in the future if the quick-start grows in complexity, but is not appropriate as the initial approach.\n+\n+### Operator of Operators\n+\n+Building a meta-operator that installs and manages all the other operators and operands from a central set of CRs would provide the most integrated experience. \n+However, this is a significantly more complex undertaking than is needed for a developer quick-start. \n+The engineering effort and ongoing maintenance burden would far outweigh the benefits for the target use case of getting developers started quickly."
+        },
+        {
+          "sha": "5a76ef66b4bd7deacefdbc39fea7632dba850e5a",
+          "filename": "README.md",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 3,
+          "changes": 7,
+          "blob_url": "https://github.com/streamshub/proposals/blob/d14e1cfd89a7246428d6021407c0e39a7713e494/README.md",
+          "raw_url": "https://github.com/streamshub/proposals/raw/d14e1cfd89a7246428d6021407c0e39a7713e494/README.md",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/README.md?ref=d14e1cfd89a7246428d6021407c0e39a7713e494",
+          "patch": "@@ -8,7 +8,8 @@ Governance rules around the review and acceptance of proposals are defined in th\n \n A template for new proposals can be found [here](./000-template.md).\n \n-| #   | Title                                                                           |\n-|:--: |:--------------------------------------------------------------------------------|\n-| 000 | [StreamsHub Proposal Template](./000-template.md)                               |\n+| #   | Title                                                                              |\n+|:--: |:-----------------------------------------------------------------------------------|\n+| 000 | [StreamsHub Proposal Template](./000-template.md)                                  |\n+| 001 | [StreamsHub Quick-start Kustomize Repository](./001-quickstart-kustomize-repo.md)  |\n "
+        }
+      ],
+      "updated_at": "2026-03-11T14:44:42Z",
+      "head_sha": "d14e1cfd89a7246428d6021407c0e39a7713e494",
+      "frozen": true,
+      "reviews_snapshot": [
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-04T08:31:17Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-05T06:20:46Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-05T07:01:16Z"
+        },
+        {
+          "name": "kornys",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-05T07:19:36Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-05T11:42:33Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-05T11:44:59Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-05T11:45:46Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-05T11:53:00Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-05T13:27:31Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-05T14:07:39Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-05T14:20:01Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T10:06:43Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T15:28:09Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T15:29:24Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T15:30:09Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T15:38:49Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T15:41:53Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "CHANGES_REQUESTED",
+          "timestamp": "2026-03-06T15:51:04Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T16:12:25Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T16:25:23Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-06T16:33:12Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T14:53:10Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T14:54:13Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T15:06:32Z"
+        },
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T15:18:36Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T15:48:17Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "COMMENTED",
+          "timestamp": "2026-03-09T16:20:06Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "CHANGES_REQUESTED",
+          "timestamp": "2026-03-09T16:51:50Z"
+        },
+        {
+          "name": "aswinayyolath",
+          "state": "APPROVED",
+          "timestamp": "2026-03-09T16:57:47Z"
+        },
+        {
+          "name": "kornys",
+          "state": "APPROVED",
+          "timestamp": "2026-03-10T08:57:01Z"
+        },
+        {
+          "name": "jankalinic",
+          "state": "APPROVED",
+          "timestamp": "2026-03-10T16:45:28Z"
+        },
+        {
+          "name": "MikeEdgar",
+          "state": "APPROVED",
+          "timestamp": "2026-03-10T17:42:33Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "APPROVED",
+          "timestamp": "2026-03-10T19:58:52Z"
+        }
+      ],
+      "comments_snapshot": [
+        {
+          "name": "tomncooper",
+          "timestamp": "2026-03-06T15:48:55Z"
+        },
+        {
+          "name": "tomncooper",
+          "timestamp": "2026-03-06T15:51:14Z"
+        },
+        {
+          "name": "Frawless",
+          "timestamp": "2026-03-10T19:58:42Z"
+        },
+        {
+          "name": "tomncooper",
+          "timestamp": "2026-03-11T14:44:19Z"
+        }
+      ]
+    },
+    "1": {
+      "state": "merged",
+      "classification": "plumbing",
+      "proposal_key": "",
+      "files": [
+        {
+          "sha": "860113f244ae560beefab634a4741ace56fde81c",
+          "filename": ".github/scripts/ValidateProposals.java",
+          "status": "added",
+          "additions": 138,
+          "deletions": 0,
+          "changes": 138,
+          "blob_url": "https://github.com/streamshub/proposals/blob/aebe76f236245ca9276dc60853ba04b131cb52d3/.github%2Fscripts%2FValidateProposals.java",
+          "raw_url": "https://github.com/streamshub/proposals/raw/aebe76f236245ca9276dc60853ba04b131cb52d3/.github%2Fscripts%2FValidateProposals.java",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/.github%2Fscripts%2FValidateProposals.java?ref=aebe76f236245ca9276dc60853ba04b131cb52d3",
+          "patch": "@@ -0,0 +1,138 @@\n+///usr/bin/env jbang \"$0\" \"$@\" ; exit $?\n+//JAVA 25\n+\n+import java.io.IOException;\n+import java.nio.file.Files;\n+import java.nio.file.Path;\n+import java.util.ArrayList;\n+import java.util.HashMap;\n+import java.util.List;\n+import java.util.Map;\n+import java.util.Set;\n+import java.util.regex.Matcher;\n+import java.util.regex.Pattern;\n+import java.util.stream.Collectors;\n+\n+public class ValidateProposals {\n+\n+    static final Pattern PROPOSAL_FILE_PATTERN = Pattern.compile(\"\\\\d{3}-.+\\\\.md\");\n+    static final Pattern NAMING_CONVENTION = Pattern.compile(\"\\\\d{3}-[a-z][a-z0-9]*(-[a-z0-9]+)*\\\\.md\");\n+    static final Pattern README_TABLE_ROW = Pattern.compile(\n+            \"^\\\\|\\\\s*(\\\\d{3})\\\\s*\\\\|\\\\s*\\\\[.*?\\\\]\\\\(\\\\./([^)]+)\\\\).*$\");\n+    static final Set<String> EXCLUDED_FILES = Set.of(\"README.md\", \"000-template.md\");\n+\n+    public static void main(String[] args) throws Exception {\n+        List<String> errors = new ArrayList<>();\n+\n+        List<String> proposals = getProposalFiles();\n+\n+        // Rule 1: Filename format\n+        List<String> validProposals = new ArrayList<>();\n+        for (String file : proposals) {\n+            if (matchesNamingConvention(file)) {\n+                validProposals.add(file);\n+            } else {\n+                errors.add(\"Filename '\" + file + \"' does not match the required pattern: \"\n+                        + \"NNN-kebab-case-title.md (3-digit prefix, lowercase kebab-case)\");\n+            }\n+        }\n+\n+        // Rule 2: README table entry\n+        Map<Integer, String> readmeEntries = parseReadmeEntries(Path.of(\"README.md\"));\n+        for (String file : validProposals) {\n+            int number = extractProposalNumber(file);\n+            validateReadmeEntry(number, file, readmeEntries, errors);\n+        }\n+\n+        // Rule 3: Sequential numbering (check duplicates first, then gaps)\n+        Map<Integer, List<String>> proposalsByNumber = new HashMap<>();\n+        for (String file : validProposals) {\n+            int number = extractProposalNumber(file);\n+            proposalsByNumber.computeIfAbsent(number, k -> new ArrayList<>()).add(file);\n+        }\n+\n+        for (var entry : proposalsByNumber.entrySet()) {\n+            if (entry.getValue().size() > 1) {\n+                errors.add(\"Proposal number \" + String.format(\"%03d\", entry.getKey())\n+                        + \" is used by \" + entry.getValue().size() + \" files: \"\n+                        + String.join(\", \", entry.getValue()));\n+            }\n+        }\n+\n+        List<Integer> distinctNumbers = proposalsByNumber.keySet().stream()\n+                .sorted()\n+                .collect(Collectors.toList());\n+\n+        int expected = 1;\n+        for (int num : distinctNumbers) {\n+            if (num != expected) {\n+                errors.add(\"Proposal number \" + String.format(\"%03d\", num)\n+                        + \" is not sequential. Expected \" + String.format(\"%03d\", expected)\n+                        + \" (no gaps allowed)\");\n+            }\n+            expected = num + 1;\n+        }\n+\n+        if (!errors.isEmpty()) {\n+            System.err.println(\"Proposal validation failed with \" + errors.size() + \" error(s):\");\n+            for (String error : errors) {\n+                System.err.println(\"  - \" + error);\n+            }\n+            System.exit(1);\n+        }\n+\n+        System.out.println(\"All proposal validations passed.\");\n+    }\n+\n+    static List<String> getProposalFiles() throws IOException {\n+        try (var stream = Files.list(Path.of(\".\"))) {\n+            return stream\n+                    .map(p -> p.getFileName().toString())\n+                    .filter(f -> f.endsWith(\".md\"))\n+                    .filter(f -> !EXCLUDED_FILES.contains(f))\n+                    .sorted()\n+                    .collect(Collectors.toList());\n+        }\n+    }\n+\n+    static boolean matchesNamingConvention(String filename) {\n+        return NAMING_CONVENTION.matcher(filename).matches();\n+    }\n+\n+    static int extractProposalNumber(String filename) {\n+        if (filename.length() >= 3) {\n+            try {\n+                return Integer.parseInt(filename.substring(0, 3));\n+            } catch (NumberFormatException e) {\n+                // fall through\n+            }\n+        }\n+        return -1;\n+    }\n+\n+    static Map<Integer, String> parseReadmeEntries(Path readmePath) throws IOException {\n+        Map<Integer, String> entries = new HashMap<>();\n+        List<String> lines = Files.readAllLines(readmePath);\n+        for (String line : lines) {\n+            Matcher m = README_TABLE_ROW.matcher(line.trim());\n+            if (m.matches()) {\n+                int number = Integer.parseInt(m.group(1));\n+                String linkedFile = m.group(2);\n+                entries.put(number, linkedFile);\n+            }\n+        }\n+        return entries;\n+    }\n+\n+    static void validateReadmeEntry(int number, String filename,\n+                                    Map<Integer, String> readmeEntries, List<String> errors) {\n+        String linkedFile = readmeEntries.get(number);\n+        if (linkedFile == null) {\n+            errors.add(\"README.md is missing a table entry for proposal \"\n+                    + String.format(\"%03d\", number) + \" (\" + filename + \")\");\n+        } else if (!linkedFile.equals(filename)) {\n+            errors.add(\"README.md entry for proposal \" + String.format(\"%03d\", number)\n+                    + \" links to '\" + linkedFile + \"' but expected '\" + filename + \"'\");\n+        }\n+    }\n+}"
+        },
+        {
+          "sha": "abff9a9f52ceb7a8f7f7ae19b3ea9f7817394f8a",
+          "filename": ".github/workflows/validate-proposals.yml",
+          "status": "added",
+          "additions": 17,
+          "deletions": 0,
+          "changes": 17,
+          "blob_url": "https://github.com/streamshub/proposals/blob/aebe76f236245ca9276dc60853ba04b131cb52d3/.github%2Fworkflows%2Fvalidate-proposals.yml",
+          "raw_url": "https://github.com/streamshub/proposals/raw/aebe76f236245ca9276dc60853ba04b131cb52d3/.github%2Fworkflows%2Fvalidate-proposals.yml",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/.github%2Fworkflows%2Fvalidate-proposals.yml?ref=aebe76f236245ca9276dc60853ba04b131cb52d3",
+          "patch": "@@ -0,0 +1,17 @@\n+name: Validate Proposals\n+\n+on:\n+  pull_request:\n+    branches: [main]\n+\n+jobs:\n+  validate:\n+    runs-on: ubuntu-latest\n+    steps:\n+      - name: Checkout Repository\n+        uses: actions/checkout@v6\n+\n+      - name: Validate Proposals\n+        uses: jbangdev/jbang-action@v0.136.0\n+        with: \n+          script: .github/scripts/ValidateProposals.java"
+        },
+        {
+          "sha": "dd29fee8e772773db8a4dbc7014a46e14e5f3007",
+          "filename": ".sdkmanrc",
+          "status": "added",
+          "additions": 4,
+          "deletions": 0,
+          "changes": 4,
+          "blob_url": "https://github.com/streamshub/proposals/blob/aebe76f236245ca9276dc60853ba04b131cb52d3/.sdkmanrc",
+          "raw_url": "https://github.com/streamshub/proposals/raw/aebe76f236245ca9276dc60853ba04b131cb52d3/.sdkmanrc",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/.sdkmanrc?ref=aebe76f236245ca9276dc60853ba04b131cb52d3",
+          "patch": "@@ -0,0 +1,4 @@\n+# Enable auto-env through the sdkman_auto_env config\n+# Add key=value pairs of SDKs to use below\n+java=25-tem\n+jbang=0.136.0"
+        },
+        {
+          "sha": "0d909c3487573777777b6c2173b4d86c3572524a",
+          "filename": "README.md",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 0,
+          "changes": 2,
+          "blob_url": "https://github.com/streamshub/proposals/blob/aebe76f236245ca9276dc60853ba04b131cb52d3/README.md",
+          "raw_url": "https://github.com/streamshub/proposals/raw/aebe76f236245ca9276dc60853ba04b131cb52d3/README.md",
+          "contents_url": "https://api.github.com/repos/streamshub/proposals/contents/README.md?ref=aebe76f236245ca9276dc60853ba04b131cb52d3",
+          "patch": "@@ -7,6 +7,8 @@ This repository lists proposals for the StreamsHub organization.\n Governance rules around the review and acceptance of proposals are defined in the [StreamsHub Governance Repository](https://github.com/streamshub/governance).\n \n A template for new proposals can be found [here](./000-template.md).\n+File names should follow the format `NNN-title.md` where `NNN` is a three digit number that is incremented for each new proposal.\n+File name format and numbering is validated by the CI workflow defined in [validate-proposals.yml](./.github/workflows/validate-proposals.yml).\n \n | #   | Title                                                                           |\n |:--: |:--------------------------------------------------------------------------------|"
+        }
+      ],
+      "updated_at": "2026-02-12T09:05:15Z",
+      "head_sha": "aebe76f236245ca9276dc60853ba04b131cb52d3",
+      "frozen": false,
+      "reviews_snapshot": [],
+      "comments_snapshot": []
+    }
+  },
+  "watermark": "2026-09-16T14:36:26Z"
+}

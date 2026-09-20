@@ -24,6 +24,12 @@
     --sol-shadow-hover: rgba(0, 0, 0, 0.6);
     --sol-shadow-kafka: rgba(181, 137, 0, 0.3);
     --sol-shadow-flink: rgba(38, 139, 210, 0.3);
+    /* Strimzi brand dark blue, lifted for contrast on the dark background */
+    --sol-strimzi: #7096cd;
+    --sol-strimzi-hover: #54bad8;
+    --sol-shadow-strimzi: rgba(112, 150, 205, 0.3);
+    --sol-shadow-streamshub: rgba(42, 161, 152, 0.3);
+    --sol-shadow-kroxylicious: rgba(133, 153, 0, 0.3);
 }
 
 [data-theme="light"] {
@@ -36,6 +42,12 @@
     --sol-shadow-hover: rgba(0, 0, 0, 0.2);
     --sol-shadow-kafka: rgba(181, 137, 0, 0.15);
     --sol-shadow-flink: rgba(38, 139, 210, 0.15);
+    /* Strimzi brand dark blue, exact */
+    --sol-strimzi: #192c47;
+    --sol-strimzi-hover: #54bad8;
+    --sol-shadow-strimzi: rgba(25, 44, 71, 0.15);
+    --sol-shadow-streamshub: rgba(42, 161, 152, 0.15);
+    --sol-shadow-kroxylicious: rgba(133, 153, 0, 0.15);
 }
 
 /* Smooth transitions (enabled by JS after initial paint) */
@@ -174,6 +186,36 @@ a:hover {
     box-shadow: 0 15px 40px var(--sol-shadow-flink);
 }
 
+.project-card.strimzi {
+    background: var(--sol-bg);
+    border-color: var(--sol-strimzi);
+}
+
+.project-card.strimzi:hover {
+    border-color: var(--sol-strimzi-hover);
+    box-shadow: 0 15px 40px var(--sol-shadow-strimzi);
+}
+
+.project-card.streamshub {
+    background: var(--sol-bg);
+    border-color: var(--sol-cyan);
+}
+
+.project-card.streamshub:hover {
+    border-color: var(--sol-blue);
+    box-shadow: 0 15px 40px var(--sol-shadow-streamshub);
+}
+
+.project-card.kroxylicious {
+    background: var(--sol-bg);
+    border-color: var(--sol-green);
+}
+
+.project-card.kroxylicious:hover {
+    border-color: var(--sol-cyan);
+    box-shadow: 0 15px 40px var(--sol-shadow-kroxylicious);
+}
+
 .logo {
     height: 80px;
     margin-bottom: 20px;
@@ -201,6 +243,18 @@ a:hover {
 
 .project-card.flink .project-name {
     color: var(--sol-blue);
+}
+
+.project-card.strimzi .project-name {
+    color: var(--sol-strimzi);
+}
+
+.project-card.streamshub .project-name {
+    color: var(--sol-cyan);
+}
+
+.project-card.kroxylicious .project-name {
+    color: var(--sol-green);
 }
 
 .footer {

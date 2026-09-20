@@ -1,6 +1,8 @@
 import logging
 from argparse import ArgumentParser, Namespace
 
+from ipper.common.github_cli import setup_github_project_parser
+from ipper.common.github_config import GITHUB_PROJECT_CONFIGS
 from ipper.flink.main import setup_flink_parser
 from ipper.kafka.main import setup_kafka_parser
 
@@ -54,6 +56,9 @@ def setup_top_level_parser() -> ArgumentParser:
 
     setup_kafka_parser(top_level_subparsers)
     setup_flink_parser(top_level_subparsers)
+
+    for github_config in GITHUB_PROJECT_CONFIGS.values():
+        setup_github_project_parser(top_level_subparsers, github_config)
 
     return top_level_parser
 

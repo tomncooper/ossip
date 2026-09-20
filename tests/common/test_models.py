@@ -5,11 +5,15 @@ import json
 from ipper.common.models import (
     ApiIndex,
     FlipDetail,
+    GithubProposalSummary,
     KipDetail,
     ProjectMeta,
     ProjectSummary,
     ProposalDetail,
     ProposalSummary,
+    ReviewCount,
+    ReviewerInfo,
+    ReviewSummary,
     VoteCount,
     VoterInfo,
     VoteSummary,
@@ -61,6 +65,111 @@ class TestVoteCount:
         assert count.plus_one == 5
         assert count.zero == 2
         assert count.minus_one == 1
+
+
+class TestReviewerInfo:
+    """Tests for the ReviewerInfo model (GitHub reviews)."""
+
+    def test_serialization_roundtrip(self):
+        reviewer = ReviewerInfo(login="alice", timestamp="2026-02-01T10:00:00Z")
+        parsed = json.loads(reviewer.model_dump_json())
+        assert parsed == {"login": "alice", "timestamp": "2026-02-01T10:00:00Z"}
+
+        reviewer2 = ReviewerInfo.model_validate_json(reviewer.model_dump_json())
+        assert reviewer2.login == "alice"
+
+
+class TestReviewSummary:
+    """Tests for the ReviewSummary model."""
+
+    def test_serialization_with_reviewers(self):
+        summary = ReviewSummary(
+            accepted=[ReviewerInfo(login="Alice", timestamp="2026-01-02T10:00:00Z")],
+            commented=[ReviewerInfo(login="Bob", timestamp="2026-01-03T11:00:00Z")],
+            changes_requested=[
+                ReviewerInfo(login="Carol", timestamp="2026-01-04T12:00:00Z")
+            ],
+        )
+        parsed = json.loads(summary.model_dump_json())
+        assert len(parsed["accepted"]) == 1
+        assert parsed["accepted"][0]["login"] == "Alice"
+        assert len(parsed["commented"]) == 1
+        assert len(parsed["changes_requested"]) == 1
+
+
+class TestReviewCount:
+    """Tests for the ReviewCount model."""
+
+    def test_integer_counts(self):
+        count = ReviewCount(accepted=5, commented=2, changes_requested=1)
+        assert count.accepted == 5
+        assert count.commented == 2
+        assert count.changes_requested == 1
+
+
+class TestGithubProposalSummary:
+    """Tests for the GithubProposalSummary model."""
+
+    def test_has_review_count_not_vote_count(self):
+        summary = GithubProposalSummary(
+            id=1,
+            title="Test SIP",
+            state="under discussion",
+            created_by="Alice",
+            authors=["Alice"],
+            created_on="2026-01-02",
+            review_count=ReviewCount(accepted=3, commented=1, changes_requested=0),
+            activity_status="green",
+            detail_url="https://ossip.dev/api/v1/strimzi/sips/1.json",
+            web_url="https://github.com/strimzi/proposals/pull/1",
+            pr_number=1,
+        )
+        assert summary.review_count.accepted == 3
+        assert summary.pr_number == 1
+        assert not hasattr(summary, "vote_count")
+
+    def test_project_summary_serializes_both_variants(self):
+        """A ProjectSummary holding wiki- and GitHub-tracked summaries
+        keeps each variant's count field on serialization."""
+
+        project = ProjectSummary(
+            project="test",
+            proposal_type="SIP",
+            last_updated="2026-01-10T12:00:00Z",
+            count=2,
+            proposals=[
+                ProposalSummary(
+                    id=1,
+                    title="Test KIP",
+                    state="accepted",
+                    created_by="Alice",
+                    authors=["Alice"],
+                    created_on="2025-01-01",
+                    vote_count=VoteCount(plus_one=3, zero=0, minus_one=0),
+                    activity_status=None,
+                    detail_url="kips/1.json",
+                    web_url="https://example.com",
+                ),
+                GithubProposalSummary(
+                    id=2,
+                    title="Test SIP",
+                    state="under discussion",
+                    created_by="Bob",
+                    authors=["Bob"],
+                    created_on="2026-01-05",
+                    review_count=ReviewCount(
+                        accepted=1, commented=2, changes_requested=0
+                    ),
+                    activity_status="green",
+                    detail_url="sips/2.json",
+                    web_url="https://example.com/2",
+                    pr_number=2,
+                ),
+            ],
+        )
+        parsed = json.loads(project.model_dump_json())
+        assert parsed["proposals"][0]["vote_count"]["plus_one"] == 3
+        assert parsed["proposals"][1]["review_count"]["accepted"] == 1
 
 
 class TestProposalSummary:

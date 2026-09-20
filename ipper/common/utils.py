@@ -1,6 +1,52 @@
 import datetime as dt
+from enum import Enum
 
 from dateutil.relativedelta import relativedelta
+from pandas import Timedelta, Timestamp
+
+
+class ActivityStatus(Enum):
+    """Activity level indicator for proposals under discussion.
+
+    Derived from how recently the proposal was last active. Shared by the
+    Kafka (KIP) mailing-list tracking and the GitHub (SIP/SHIP/KDP) PR
+    tracking pipelines.
+    """
+
+    BLUE = ("blue", Timedelta(weeks=0))
+    GREEN = ("green", Timedelta(weeks=4))
+    YELLOW = ("yellow", Timedelta(weeks=12))
+    RED = ("red", Timedelta(days=365))
+    BLACK = ("black", Timedelta.max)
+
+    def __init__(self, text: str, duration: Timedelta) -> None:
+        super().__init__()
+        self.text = text
+        self.duration = duration
+
+
+def calculate_activity_status(last_activity: Timestamp) -> ActivityStatus:
+    """Calculate the activity status based on how long ago the proposal was
+    last active."""
+
+    now: Timestamp = Timestamp(dt.datetime.now(dt.UTC))
+    last_activity = Timestamp(last_activity)
+    if last_activity.tzinfo is None:
+        last_activity = last_activity.tz_localize("UTC")
+    else:
+        last_activity = last_activity.tz_convert("UTC")
+    diff: Timedelta = now - last_activity
+
+    if diff <= ActivityStatus.GREEN.duration:
+        return ActivityStatus.GREEN
+
+    if diff <= ActivityStatus.YELLOW.duration:
+        return ActivityStatus.YELLOW
+
+    if diff <= ActivityStatus.RED.duration:
+        return ActivityStatus.RED
+
+    return ActivityStatus.BLACK
 
 
 def generate_month_list(now: dt.datetime, then: dt.datetime) -> list[tuple[int, int]]:

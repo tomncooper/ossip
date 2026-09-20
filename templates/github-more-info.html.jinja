@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+
+<head>
+    <title>{{ project_name }} Improvement Proposals</title>
+    <link rel="stylesheet" href="../style.css">
+    <script>(function(){var t=localStorage.getItem('ossip-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+</head>
+
+<body>
+    <h1>{{ data.heading }}</h1>
+    <p><a href="../{{ detail_page_dir }}.html">Back to {{ prefix }} Summary</a></p>
+    <p>Last Updated: {{ date }}</p>
+    <table>
+        <tr>
+            <td>State</td>
+            <td>{{ data.state }}</td>
+        </tr>
+        <tr>
+            <td>Authors</td>
+            <td>{{ data.authors|join(", ") }}</td>
+        </tr>
+        <tr>
+            <td>Created</td>
+            <td>{{ data.created_on }} by {{ data.created_by }}</td>
+        </tr>
+        {% if data.merged_on %}
+        <tr>
+            <td>Merged</td>
+            <td>{{ data.merged_on }}</td>
+        </tr>
+        {% endif %}
+        {% if data.last_modified_on %}
+        <tr>
+            <td>Last Modified</td>
+            <td>{{ data.last_modified_on }}</td>
+        </tr>
+        {% endif %}
+        {% if data.pr_url %}
+        <tr>
+            <td>Pull Request</td>
+            <td><a href="{{ data.pr_url }}">PR #{{ data.pr_number }}</a></td>
+        </tr>
+        {% endif %}
+        {% if data.file_path %}
+        <tr>
+            <td>Proposal File</td>
+            <td><a href="{{ data.web_url }}">{{ data.file_path }}</a></td>
+        </tr>
+        {% endif %}
+        {% if data.amendments %}
+        <tr>
+            <td>Amendments</td>
+            <td>
+                {% for amendment in data.amendments %}
+                <a href="{{ amendment.url }}">PR #{{ amendment.pr_number }}</a> ({{ amendment.date }})<br>
+                {% endfor %}
+            </td>
+        </tr>
+        {% endif %}
+        {% if data.activity_status %}
+        <tr>
+            <td>Activity</td>
+            <td><span style="color:{{ data.activity_status }};">&#9679;</span> Last activity {{ data.last_activity_age }} ago</td>
+        </tr>
+        {% endif %}
+        {% for column, column_label in [("accepted", "Accepted"), ("commented", "Commented"), ("changes_requested", "Requested Changes")] %}
+        <tr>
+            <td>{{ column_label }}</td>
+            <td>
+                {% set users = data.reviews[column] %}
+                {% if users %}
+                {{ users|length }} user{{ 's' if users|length > 1 }}:
+                {% for user in users %}
+                {{ user.name }} (<em>{{ user.timestamp }}</em>){% if not loop.last %}, {% endif %}
+                {% endfor %}
+                {% else %}
+                No reviewers
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% include '_footer.html' %}
+    <script src="../assets/theme-toggle.js"></script>
+</body>
+
+</html>
