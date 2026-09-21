@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-14T02:26:18.832590+00:00",
+  "last_updated": "2026-09-21T02:24:46.391777+00:00",
   "source_url": "https://downloads.apache.org/kafka/KEYS",
   "committers": [
     {
@@ -138,6 +138,13 @@
       "raw_uid": "Jason Gustafson <jason.gustafson@gmail.com>"
     },
     {
+      "name": "Jiunn Yang Huang",
+      "emails": [
+        "jyhuang@apache.org"
+      ],
+      "raw_uid": "Jiunn Yang Huang <jyhuang@apache.org>"
+    },
+    {
       "name": "Joe Stein",
       "emails": [
         "joestein@apache.org"
@@ -220,6 +227,13 @@
         "nehanarkhede@apache.org"
       ],
       "raw_uid": "Neha Narkhede (Key for signing code and releases) <nehanarkhede@apache.org>"
+    },
+    {
+      "name": "Omnia Ibrahim",
+      "emails": [
+        "omnia@apache.org"
+      ],
+      "raw_uid": "Omnia Ibrahim <omnia@apache.org>"
     },
     {
       "name": "PoAn Yang",
