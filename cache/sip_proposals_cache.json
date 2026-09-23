@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-22T14:07:45Z",
+  "last_updated": "2026-09-23T14:20:12Z",
   "proposals": {
     "pr-245": {
       "pr_number": 245,
@@ -12,7 +12,7 @@
       "created_on": "2026-09-01",
       "state": "under discussion",
       "web_url": "https://github.com/strimzi/proposals/pull/245",
-      "last_activity": "2026-09-22T13:51:19Z",
+      "last_activity": "2026-09-23T14:19:23Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -32,11 +32,15 @@
         "commented": [
           {
             "name": "ppatierno",
-            "timestamp": "2026-09-22T13:35:33Z"
+            "timestamp": "2026-09-23T13:53:17Z"
+          },
+          {
+            "name": "tinaselenge",
+            "timestamp": "2026-09-23T12:57:27Z"
           },
           {
             "name": "see-quick",
-            "timestamp": "2026-09-22T13:15:37Z"
+            "timestamp": "2026-09-23T10:25:43Z"
           },
           {
             "name": "katheris",
@@ -10637,6 +10641,38 @@
         "changes_requested": []
       }
     },
+    "pr-248": {
+      "pr_number": 248,
+      "pr_url": "https://github.com/strimzi/proposals/pull/248",
+      "title": "Add proposal to honor the deletionTimestamp on KafkaUser resources",
+      "created_by": "evheniyt-pillar",
+      "authors": [
+        "evheniyt-pillar"
+      ],
+      "created_on": "2026-09-23",
+      "state": "under discussion",
+      "web_url": "https://github.com/strimzi/proposals/pull/248",
+      "reviews": {
+        "accepted": [],
+        "commented": [
+          {
+            "name": "scholzj",
+            "timestamp": "2026-09-23T07:50:16Z"
+          },
+          {
+            "name": "ppatierno",
+            "timestamp": "2026-09-23T07:25:24Z"
+          }
+        ],
+        "changes_requested": []
+      },
+      "last_activity": "2026-09-23T07:50:16Z",
+      "activity_status": "green",
+      "last_activity_age": "0 days",
+      "amendments": [],
+      "frozen": false,
+      "id": null
+    },
     "4": {
       "pr_number": 1,
       "pr_url": "https://github.com/strimzi/proposals/pull/1",
@@ -10756,7 +10792,7 @@
           "patch": "@@ -0,0 +1,163 @@\n+# Kafka Exporter reimplementation\n+\n+This proposal suggests to re-implement Kafka Exporter tool under Strimzi organization in Java.\n+\n+## Current Situation\n+\n+Strimzi currently downloads binaries from released version of [kafka_exporter](https://github.com/danielqsj/kafka_exporter) tool on GitHub.\n+The binaries are baked into Strimzi images and shipped as an optional tool for extending Kafka consumer metrics.\n+\n+## Motivation\n+\n+The project is widely used by Kafka community, however, it is not well maintained.\n+The latest release, v1.10.0, was published on 2026-09-08 after a period of minimal activity, but the project still has 216 open issues and 56 open pull requests with limited attention from the code owner.\n+This opens space for potential security issues as CVEs may not be fixed promptly.\n+\n+This situation is also not helpful for new features that we would like to add into the exporter.\n+Additionally, the upstream project relies on a third-party Go Kafka client rather than the official Apache Kafka client, meaning it does not benefit from the same level of support and compatibility guarantees that the official client provides.\n+\n+## Proposal\n+\n+To mitigate security problems and allow us to better maintain the tool and provide new features, we should re-implement Kafka Exporter tool.\n+\n+We will create new repository under Strimzi organization - `strimzi/insights-reporter` - that will contain the implementation code.\n+\n+### Implementation\n+\n+Because Strimzi mostly consists of Java projects, the proposal is to implement the tool in Java.\n+The implementation will use the minimal required dependencies and will cover all functionality currently used by Strimzi.\n+Features not used by Strimzi are explicitly out of scope for the initial implementation, including Helm charts, Kerberos authentication, and SASL mechanisms other than OAUTHBEARER.\n+\n+All the metrics that the tool will export will follow the same naming as the existing Kafka Exporter, but this can change in the future based on community feedback and needs.\n+\n+To keep the minimal dependency tree we will use the following:\n+- `kafka-clients` for `Admin`\n+- `prometheus-metrics-core` and `prometheus-metrics-exposition-formats` for Prometheus endpoint\n+- JDK built-in HTTP server for the `/metrics` and health check endpoints\n+\n+#### Collection Model\n+\n+Metrics collection is decoupled from the Prometheus scrape.\n+A background scheduler runs a collection cycle on a configurable interval (default 30 seconds).\n+Each cycle executes a sequence of batched `Admin` calls \u2014 cluster description, topic listing and description, offset fetching, consumer group listing, group description, and committed offset fetching \u2014 and assembles the results into an immutable snapshot.\n+The snapshot is atomically swapped into the metrics registry.\n+The `/metrics` endpoint only reads the latest snapshot; no Kafka calls happen in the scrape path and HTTP responses are always fast regardless of cluster size.\n+\n+On collection failure the previous snapshot continues to be served and the readiness probe reflects the unhealthy state.\n+This avoids the `up == 0` failure mode seen in the upstream `kafka_exporter`, where scrapes time out under cluster load and dashboards go blind exactly when the cluster is most stressed.\n+\n+#### HTTP Server\n+\n+The tool exposes two HTTP listeners on separate ports, following the same pattern used by the Kafka Bridge:\n+\n+- **Management port** (default: `8080`) \u2014 serves `/healthz/ready` over plain HTTP only.\n+This port is never TLS-enabled and is used exclusively by the operator's liveness and readiness probes.\n+Keeping health check endpoints on a dedicated plain-HTTP port means probe behaviour is stable regardless of the TLS configuration of the metrics endpoint.\n+- **Metrics port** (default: `9404`) \u2014 serves `/metrics`.\n+In the initial release this port also uses plain HTTP.\n+\n+There is community demand for having TLS enabled on metrics endpoint ([strimzi-kafka-operator#12556](https://github.com/strimzi/strimzi-kafka-operator/issues/12556)).\n+The implementation and integration of TLS configuration into Strimzi Kafka Operator will require a new proposal as it will need API changes for the tool.\n+When TLS support is added, the implementation will use PEM files and Strimzi config providers, consistent with the approach used by other Strimzi components.\n+\n+### CI/CD\n+\n+The tool will follow Strimzi standards and will adopt the same CI/CD workflow we use for other projects.\n+As an output of the build and release process, we will produce a zip file that we use across Strimzi org and that can be used in Strimzi images or in standalone distributions connected to Kafka.\n+\n+### Versioning\n+\n+The tool will follow Strimzi versioning `<major>.<minor>.<micro>` as other projects do.\n+The first version will be `0.1.0`, even though the tool already covers all Strimzi-required functionality.\n+\n+### Strimzi Kafka Operator changes\n+\n+#### CRD and API Changes\n+\n+Insights Reporter will be introduced as a new, parallel section in the Kafka CR \u2014 `spec.insightsReporter` \u2014 alongside the existing `spec.kafkaExporter` section.\n+This allows users to opt in to the new Java implementation without any changes to their existing `kafkaExporter` configuration.\n+\n+The `spec.kafkaExporter` section will be set as **deprecated** from the moment `spec.insightsReporter` is introduced.\n+The upstream `kafka_exporter` binary will be updated to v1.10.0 and continue to be supported and bundled in Strimzi images.\n+We will keep to update Kafka Exporter until new API version or until the tool will work without significant required changes on our side.\n+The `spec.kafkaExporter` section and the Go binary will be removed in a future API version once the deprecation period ends.\n+\n+The new `spec.insightsReporter` section follows the same conventions as other Strimzi components such as CruiseControl.\n+The component is enabled by including the section in the CR and disabled by omitting it \u2014 there is no separate `enabled` field, consistent with `spec.kafkaExporter` and `spec.cruiseControl`.\n+The section will include the following fields from the start:\n+\n+- `image` \u2014 container image override.\n+- `groupRegex` \u2014 consumer group include regex (default: `.*`).\n+- `groupExcludeRegex` \u2014 consumer group exclude regex.\n+- `topicRegex` \u2014 topic include regex (default: `.*`).\n+- `topicExcludeRegex` \u2014 topic exclude regex.\n+- `logging` \u2014 standard Strimzi `Logging` type (Log4j 2), replacing the plain string `logging` field from `kafkaExporter`.\n+- `jvmOptions` \u2014 standard Strimzi `JvmOptions` type for JVM heap, GC options, and flags.\n+- `resources` \u2014 CPU and memory resource requirements.\n+- `livenessProbe` \u2014 liveness probe configuration.\n+- `readinessProbe` \u2014 readiness probe configuration.\n+- `template` \u2014 pod and container template overrides.\n+\n+Fields that exist in `kafkaExporter` but are Go-specific, such as `enableSaramaLogging`, will not be carried over to `spec.insightsReporter`.\n+\n+Both `spec.kafkaExporter` and `spec.insightsReporter` can be set at the same time.\n+This allows users to run both implementations in parallel during migration \u2014 for example to compare metrics output or verify parity before switching over.\n+When both are configured, the operator will deploy both components independently and emit a warning recommending migration to `spec.insightsReporter`.\n+\n+### Documentation\n+\n+The `strimzi/insights-reporter` repository will include a README covering all configuration options, the full list of exported metrics, and instructions for running the tool standalone.\n+The Strimzi documentation will be updated to reflect the new component and the deprecation of `spec.kafkaExporter`.\n+\n+### Testing\n+\n+The new repository will include unit tests covering the metrics collection and registry logic, and integration tests running against a real Kafka instance using `strimzi-test-container`.\n+Existing system tests in `strimzi-kafka-operator` will be extended to cover Insights Reporter and will continue to cover the existing Kafka Exporter for the duration of the deprecation period.\n+\n+### Security\n+\n+The new implementation preserves the TLS/mTLS configuration used by Strimzi today for connecting to Kafka.\n+The tool continues to use the cluster CA certificate and client certificate/key mounted by the operator via Secrets, loaded via PEM files and Strimzi config providers.\n+No credentials will be logged or persisted by the tool itself.\n+Moving to a Java implementation removes the current need to trust and verify pre-built third-party Go binaries and their checksums, replacing them with well-known JVM dependencies that already go through Strimzi's existing CVE scanning and patching process.\n+\n+SASL OAUTHBEARER support will be part of initial implementation.\n+It is required for Strimzi Cluster Security and is straightforward to implement by including Strimzi OAuth as a dependency and adding the relevant Kafka client configuration.\n+Other SASL mechanisms are currently out of scope.\n+\n+## Affected Projects\n+\n+This proposal affects the following projects:\n+\n+- `strimzi/insights-reporter` \u2014 new repository created by this proposal.\n+- `strimzi-kafka-operator` \u2014 operator changes to introduce `spec.insightsReporter`, deprecate `spec.kafkaExporter`, and update system tests.\n+\n+## Backwards Compatibility\n+\n+Users who continue to use `spec.kafkaExporter` are not affected.\n+The Go binary is kept at the latest upstream release (v1.10.0) and will continue to function until the deprecation period ends.\n+Users who migrate to `spec.insightsReporter` will get the same metric names as today, so existing dashboards and alerting rules continue to work without modification.\n+\n+## Rejected Alternatives\n+\n+### Feature gate transition\n+\n+An earlier version of this proposal used a feature gate to switch between the Go binary and the Java implementation within the existing `spec.kafkaExporter` API.\n+This was rejected because it couples two unrelated implementations under the same API, complicates the operator logic for the duration of the gate lifecycle, and prevents a clean API that reflects the capabilities of the Java implementation.\n+Introducing a new `spec.insightsReporter` section alongside a deprecated `spec.kafkaExporter` is a cleaner separation.\n+\n+### Fork Kafka Exporter to Strimzi org\n+\n+We could simply fork the original Kafka Exporter and just fix CVEs.\n+However, this would require onboarding it to our build mechanisms and removing things we don't want, such as Helm charts.\n+These changes are straightforward, but we would still need to maintain Go code, which is not our team's expertise.\n+\n+### Re-write Kafka Exporter in Go\n+\n+Kafka Exporter is a small tool and Go is great for such tools, however, we do not have much experience across the maintainers team, and it might be hard to find an owner for it with proper experience.\n+\n+### Re-write Kafka Exporter in Quarkus\n+\n+Quarkus provides an easy way to write small tools that expose Prometheus metrics.\n+However, it also brings additional dependencies that can be easily avoided with pure Java.\n+The main advantage of Quarkus for a tool like this would be native image builds, but native images are not viable for Strimzi because they only support x86-64 and aarch64, while Strimzi ships images for s390x and ppc64le as well."
         }
       ],
-      "updated_at": "2026-09-22T13:51:19Z",
+      "updated_at": "2026-09-23T14:19:23Z",
       "head_sha": "5fa73b45ce7e157c9975641d64917a2efddb8f7c",
       "frozen": false,
       "reviews_snapshot": [
@@ -11114,6 +11150,76 @@
           "name": "scholzj",
           "state": "COMMENTED",
           "timestamp": "2026-09-22T13:51:19Z"
+        },
+        {
+          "name": "tinaselenge",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-22T15:08:35Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-22T15:37:16Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-22T15:42:46Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-22T17:03:00Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-22T17:23:55Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-22T17:28:21Z"
+        },
+        {
+          "name": "tinaselenge",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-23T09:56:54Z"
+        },
+        {
+          "name": "see-quick",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-23T10:25:43Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-23T10:26:29Z"
+        },
+        {
+          "name": "scholzj",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-23T11:57:35Z"
+        },
+        {
+          "name": "tinaselenge",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-23T12:57:27Z"
+        },
+        {
+          "name": "scholzj",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-23T13:39:35Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-23T13:53:17Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-23T14:19:23Z"
         }
       ],
       "comments_snapshot": [
@@ -56685,7 +56791,45 @@
           "timestamp": "2020-06-04T07:50:52Z"
         }
       ]
+    },
+    "248": {
+      "state": "open",
+      "classification": "proposal",
+      "proposal_key": "pr-248",
+      "files": [
+        {
+          "sha": "31bf8c446a3fb9e2e101e5e7b9662a545b975986",
+          "filename": "158-honor-deletion-timestamp-in-the-user-operator.md",
+          "status": "added",
+          "additions": 174,
+          "deletions": 0,
+          "changes": 174,
+          "blob_url": "https://github.com/strimzi/proposals/blob/9364950e59fd992cbb91e36f67a3804571b886d6/158-honor-deletion-timestamp-in-the-user-operator.md",
+          "raw_url": "https://github.com/strimzi/proposals/raw/9364950e59fd992cbb91e36f67a3804571b886d6/158-honor-deletion-timestamp-in-the-user-operator.md",
+          "contents_url": "https://api.github.com/repos/strimzi/proposals/contents/158-honor-deletion-timestamp-in-the-user-operator.md?ref=9364950e59fd992cbb91e36f67a3804571b886d6",
+          "patch": "@@ -0,0 +1,174 @@\n+# Honor the `deletionTimestamp` on `KafkaUser` resources\n+\n+This proposal suggests that the User Operator stops reconciling a `KafkaUser` once Kubernetes marks the resource for deletion, and that it reports this state in the resource status.\n+It describes the _middle state_ outlined by the maintainers when [strimzi-kafka-operator#12835](https://github.com/strimzi/strimzi-kafka-operator/issues/12835) was discussed on the community call on 9.7.2026 - while the deletion of a `KafkaUser` is pending, the operator neither recreates nor deletes anything.\n+\n+## Current situation\n+\n+The User Operator watches `KafkaUser` resources and the `Secrets` it generates for them.\n+Every event from these two informers, as well as every periodic reconciliation, enqueues the affected `KafkaUser` for reconciliation.\n+`KafkaUserOperator#reconcile` then decides what to do based on a single condition - when the `KafkaUser` is present in the informer cache, the user is created or updated, and when it is not present, the user is deleted from Kafka together with its `Secret`.\n+\n+The `metadata.deletionTimestamp` field is not taken into account anywhere in this flow.\n+A `KafkaUser` which is marked for deletion, but is still present in the Kubernetes API because it has a pending finalizer, is therefore reconciled as a regular resource.\n+\n+The `Secret` generated for a `KafkaUser` has an owner reference pointing to the `KafkaUser` with `blockOwnerDeletion: true`.\n+Together with the missing `deletionTimestamp` check, this breaks the foreground cascading deletion of a `KafkaUser`:\n+\n+1. The `KafkaUser` is deleted with foreground propagation - for example with `kubectl delete kafkauser my-user --cascade=foreground`, or by a GitOps tool such as Argo CD, which uses foreground deletion for the resources it manages.\n+2. Kubernetes sets `metadata.deletionTimestamp` and adds the `foregroundDeletion` finalizer to the `KafkaUser`.\n+3. The garbage collector deletes the dependent `Secret` and waits for all dependents which block the owner deletion to disappear before it removes the finalizer.\n+4. The `Secret` informer receives the `DELETED` event, the operator reconciles the `KafkaUser`, which still exists, and recreates the `Secret`.\n+5. The garbage collector deletes the new `Secret`, the operator recreates it again, and the deletion never completes.\n+\n+The reconciliation loop reported in the issue looks as follows:\n+\n+```\n+2026-06-16 10:31:37 INFO  UserController:146 - Secret my-test-user in namespace kafka was DELETED\n+2026-06-16 10:31:39 INFO  UserControllerLoop:102 - Reconciliation #145168(timer) KafkaUser(kafka/my-test-user): KafkaUser will be reconciled\n+2026-06-16 10:31:39 INFO  UserController:146 - Secret my-test-user in namespace kafka was ADDED\n+```\n+\n+The same loop happens with any other finalizer which delays the deletion of the `KafkaUser`, no matter whether it was added by a GitOps tool, by an admission webhook or by the user directly.\n+With the default background propagation, the `KafkaUser` is removed from the Kubernetes API immediately, so the current behaviour is not affected by this problem.\n+\n+For a `KafkaUser` with `type: scram-sha-512` and a generated password, every recreation of the `Secret` also generates a new password and updates the SCRAM credentials in Kafka.\n+Clients which still use the old password stop working, even though the deletion which affects them has not completed and can stay blocked by the finalizer for an arbitrarily long time.\n+\n+## Motivation\n+\n+Foreground deletion is a standard Kubernetes deletion mode and is used by common tooling, but it cannot complete for a `KafkaUser`.\n+The resource stays in the deleting state, the operator keeps reconciling it, and nothing in the resource explains why.\n+Documentation does not describe `KafkaUser` as unsupported with foreground deletion either.\n+\n+Reconciling a resource which the API server already accepted for deletion produces work which will be thrown away.\n+In the case of a generated SCRAM-SHA-512 password, it is not only wasted work - it rotates the credentials of a user which is on its way out, and breaks the clients which still use them.\n+\n+Skipping the reconciliation of a resource which is being deleted also keeps the semantics of finalizers intact.\n+A finalizer is a mechanism to block the deletion of a resource, and users rely on it to protect a `KafkaUser` from an accidental deletion.\n+In the proposed state, nothing is deleted early, so a finalizer still protects the user in Kafka.\n+But nothing is recreated either, so the deletion is not fighting the operator while it is pending.\n+\n+Once the `deletionTimestamp` is set, the resource cannot return to a normal state.\n+The only way out of this state is the deletion of the resource, which happens as soon as the last finalizer is removed.\n+Skipping the reconciliation therefore cannot leave a `KafkaUser` in an in-between state for any longer than its finalizers keep it there.\n+\n+## Proposal\n+\n+The User Operator will treat a `KafkaUser` with a non-`null` `metadata.deletionTimestamp` as a resource which is being deleted and will skip the create-or-update part of the reconciliation.\n+\n+The check will be added to `UserControllerLoop#reconcile`, next to the existing check for the paused reconciliation and before `KafkaUserOperator#reconcile` is called.\n+The `deletionTimestamp` check will be evaluated first, because a resource which is being deleted is being deleted regardless of whether its reconciliation is also paused.\n+\n+In this state, the operator will do the following:\n+\n+- It will not create or update anything - the `Secret` is not created or recreated, and the SCRAM-SHA-512 credentials, ACLs and quotas in Kafka are left untouched.\n+- It will not delete anything - neither the remaining `Secret` nor the user configuration in Kafka is removed.\n+- It will set a condition in the `KafkaUser` status to make the state visible to the user.\n+- It will count the reconciliation as successful in the `strimzi_reconciliations_successful_total` metric, in the same way as it does for a paused resource, because nothing failed.\n+- It will log one `INFO` message per reconciliation, in the same way as it does for a paused resource.\n+\n+The deletion itself is not changed by this proposal.\n+It is still triggered only when the `KafkaUser` is gone from the Kubernetes API, which is the existing `kafkaUser == null` branch in `KafkaUserOperator#reconcile`.\n+For the flow described above, this means that the garbage collector is now able to finish the deletion of the `Secret` and to remove the `foregroundDeletion` finalizer.\n+The `KafkaUser` is then deleted, and the following reconciliation removes the user configuration from Kafka as it does today.\n+\n+The periodic reconciliation will keep enqueuing a `KafkaUser` which is being deleted, and every such reconciliation will hit the new branch and do nothing.\n+\n+### Status condition\n+\n+The status of a `KafkaUser` which is being deleted will contain a new condition with the type `Deleting`, following the way the `ReconciliationPaused` condition is used today:\n+\n+```yaml\n+status:\n+  conditions:\n+    - type: Deleting\n+      status: \"True\"\n+      reason: DeletionTimestampSet\n+      message: The resource is being deleted and will not be reconciled.\n+      lastTransitionTime: \"2026-09-08T10:12:34.123456789Z\"\n+  observedGeneration: 3\n+  username: CN=my-user\n+  secret: my-user\n+```\n+\n+The `Deleting` condition replaces the `Ready`, `NotReady` and `ReconciliationPaused` conditions in the list.\n+The `Ready` column of `kubectl get kafkauser` will therefore show no value for such a resource, which is the same behaviour as for a resource with a paused reconciliation.\n+This is intentional - the operator should not claim that a user is ready while its `Secret` is gone and the resource is being deleted.\n+\n+The `observedGeneration`, `username` and `secret` fields are carried over from the previous status, because the operator did not reconcile the resource and has no new information to report.\n+\n+The status of a resource which is being deleted can still be updated, because Kubernetes only restricts changes to the object itself and to its finalizers, not to its status subresource.\n+The existing `StatusDiff` check in `UserControllerLoop#maybeUpdateStatus` makes sure that the status is written only when it actually changes, so a `KafkaUser` which waits on a finalizer for a long time is not updated on every reconciliation.\n+\n+### Metrics\n+\n+This proposal does not add any new metric.\n+The state is visible through the new condition, and the existing `strimzi_resources_paused` metric is deliberately not reused for it, because it tracks resources paused with the `strimzi.io/pause-reconciliation` annotation.\n+\n+### Documentation\n+\n+The new behaviour will be described in the documentation as part of the implementation, together with a note that the credentials of a `KafkaUser` remain valid in Kafka until the deletion of the resource completes.\n+\n+### Testing\n+\n+The implementation will be covered by unit tests in the User Operator, which verify that no `Secret` is created, that no ACLs, quotas or SCRAM credentials are reconciled, and that the `Deleting` condition is set.\n+A system test will delete a `KafkaUser` which has a finalizer, and verify that its `Secret` is not recreated and that the resource and the user configuration in Kafka are removed once the finalizer is removed.\n+\n+## Affected/not affected projects\n+\n+The only affected project is the `strimzi-kafka-operator` repository, and within it only the User Operator, its documentation and its system tests.\n+\n+No other project in the Strimzi organisation is affected.\n+Applying the same pattern to other custom resources, such as `KafkaTopic` or the resources handled by the Cluster Operator, is out of the scope of this proposal.\n+\n+## Compatibility\n+\n+The proposal does not change the `KafkaUser` API.\n+The `metadata.deletionTimestamp` field is a standard Kubernetes field, and the condition `type` in the `KafkaUser` status is a free-form string in the CRD, so a new condition type does not require a CRD change.\n+\n+The behaviour changes only for a `KafkaUser` which has a `deletionTimestamp` and is still present in the Kubernetes API, which happens only when a finalizer delays its deletion.\n+Deletions without a finalizer, which is the default, are not affected at all.\n+\n+For users who use a finalizer to protect a `KafkaUser` from deletion, the difference is that the `Secret` is no longer recreated while the deletion is pending, and that the SCRAM-SHA-512 password of such a user is no longer rotated.\n+The credentials which existing clients hold therefore keep working until the deletion completes, and the user configuration in Kafka is removed only after the resource is gone, as it is today.\n+\n+## Rejected alternatives\n+\n+### Deleting the user when the `deletionTimestamp` is set\n+\n+The operator could run its regular deletion logic as soon as the `deletionTimestamp` is set, and remove the `Secret` and the user configuration from Kafka while the resource is still present.\n+This was rejected because it defeats the purpose of finalizers.\n+The custom resource would survive, but everything it describes would be gone, which breaks the workflows of users who use finalizers to protect a `KafkaUser` from an accidental deletion.\n+\n+### Adding a Strimzi finalizer to `KafkaUser`\n+\n+The operator could add its own finalizer to every `KafkaUser`, clean up Kafka when the resource is being deleted and remove the finalizer afterwards, optionally controlled by an environment variable such as `STRIMZI_USE_FINALIZERS`.\n+This was rejected for two reasons.\n+\n+First, it does not solve the reported problem, which is caused by reconciling a resource that is already terminating, and which would happen with a Strimzi finalizer in place as well.\n+\n+Second, the User Operator does not need finalizers to guarantee the cleanup.\n+It treats Kubernetes as the single source of truth and, on every periodic reconciliation, `KafkaUserOperator#getAllUsers` lists the users which exist in Kafka as SCRAM credentials, ACLs or quotas, and reconciles them together with the users defined as custom resources.\n+Any user in Kafka without a matching `KafkaUser` resource is removed by this mechanism, which also covers the users deleted while the operator was down.\n+Adding finalizers would only add failure modes, such as resources which cannot be deleted when the operator is not running or when its RBAC rules change.\n+\n+### Skipping the reconciliation without reporting it\n+\n+The original fix proposed in the issue only skipped the reconciliation and logged an `INFO` message.\n+This was rejected because the `KafkaUser` would keep its last status, and would still report itself as ready while its `Secret` is missing, with no indication of why nothing is happening.\n+\n+### Reusing the `ReconciliationPaused` condition\n+\n+The state could be reported with the existing `ReconciliationPaused` condition instead of a new condition type.\n+This was rejected because it would conflate two different states - a reconciliation paused with the `strimzi.io/pause-reconciliation` annotation, which the user can resume, and a deletion in progress, which cannot be undone.\n+\n+### Removing the owner reference from the user `Secret`\n+\n+The operator could stop setting the owner reference on the `Secret` and delete the `Secret` itself, which would prevent the garbage collector from deleting it during a foreground deletion.\n+This was rejected because the cleanup of such a `Secret` would have to be guaranteed by a finalizer, with all the problems described above, and because GitOps tools would treat a `Secret` without an owner reference as an orphaned resource and try to prune it.\n+\n+### Documenting foreground deletion as unsupported\n+\n+The current behaviour could be kept and the documentation could state that a `KafkaUser` does not support foreground deletion.\n+This was rejected because the failure mode is silent and expensive - the reconciliation loop keeps running, the credentials of the user are rotated in the meantime, and the resource never disappears - while standard Kubernetes tooling and GitOps tools use foreground deletion by default in many setups."
+        }
+      ],
+      "updated_at": "2026-09-23T07:50:16Z",
+      "head_sha": "9364950e59fd992cbb91e36f67a3804571b886d6",
+      "frozen": false,
+      "reviews_snapshot": [],
+      "comments_snapshot": [
+        {
+          "name": "ppatierno",
+          "timestamp": "2026-09-23T07:25:24Z"
+        },
+        {
+          "name": "evheniyt-pillar",
+          "timestamp": "2026-09-23T07:28:38Z"
+        },
+        {
+          "name": "scholzj",
+          "timestamp": "2026-09-23T07:50:16Z"
+        }
+      ],
+      "snapshots_fetched": true
     }
   },
-  "watermark": "2026-09-22T13:51:19Z"
+  "watermark": "2026-09-23T14:19:23Z"
 }
