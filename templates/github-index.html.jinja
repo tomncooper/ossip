@@ -31,17 +31,18 @@
             <th>Accepted</th>
             <th>Commented</th>
             <th>Requested Changes</th>
-            <th>More Info</th>
+            <th data-nosort>More Info</th>
         </tr>
         </thead>
         <tbody>
+        {% set status_rank = {'blue': 0, 'green': 1, 'yellow': 2, 'red': 3, 'black': 4} %}
         {% for row in rows %}
         <tr data-state="{{ row.state|e }}" data-authors='{{ row.authors|tojson }}'>
             <td>{% if row.web_url %}<a href="{{ row.web_url }}">{{ row.display_id }}</a>{% else %}{{ row.display_id }}{% endif %}</td>
             <td>{{ row.title }}</td>
             <td>{{ row.state }}</td>
             {% if row.activity_status %}
-            <td style="background-color:{{ row.activity_status }};">
+            <td style="background-color:{{ row.activity_status }};" data-sort="{{ status_rank[row.activity_status] }}">
                 <div class="tooltip">&nbsp;
                     <span class="tooltiptext">{% if row.last_activity_age %}Last activity {{ row.last_activity_age }} ago{% else %}No activity recorded{% endif %}</span>
                 </div>
@@ -54,7 +55,7 @@
             {% for column, css_class in [("accepted", "vote-positive"), ("commented", "vote-neutral"), ("changes_requested", "vote-negative")] %}
             {% set users = row.reviews[column] %}
             {% if users %}
-            <td class="{{ css_class }}" style="text-align: center;">
+            <td class="{{ css_class }}" style="text-align: center;" data-sort="{{ users|length }}">
                 <div class="tooltip">{{ users|length }}
                     <span class="tooltiptext">
                         {% for user in users %}
@@ -75,7 +76,9 @@
 
     <!-- Filter JavaScript -->
     <script src="assets/table-filter.js?v=2"></script>
+    <script src="assets/table-sort.js?v=1"></script>
     <script>
+        TableSort.init({ tableSelector: 'table' });
         TableFilter.init({
             tableSelector: 'table',
             filterContainerId: 'filter-controls',

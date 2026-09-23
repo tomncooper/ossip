@@ -305,6 +305,33 @@ th {
     font-weight: 700;
 }
 
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+th.sortable::after {
+    content: "\2195";
+    margin-left: 0.4em;
+    opacity: 0.4;
+}
+
+th.sortable[aria-sort="ascending"]::after {
+    content: "\25B2";
+    opacity: 1;
+}
+
+th.sortable[aria-sort="descending"]::after {
+    content: "\25BC";
+    opacity: 1;
+}
+
+th.sortable:hover,
+th.sortable:focus-visible {
+    color: var(--sol-blue);
+}
+
 tr:hover {
     background-color: var(--sol-bg);
 }
