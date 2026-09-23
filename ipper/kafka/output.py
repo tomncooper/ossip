@@ -130,6 +130,9 @@ def create_status_dict(
         status_entry["age"] = calculate_age(
             cast(str, kip_data["created_on"]), APACHE_CONFLUENCE_DATE_FORMAT
         )
+        status_entry["created_on"] = confluence_date_to_iso_date(
+            cast(str, kip_data["created_on"])
+        )
 
         # Only calculate colored status for KIPs under discussion
         if kip_data["state"] == IPState.UNDER_DISCUSSION:

@@ -32,7 +32,7 @@
             <th>Author(s)</th>
             <th>State</th>
             <th>JIRA</th>
-            <th>More Info</th>
+            <th data-nosort>More Info</th>
         </tr>
         </thead>
         <tbody>
@@ -52,7 +52,7 @@
             <td>{{ flip['release_version'] }}
             {% endif %}
             {% if flip["+1"] %}
-            <td class="vote-positive">
+            <td class="vote-positive" data-sort="{{ flip["+1"]|length }}">
                 <div class="tooltip">{{ flip["+1"]|length }}
                     <span class="tooltiptext">
                         {% for voter in flip["+1"] %}
@@ -65,7 +65,7 @@
             <td>{{ flip["+1"]|length }}</td>
             {% endif %}
             {% if flip["0"] %}
-            <td class="vote-neutral">
+            <td class="vote-neutral" data-sort="{{ flip["0"]|length }}">
                 <div class="tooltip">{{ flip["0"]|length }}
                     <span class="tooltiptext">
                         {% for voter in flip["0"] %}
@@ -78,7 +78,7 @@
             <td>{{ flip["0"]|length }}</td>
             {% endif %}
             {% if flip["-1"] %}
-            <td class="vote-negative">
+            <td class="vote-negative" data-sort="{{ flip["-1"]|length }}">
                 <div class="tooltip">{{ flip["-1"]|length }}
                     <span class="tooltiptext">
                         {% for voter in flip["-1"] %}
@@ -105,7 +105,9 @@
 
     <!-- Filter JavaScript -->
     <script src="assets/table-filter.js?v=2"></script>
+    <script src="assets/table-sort.js?v=1"></script>
     <script>
+        TableSort.init({ tableSelector: 'table' });
         TableFilter.init({
             tableSelector: 'table',
             filterContainerId: 'filter-controls',

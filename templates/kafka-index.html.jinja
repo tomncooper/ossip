@@ -30,18 +30,19 @@
             <th>0</th>
             <th>-1</th>
             <th>Author(s)</th>
-            <th>Age</th>
-            <th>More Info</th>
+            <th data-sort-reverse>Age</th>
+            <th data-nosort>More Info</th>
         </tr>
         </thead>
         <tbody>
+        {% set status_rank = {'blue': 0, 'green': 1, 'yellow': 2, 'red': 3, 'black': 4} %}
         {% for kip in kip_status %}
         <tr data-state="{{ kip['state']|e }}" data-authors='{{ kip['authors']|tojson }}'>
             <td><a href={{ kip['url'] }}>{{ kip['id'] }}</a></td>
             <td>{{ kip['text'] }}</td>
             <td>{{ kip['state'] }}</td>
             {% if kip['status'] %}
-            <td style="background-color:{{ kip['status'].text }};">
+            <td style="background-color:{{ kip['status'].text }};" data-sort="{{ status_rank[kip['status'].text] }}">
                 <div class="tooltip">&nbsp;
                     <span class="tooltiptext">{% if kip['last_mention_age'] %}Last mentioned {{ kip['last_mention_age'] }} ago{% else %}Never mentioned in mailing lists{% endif %}</span>
                 </div>
@@ -50,7 +51,7 @@
             <td style="text-align: center; font-size: 1.5em;">{{ kip['emoji'] }}</td>
             {% endif %}
             {% if kip["+1"] %}
-            <td class="vote-positive">
+            <td class="vote-positive" data-sort="{{ kip["+1"]|length }}">
                 <div class="tooltip">{{ kip["+1"]|length }}
                     <span class="tooltiptext">
                         {% for voter in kip["+1"] %}
@@ -63,7 +64,7 @@
             <td>{{ kip["+1"]|length }}</td>
             {% endif %}
             {% if kip["0"] %}
-            <td class="vote-neutral">
+            <td class="vote-neutral" data-sort="{{ kip["0"]|length }}">
                 <div class="tooltip">{{ kip["0"]|length }}
                     <span class="tooltiptext">
                         {% for voter in kip["0"] %}
@@ -76,7 +77,7 @@
             <td>{{ kip["0"]|length }}</td>
             {% endif %}
             {% if kip["-1"] %}
-            <td class="vote-negative">
+            <td class="vote-negative" data-sort="{{ kip["-1"]|length }}">
                 <div class="tooltip">{{ kip["-1"]|length }}
                     <span class="tooltiptext">
                         {% for voter in kip["-1"] %}
@@ -89,7 +90,7 @@
             <td>{{ kip["-1"]|length }}</td>
             {% endif %}
             <td class="author-cell">{{ kip['authors']|join(", ") }}</td>
-            <td>{{ kip["age"] }}</td>
+            <td data-sort="{{ kip['created_on'] }}">{{ kip["age"] }}</td>
             <td><a href=kips/KIP-{{ kip['id'] }}.html>info</a></td>
         </tr>
         {% endfor %}
@@ -98,7 +99,9 @@
 
     <!-- Filter JavaScript -->
     <script src="assets/table-filter.js?v=2"></script>
+    <script src="assets/table-sort.js?v=1"></script>
     <script>
+        TableSort.init({ tableSelector: 'table' });
         TableFilter.init({
             tableSelector: 'table',
             filterContainerId: 'filter-controls',
