@@ -554,6 +554,28 @@ td[style*="background-color: black"] {
     background-color: var(--sol-bg-highlight);
 }
 
+.filter-search {
+    background: var(--sol-bg);
+    color: var(--sol-body-text);
+    border: 1px solid var(--sol-secondary);
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    min-width: 220px;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.filter-search:hover {
+    border-color: var(--sol-blue);
+}
+
+.filter-search:focus {
+    outline: none;
+    border-color: var(--sol-cyan);
+    background-color: var(--sol-bg-highlight);
+}
+
 .clear-filters-btn {
     background: var(--sol-blue);
     color: var(--sol-accent-light-text);
@@ -605,6 +627,11 @@ tr.filtered-out {
     }
 
     .filter-dropdown {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .filter-search {
         width: 100%;
         min-width: unset;
     }

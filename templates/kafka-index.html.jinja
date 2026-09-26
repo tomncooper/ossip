@@ -98,7 +98,7 @@
     </table>
 
     <!-- Filter JavaScript -->
-    <script src="assets/table-filter.js?v=2"></script>
+    <script src="assets/table-filter.js?v=3"></script>
     <script src="assets/table-sort.js?v=1"></script>
     <script>
         TableSort.init({ tableSelector: 'table' });
@@ -108,7 +108,11 @@
             columns: [
                 { id: 'state', label: 'State', dataAttr: 'data-state' },
                 { id: 'author', label: 'Author', dataAttr: 'data-authors', multi: true }
-            ]
+            ],
+            search: {
+                columns: [0, 1],
+                placeholder: 'Search by KIP or description...'
+            }
         });
     </script>
     {% include '_footer.html' %}
