@@ -104,7 +104,7 @@
     </table>
 
     <!-- Filter JavaScript -->
-    <script src="assets/table-filter.js?v=2"></script>
+    <script src="assets/table-filter.js?v=3"></script>
     <script src="assets/table-sort.js?v=1"></script>
     <script>
         TableSort.init({ tableSelector: 'table' });
@@ -115,7 +115,11 @@
                 { id: 'state', label: 'State', dataAttr: 'data-state' },
                 { id: 'author', label: 'Author', dataAttr: 'data-authors', multi: true },
                 { id: 'component', label: 'Component', dataAttr: 'data-component' }
-            ]
+            ],
+            search: {
+                columns: [0, 1],
+                placeholder: 'Search by FLIP or description...'
+            }
         });
     </script>
     {% include '_footer.html' %}
