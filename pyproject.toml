@@ -16,6 +16,8 @@ dependencies = [
     "python-dateutil>=2.9.0.post0",
     "rapidfuzz>=3.0.0",
     "pydantic>=2.7,<3",
+    "atproto>=0.0.72",
+    "mastodon-py>=2.2.2",
 ]
 
 [dependency-groups]

@@ -16,6 +16,11 @@ The Kafka and Flink pipelines read from Apache Confluence wikis and mailing
 list archives; the Strimzi, StreamsHub and Kroxylicious pipelines read
 proposal PRs from GitHub repositories.
 
+New, accepted and rejected/closed proposals are also announced on social
+media (Mastodon and Bluesky) by the daily build. See
+`docs/social-media-implementation-plan.md` for the design and the
+`ipper/social/` package for the implementation.
+
 ## JSON API and OSSIP Skill
 
 The OSSIP project provides a JSON API for programmatic access to KIP and FLIP data. The API is:
