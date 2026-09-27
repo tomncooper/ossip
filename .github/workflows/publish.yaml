@@ -156,7 +156,7 @@ jobs:
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
         run: |
           if [ "${{ secrets.SOCIAL_POSTS_ENABLED }}" = "true" ]; then
-            uv run python ipper/main.py social announce --max-posts 5
+            uv run python ipper/main.py social announce --max-posts 10
           else
             echo "SOCIAL_POSTS_ENABLED != 'true' — running social announce in dry-run mode (no credentials needed)"
             uv run python ipper/main.py social announce --dry-run
