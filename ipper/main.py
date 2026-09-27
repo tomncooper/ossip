@@ -5,6 +5,7 @@ from ipper.common.github_cli import setup_github_project_parser
 from ipper.common.github_config import GITHUB_PROJECT_CONFIGS
 from ipper.flink.main import setup_flink_parser
 from ipper.kafka.main import setup_kafka_parser
+from ipper.social.cli import setup_social_parser
 
 CACHE_DIR = "cache"
 
@@ -59,6 +60,8 @@ def setup_top_level_parser() -> ArgumentParser:
 
     for github_config in GITHUB_PROJECT_CONFIGS.values():
         setup_github_project_parser(top_level_subparsers, github_config)
+
+    setup_social_parser(top_level_subparsers)
 
     return top_level_parser
 

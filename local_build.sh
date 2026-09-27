@@ -1,11 +1,24 @@
 #!/usr/bin/env bash
+# Usage: ./local_build.sh [--render-only] [--social-dry-run]
+#   --render-only     Skip data updates; regenerate HTML from existing caches
+#   --social-dry-run  Also preview social announcements (no credentials needed,
+#                     never posts, never writes the state file)
 set -e
 
 RENDER_MODE=false
+SOCIAL_DRY_RUN=false
 
 # Parse arguments
-if [[ "$1" == "--render-only" ]]; then
-    RENDER_MODE=true
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --render-only)      RENDER_MODE=true ;;
+        --social-dry-run)   SOCIAL_DRY_RUN=true ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+if [[ "$RENDER_MODE" == true ]]; then
     echo "🚀 Starting render-only build (HTML regeneration only)..."
 else
     echo "🚀 Starting full build process..."
@@ -125,5 +138,12 @@ from ipper.common.api_output import generate_api_index
 from pathlib import Path
 generate_api_index(Path('site_files/api/v1'))
 "
+
+# Social media announcement preview (no credentials required, never posts,
+# never writes the state file)
+if [[ "$SOCIAL_DRY_RUN" == true ]]; then
+    echo "📣 Social announcement dry run..."
+    uv run python ipper/main.py social announce --dry-run
+fi
 
 echo "✅ Build complete! Output in site_files/"

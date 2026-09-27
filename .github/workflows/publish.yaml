@@ -146,6 +146,22 @@ jobs:
             exit 1
           fi
 
+      - name: Post social media announcements
+        id: social
+        continue-on-error: true
+        env:
+          MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+          MASTODON_BASE_URL: ${{ secrets.MASTODON_BASE_URL }}
+          BLUESKY_IDENTIFIER: ${{ secrets.BLUESKY_IDENTIFIER }}
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+        run: |
+          if [ "${{ secrets.SOCIAL_POSTS_ENABLED }}" = "true" ]; then
+            uv run python ipper/main.py social announce --max-posts 10
+          else
+            echo "SOCIAL_POSTS_ENABLED != 'true' — running social announce in dry-run mode (no credentials needed)"
+            uv run python ipper/main.py social announce --dry-run
+          fi
+
       - name: Commit updated cache files
         run: |
           git config user.name "github-actions[bot]"

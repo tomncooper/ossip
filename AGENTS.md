@@ -182,6 +182,20 @@ ossip/
 4. Append to `kip_mentions.csv` / `flip_mentions.csv` with automatic deduplication
 5. Update metadata tracking
 
+### Social Announcements (`social announce`)
+1. Load all five project caches via adapters → `ProposalSnapshot`s
+   (missing cache = skip that project)
+2. Diff against `cache/social/announced_states.json` baselines; advance
+   baselines at detection time
+3. Select up to `max_posts` pending events (retries first, then oldest)
+4. Post via configured posters (per-destination acks; failures retry next run)
+5. Prune fully-acked / exhausted events; save state atomically
+
+First live run seeds the baseline and posts nothing; `--dry-run` never
+writes the state file (including when seeding).
+
+### Initial Setup (`strimzi/streamshub/kroxylicious init`)
+
 ### Refresh (`kafka refresh` / `flink refresh`)
 1. Reprocess ALL mbox files from scratch
 2. Deduplicate all mentions
@@ -217,6 +231,75 @@ processing logic changes.
      SIP-XXX.html / SIP-PR-N.html for unnumbered open proposals, etc.)
 4. Emit JSON API files (`write_proposal_details`, `write_schemas`, `generate_api_index`)
 
+### Social Media Announcements (`ipper/social/`)
+
+Posts to Mastodon and Bluesky when a proposal is **new**, **accepted**, or
+**rejected/closed**. Runs as a step in the publish workflow (daily cron +
+pushes to main), gated by the `SOCIAL_POSTS_ENABLED` repo secret (dry-run
+mode until it is set to `true`).
+
+**Module layout:**
+
+```
+ipper/social/
+├── config.py                # per-project social config (SOCIAL_PROJECTS)
+├── models.py                # pydantic models + EventType enum
+├── messages.py              # message template, emoji map, length fitting
+├── adapters/                # cache -> ProposalSnapshot converters
+│   ├── kafka.py / flink.py  # wiki caches
+│   └── github.py            # shared by strimzi/streamshub/kroxylicious
+├── detector.py              # state diffing + pending queue
+├── posters/                 # pluggable destinations (base/console/mastodon/bluesky)
+└── cli.py                   # `social announce` subcommand
+```
+
+**State file:** `cache/social/announced_states.json` (committed to git with
+the other caches; `baselines` = last-seen state per proposal, advanced at
+detection time; `pending` = events awaiting per-destination acknowledgement,
+the retry mechanism when one destination is down).
+
+**Detection semantics:** absent → NEW; → accepted/completed → ACCEPTED
+(accepted↔completed is silent); → not accepted → REJECTED; reopens, unknown
+and in-progress wiggles are silent but still advance the baseline. A missing
+cache file means the project is *skipped* (baselines retained), never "mass
+deletion". At most one post per proposal per run (new events replace pending
+ones with fresh acks).
+
+**Message format:**
+`{Project} {Reference} {emoji} {phrase} — “{Title}” {URL} #{Project} #{PREFIX}`
+with emoji keyed on IPState (✅ accepted/completed, 💬 under discussion,
+❌ not accepted, 🛠️ in progress, ❓ unknown).
+
+**Dev commands:**
+
+```bash
+# Preview what would be posted (no credentials, never writes state)
+uv run python ipper/main.py social announce --dry-run
+
+# Print sample NEW/ACCEPTED/REJECTED messages from real cache data
+uv run python ipper/main.py social announce --demo
+
+# Rebuild the baseline after a corrupted state file (posts nothing)
+uv run python ipper/main.py social announce --reseed
+
+# Local build including the social dry run
+./local_build.sh --render-only --social-dry-run
+```
+
+**Secrets (set at go-live):** `SOCIAL_POSTS_ENABLED` (literal `true`),
+`MASTODON_BASE_URL` (e.g. `https://social.netech.dev`),
+`MASTODON_ACCESS_TOKEN` (instance → Preferences → Development → New
+application, scope `write:statuses`), `BLUESKY_IDENTIFIER`,
+`BLUESKY_APP_PASSWORD` (bsky.app → Settings → App Passwords — an app
+password, not the account password).
+
+**Adding a new destination:** create `ipper/social/posters/<name>.py` with a
+class decorated `@register_poster` exposing `name`, `from_env()` (raise
+`PosterNotConfigured` when credentials are missing) and
+`post(event) -> PostResult` (build its own message via
+`messages.build_message`, which takes an optional char limit); import the
+module in `posters/__init__.py`; add its env vars to CI. No other changes.
+
 ### CI/CD Pipeline (`.github/workflows/publish.yaml`)
 - **Trigger:** Push to main branch or daily cron (09:30 UTC)
 - **Steps:**
@@ -226,8 +309,12 @@ processing logic changes.
      env passed from secrets — optional, update works unauthenticated)
   4. Generate HTML files from cached data (kafka.html, flink.html,
      strimzi/streamshub/kroxylicious.html + individual detail pages + JSON API)
-  5. Commit updated cache files back to repository
-  6. Deploy to GitHub Pages
+  5. Post social media announcements (`social announce`; dry-run unless
+     `SOCIAL_POSTS_ENABLED=true`; `continue-on-error` so failed destinations
+     retry next run without losing the cache commit)
+  6. Commit updated cache files back to repository (includes the social
+     state file)
+  7. Deploy to GitHub Pages
 
 ## Important Patterns
 
@@ -297,6 +384,8 @@ KIP_PATTERN = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
     `cache/kdp_proposals_cache.json` (single source of truth)
   - Metadata: `cache/kip_mentions_metadata.json`, `cache/flip_mentions_metadata.json`
   - **Committer KEYS:** `cache/keys/kafka_keys.json`, `cache/keys/flink_keys.json`
+  - **Social announcements:** `cache/social/announced_states.json`
+    (baselines + pending announcement queue; committed with the caches)
 - **Mbox Files:** `cache/mailbox_files/*.mbox` (downloaded archives)
 - **Output:** `site_files/*.html`
 
@@ -435,6 +524,8 @@ Committer Index + Vote Detection → Enhanced vote counting
   ↓
 CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 CSV/JSON Cache → Pydantic → JSON API (/api/v1/)
+Cache diff → social/events → Posters → Mastodon/Bluesky
+announced_states.json ↔ git (committed with caches)
 ```
 
 **Caching Architecture:**
@@ -473,11 +564,61 @@ CSV/JSON Cache → Pydantic → JSON API (/api/v1/)
 - Better rate limiting and error handling for API calls
 - Machine learning for improved vote detection confidence scoring
 - Historical vote pattern analysis and committer activity tracking
+- Social announcements: if the publish runner dies after posting to a
+  destination but before the cache commit, the acknowledgements are lost and
+  the next run re-posts (rare; self-limiting; accepted residual risk)
 
 ---
 
-**Last Updated:** 2026-10-04
+**Last Updated:** 2026-10-05
 **Maintainer:** Thomas Cooper
+
+## Recent Changes (2026-10-05)
+
+### Social Media Announcements (Mastodon + Bluesky)
+
+**What Changed:**
+- New `ipper/social/` package: posts to Mastodon and Bluesky when a proposal
+  is **new**, **accepted**, or **rejected/closed**; covers all five projects
+  (KIP, FLIP, SIP, SHIP, KDP) via cache adapters
+- Pluggable destinations via a `Poster` protocol + registry
+  (`ipper/social/posters/`); console poster for dry runs, Mastodon.py and
+  atproto SDK clients for live posting
+- Duplicate protection via an in-repo state file
+  (`cache/social/announced_states.json`): per-proposal baselines advanced at
+  detection time plus a pending-event queue with per-destination
+  acknowledgements — if Mastodon succeeds but Bluesky is down, only Bluesky
+  is retried next run
+- Baseline seeding: the first live run records current state and posts
+  nothing; only future changes are announced. `--dry-run` never writes the
+  state file
+- Uniform message template
+  `{Project} {Reference} {emoji} {phrase} — “{Title}” {URL} {hashtags}` with
+  char-limit fitting (Mastodon limit queried from the instance, Bluesky 300,
+  link facets for clickable Bluesky URLs)
+- New CLI: `uv run python ipper/main.py social announce [--post-to ...]
+  [--projects ...] [--dry-run] [--demo] [--reseed] [--max-posts N]
+  [--max-attempts N] [--state-file PATH]`
+- CI (`publish.yaml`) gained a `Post social media announcements` step between
+  build checks and the cache commit, gated by `SOCIAL_POSTS_ENABLED`
+  (dry-run until it is set to `true`), `continue-on-error: true` so acks are
+  committed even when a destination is down
+- `local_build.sh` gained a `--social-dry-run` flag
+- New dependencies: `atproto`, `Mastodon.py`
+
+**New Files:**
+- `ipper/social/` — `config.py`, `models.py`, `messages.py`, `detector.py`,
+  `cli.py`, `adapters/` (kafka, flink, github), `posters/`
+  (base, console, mastodon, bluesky)
+- `tests/social/` — `conftest.py`, `test_models.py`, `test_messages.py`,
+  `test_adapters.py`, `test_detector.py`, `test_posters.py`, `test_cli.py`
+
+**Modified Files:**
+- `ipper/main.py` — `social` subcommand registration
+- `local_build.sh` — `--social-dry-run` flag (argument loop)
+- `.github/workflows/publish.yaml` — social announce step
+- `pyproject.toml` — `atproto`, `Mastodon.py` dependencies
+- `README.md`, this file — documentation
 
 ## Recent Changes (2026-10-04)
 
