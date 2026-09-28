@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-21T02:24:46.391777+00:00",
+  "last_updated": "2026-09-28T02:38:05.917919+00:00",
   "source_url": "https://downloads.apache.org/kafka/KEYS",
   "committers": [
     {
@@ -8,6 +8,13 @@
         "ableegoldman@apache.org"
       ],
       "raw_uid": "Anna Sophie Blee-Goldman <ableegoldman@apache.org>"
+    },
+    {
+      "name": "Apoorv Mittal",
+      "emails": [
+        "mittal@apache.org"
+      ],
+      "raw_uid": "Apoorv Mittal (CODE SIGNING KEY) <mittal@apache.org>"
     },
     {
       "name": "Bill Bejeck",
