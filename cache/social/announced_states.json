@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "last_run": "2026-09-28T17:47:23+00:00",
+  "last_run": "2026-09-29T16:04:20+00:00",
   "baselines": {
     "kafka:kip-1": {
       "state": "accepted"
@@ -5814,7 +5814,7 @@
       "state": "unknown"
     },
     "flink:flip-615": {
-      "state": "unknown"
+      "state": "in progress"
     },
     "strimzi:pr-245": {
       "state": "under discussion"
@@ -6513,7 +6513,7 @@
       "state": "under discussion"
     },
     "kroxylicious:pr-111": {
-      "state": "under discussion"
+      "state": "accepted"
     },
     "kroxylicious:pr-88": {
       "state": "not accepted"
