@@ -181,20 +181,34 @@ ossip/
 3. Process new mbox files directly
 4. Append to `kip_mentions.csv` / `flip_mentions.csv` with automatic deduplication
 5. Update metadata tracking
+6. Append proposal events to `cache/events/events.jsonl`
+
+### Event Log (automatic, part of each `update`)
+1. Each project's `update` command ends with `update_from_cache(project, cache_path)`
+   — diffs the cache against `cache/events/last_seen.json` baselines
+2. Detectable changes append to the append-only log `cache/events/events.jsonl`
+   (under an exclusive `fcntl.flock`; parallel `local_build.sh` updates are safe)
+3. Baselines (`last_seen.json`) advance atomically after the append
+4. A missing cache skips the project (never "everything disappeared"); a
+   `last_seen.json` version mismatch fails loudly (`EventsVersionError`)
+5. Only `update` is hooked — `init`/`refresh` never append (seed via
+   `events backfill` first; see below)
 
 ### Social Announcements (`social announce`)
-1. Load all five project caches via adapters → `ProposalSnapshot`s
-   (missing cache = skip that project)
-2. Diff against `cache/social/announced_states.json` baselines; advance
-   baselines at detection time
-3. Select up to `max_posts` pending events (retries first, then oldest)
-4. Post via configured posters (per-destination acks; failures retry next run)
-5. Prune fully-acked / exhausted events; save state atomically
+1. Load the event log (`cache/events/events.jsonl`) and compute its head seq
+2. Load `cache/social/announced_states.json` (v2: per-destination cursors +
+   pending queue); absent/v1/corrupt file → auto-seed cursors to the log head
+   (posts nothing)
+3. Discover announceable events past the least-advanced cursor; merge into the
+   pending queue (a newer event for a proposal replaces the pending one)
+4. Select up to `max_posts` (retries first, then ascending seq); overflow stays
+   pending (cursors never advance past unacked pending events)
+5. Post via configured posters (per-destination acks; a retry re-posts only to
+   the failed destination)
+6. Recompute cursors, prune fully-acked / exhausted events, save state atomically
 
-First live run seeds the baseline and posts nothing; `--dry-run` never
-writes the state file (including when seeding).
-
-### Initial Setup (`strimzi/streamshub/kroxylicious init`)
+`--dry-run` never writes the state file; `--reseed` clears pending and resets
+cursors to the log head explicitly.
 
 ### Refresh (`kafka refresh` / `flink refresh`)
 1. Reprocess ALL mbox files from scratch
@@ -217,6 +231,8 @@ writes the state file (including when seeding).
 3. `head.sha` change → re-fetch PR files; label-only bump → refresh reviews/comments only
 4. Close/reopen/merge transitions handled (freeze review activity, reconcile merged PRs with the tarball)
 5. Save the JSON cache atomically (temp file + rename)
+6. Append proposal events to `cache/events/events.jsonl` (shared hook in
+   `common/github_cli.py`)
 
 ### Refresh (`strimzi/streamshub/kroxylicious refresh`)
 Same as init (full re-fetch from GitHub). Use when cache is corrupted or
@@ -230,40 +246,52 @@ processing logic changes.
    - Individual detail pages for each proposal (KIP-XXX.html, FLIP-XXX.html,
      SIP-XXX.html / SIP-PR-N.html for unnumbered open proposals, etc.)
 4. Emit JSON API files (`write_proposal_details`, `write_schemas`, `generate_api_index`)
+5. Copy static pages into `site_files/`: the landing page (`templates/index.html`)
+   and the agent-skill page (`templates/skills.html` +
+   `templates/skill/ossip/SKILL.md`, which documents the JSON API endpoints
+   for AI agents)
+
+**Client-side enhancements (vanilla JS in `templates/assets/`, no build
+step):** per-column dropdown filters plus global text search
+(`table-filter.js`, with multi-value cell support for multi-author columns),
+sortable column headings (`table-sort.js`, driven by `data-sort` attributes
+emitted from Python), and a light/dark theme toggle (`theme-toggle.js`,
+persisted in localStorage).
 
 ### Social Media Announcements (`ipper/social/`)
 
 Posts to Mastodon and Bluesky when a proposal is **new**, **accepted**, or
-**rejected/closed**. Runs as a step in the publish workflow (daily cron +
-pushes to main), gated by the `SOCIAL_POSTS_ENABLED` repo secret (dry-run
-mode until it is set to `true`).
+**rejected/closed**. Social is a **consumer** of the proposal event log
+(see the Event Log section): detection moved to `ipper.events`, so social
+only maps log events to announcements and manages delivery state. Runs as
+a step in the publish workflow (daily cron + pushes to main), gated by the
+`SOCIAL_POSTS_ENABLED` repo secret (dry-run mode until it is set to `true`).
 
 **Module layout:**
 
 ```
 ipper/social/
-├── config.py                # per-project social config (SOCIAL_PROJECTS)
-├── models.py                # pydantic models + EventType enum
+├── config.py                # re-exports shared project config (common/projects.py)
+├── models.py                # v2 state models + announcement vocabulary (EventType)
+├── consumer.py              # EventRecord -> announcement type + render models
 ├── messages.py              # message template, emoji map, length fitting
-├── adapters/                # cache -> ProposalSnapshot converters
-│   ├── kafka.py / flink.py  # wiki caches
-│   └── github.py            # shared by strimzi/streamshub/kroxylicious
-├── detector.py              # state diffing + pending queue
 ├── posters/                 # pluggable destinations (base/console/mastodon/bluesky)
-└── cli.py                   # `social announce` subcommand
+└── cli.py                   # `social announce` subcommand (cursor/pending flow)
 ```
 
-**State file:** `cache/social/announced_states.json` (committed to git with
-the other caches; `baselines` = last-seen state per proposal, advanced at
-detection time; `pending` = events awaiting per-destination acknowledgement,
-the retry mechanism when one destination is down).
+**State file:** `cache/social/announced_states.json` v2 (committed to git
+with the other caches): `cursors` = per-destination acked-through seq into
+the event log; `pending` = events awaiting per-destination acknowledgement
+(each embeds a full `EventRecord` copy). Absent, corrupt or v1 files are
+auto-seeded to the log head — nothing historical is ever posted.
 
-**Detection semantics:** absent → NEW; → accepted/completed → ACCEPTED
-(accepted↔completed is silent); → not accepted → REJECTED; reopens, unknown
-and in-progress wiggles are silent but still advance the baseline. A missing
-cache file means the project is *skipped* (baselines retained), never "mass
-deletion". At most one post per proposal per run (new events replace pending
-ones with fresh acks).
+**Announcement mapping** (`social/consumer.announcement_type`): `new` → NEW;
+`state_changed` into accepted/completed → ACCEPTED (accepted↔completed
+flips silent); `state_changed` into "not accepted" → REJECTED; reopens and
+other wiggles are logged but silent; renumbered / first_approval /
+changes_requested / vote_started / disappeared → never announced. At most
+one post per proposal per run (new events replace pending ones with fresh
+acks); a new destination starts at the head (no history replay).
 
 **Message format:**
 `{Project} {Reference} {emoji} {phrase} — “{Title}” {URL} #{Project} #{PREFIX}`
@@ -276,10 +304,10 @@ with emoji keyed on IPState (✅ accepted/completed, 💬 under discussion,
 # Preview what would be posted (no credentials, never writes state)
 uv run python ipper/main.py social announce --dry-run
 
-# Print sample NEW/ACCEPTED/REJECTED messages from real cache data
+# Print sample NEW/ACCEPTED/REJECTED messages from the event log
 uv run python ipper/main.py social announce --demo
 
-# Rebuild the baseline after a corrupted state file (posts nothing)
+# Re-seed cursors to the event-log head (clears pending; posts nothing)
 uv run python ipper/main.py social announce --reseed
 
 # Local build including the social dry run
@@ -300,21 +328,90 @@ class decorated `@register_poster` exposing `name`, `from_env()` (raise
 `messages.build_message`, which takes an optional char limit); import the
 module in `posters/__init__.py`; add its env vars to CI. No other changes.
 
+### Event Log (`ipper/events/`)
+
+An append-only JSONL record of every detectable proposal change, maintained
+automatically by each project's `update` command and consumed by social
+(and future feeds/webhooks/JSON API).
+
+**Files:**
+
+```
+cache/events/
+├── events.jsonl    # append-only log; full history retained forever
+├── last_seen.json  # detection baselines (mutable, atomically rewritten)
+└── .lock           # fcntl lock file (gitignored)
+```
+
+**Producer flow:** `update_from_cache(project, cache_path)` — under an
+exclusive `fcntl.flock` on `.lock` (the five updates run in parallel), load
+the log + baselines, convert the cache to `SeenSnapshot`s via an adapter,
+pure-diff (`detection.detect_events`), append candidates (replay-dedup
+makes a crash between append and baseline-save harmless), then atomically
+save the baselines.
+
+**Event taxonomy** (`EventType`): `new`, `state_changed`, `renumbered`,
+`disappeared`, `first_approval`, `changes_requested`, `vote_started`.
+Everything detectable is logged; consumers decide what they care about.
+
+**Effective-at:** every event has `observed_at` (detection run time) plus
+`effective_at`/`effective_at_source` (best-known change time). Wiki
+`last_modified_on` values are upper bounds only (the wiki records just the
+page's latest edit); GitHub `merged_on`/`closed_on`/`created_at` and review
+timestamps are exact.
+
+**stable_id:** `{key}/{event_type}@{YYYY-MM-DD}` with a `-2`, `-3` ...
+suffix on same-day same-type collisions; computed once at append time and
+stored on the record (consumers never recompute). Keys are PR-number-stable
+for GitHub projects (`strimzi:pr-245` survives renumbering to SIP-46).
+
+**Schema evolution:** pydantic models in `ipper/events/models.py` are the
+source of truth; per-record `schema_version`. Additive changes need no
+bump (readers tolerate unknown fields via `extra="allow"` and unknown
+`event_type` values — it's a plain str); breaking changes bump the version
+and ship a one-time migrator (git history is the archive).
+
+**Version guard:** a `last_seen.json` version mismatch raises
+`EventsVersionError` — never silently reseeded (a reseed would re-emit
+thousands of duplicate events into the permanent log).
+
+**Backfill:** `events backfill` (one-time; refuses a non-empty log)
+synthesizes historical events from current caches (chronological within
+each project, `backfilled: true`) and seeds `last_seen`.
+
+**Consumer API** (`ipper.events`, see the package docstring for a feed
+example): `load_events`/`read_events`, `filter_events` (project/type/date/
+backfill), `newest_first`, `events_after_seq`, `max_seq`, `latest_snapshot`
+(current reference/URL for a key — fixes stale links for renumbered
+proposals) plus `headline`/`summary_text` display helpers shared with the
+social messages.
+
+**CLI:** `events tail [--project K] [--type T] [--limit N]`,
+`events backfill`, `events stats`.
+
 ### CI/CD Pipeline (`.github/workflows/publish.yaml`)
-- **Trigger:** Push to main branch or daily cron (09:30 UTC)
+- **Triggers:** daily cron (09:30 UTC), manual `workflow_dispatch`, push to
+  main touching `templates/**` or the workflow file, and successful
+  completion of the "Run Tests" workflow on main; concurrent runs are queued
+  (concurrency group `publish`) so cache-commit pushes never race
 - **Steps:**
   1. Install Python 3.12 and uv
-  2. Run `kafka update` and `flink update` (both incremental, including mailing lists)
-  3. Run `strimzi/streamshub/kroxylicious update` (incremental; `GITHUB_TOKEN`
+  2. Run `kafka update` (incremental, including mailing lists)
+  3. Run `flink wiki download --update --refresh-days 60`, then `flink update`
+  4. Run `strimzi/streamshub/kroxylicious update` (incremental; `GITHUB_TOKEN`
      env passed from secrets — optional, update works unauthenticated)
-  4. Generate HTML files from cached data (kafka.html, flink.html,
+  5. Copy static pages (landing `index.html`, `skills.html` + the agent
+     skill) into `site_files/`
+  6. Generate HTML files from cached data (kafka.html, flink.html,
      strimzi/streamshub/kroxylicious.html + individual detail pages + JSON API)
-  5. Post social media announcements (`social announce`; dry-run unless
-     `SOCIAL_POSTS_ENABLED=true`; `continue-on-error` so failed destinations
-     retry next run without losing the cache commit)
-  6. Commit updated cache files back to repository (includes the social
+  7. Check build results (a single failed project build only warns; all five
+     failing is an error)
+  8. Post social media announcements (`social announce --max-posts 10`;
+     dry-run unless `SOCIAL_POSTS_ENABLED=true`; `continue-on-error` so failed
+     destinations retry next run without losing the cache commit)
+  9. Commit updated cache files back to repository (includes the social
      state file)
-  7. Deploy to GitHub Pages
+  10. Deploy to GitHub Pages
 
 ## Important Patterns
 
@@ -384,8 +481,11 @@ KIP_PATTERN = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
     `cache/kdp_proposals_cache.json` (single source of truth)
   - Metadata: `cache/kip_mentions_metadata.json`, `cache/flip_mentions_metadata.json`
   - **Committer KEYS:** `cache/keys/kafka_keys.json`, `cache/keys/flink_keys.json`
-  - **Social announcements:** `cache/social/announced_states.json`
-    (baselines + pending announcement queue; committed with the caches)
+  - **Event log:** `cache/events/events.jsonl` (append-only, full history
+    retained forever) · `cache/events/last_seen.json` (detection baselines)
+    · `cache/events/.lock` (gitignored) — committed with the caches
+  - **Social announcements:** `cache/social/announced_states.json` (v2:
+    per-destination cursors + pending announcement queue; committed with the caches)
 - **Mbox Files:** `cache/mailbox_files/*.mbox` (downloaded archives)
 - **Output:** `site_files/*.html`
 
@@ -421,11 +521,13 @@ uv run python ipper/main.py flink wiki download --update --refresh-days 60
 
 # Generate Kafka HTML (shows ALL KIPs + individual KIP pages)
 uv run python ipper/main.py kafka output standalone \
-  cache/mailbox_files/kip_mentions.csv site_files/kafka.html site_files/kips
+  cache/mailbox_files/kip_mentions.csv site_files/kafka.html site_files/kips \
+  --api-dir site_files/api/v1/kafka
 
 # Generate Flink HTML (shows ALL FLIPs + individual FLIP pages)
 uv run python ipper/main.py flink output \
-  cache/flip_wiki_cache.json site_files/flink.html site_files/flips
+  cache/flip_wiki_cache.json site_files/flink.html site_files/flips \
+  --api-dir site_files/api/v1/flink
 
 # Initialize Strimzi/StreamsHub/Kroxylicious proposal data (requires GITHUB_TOKEN)
 uv run python ipper/main.py strimzi init
@@ -439,15 +541,18 @@ uv run python ipper/main.py kroxylicious update
 
 # Generate Strimzi HTML (shows ALL SIPs + individual SIP pages)
 uv run python ipper/main.py strimzi output \
-  cache/sip_proposals_cache.json site_files/strimzi.html site_files/sips
+  cache/sip_proposals_cache.json site_files/strimzi.html site_files/sips \
+  --api-dir site_files/api/v1/strimzi
 
 # Generate StreamsHub HTML
 uv run python ipper/main.py streamshub output \
-  cache/ship_proposals_cache.json site_files/streamshub.html site_files/ships
+  cache/ship_proposals_cache.json site_files/streamshub.html site_files/ships \
+  --api-dir site_files/api/v1/streamshub
 
 # Generate Kroxylicious HTML
 uv run python ipper/main.py kroxylicious output \
-  cache/kdp_proposals_cache.json site_files/kroxylicious.html site_files/kdps
+  cache/kdp_proposals_cache.json site_files/kroxylicious.html site_files/kdps \
+  --api-dir site_files/api/v1/kroxylicious
 
 # Run linting checks
 uv run ruff check .
@@ -456,7 +561,7 @@ uv run ruff check .
 ## Testing & Quality
 
 The project includes:
-- **456 comprehensive tests** covering all core functionality
+- **534 comprehensive tests** covering all core functionality
 - Type hints throughout (checked with MyPy)
 - Code formatting with Black
 - Linting with Pylint and Ruff
@@ -524,8 +629,10 @@ Committer Index + Vote Detection → Enhanced vote counting
   ↓
 CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 CSV/JSON Cache → Pydantic → JSON API (/api/v1/)
-Cache diff → social/events → Posters → Mastodon/Bluesky
-announced_states.json ↔ git (committed with caches)
+CSV/JSON Cache → ipper.events adapters → events.jsonl (append-only log)
+last_seen.json ↔ git (detection baselines, committed with caches)
+event log → social consumer → Posters → Mastodon/Bluesky
+announced_states.json (v2 cursors/pending) ↔ git (committed with caches)
 ```
 
 **Caching Architecture:**
@@ -556,8 +663,8 @@ announced_states.json ↔ git (committed with caches)
 ## Future Considerations
 
 - Add support for more Apache projects (e.g., Airflow, Spark)
-- Add JavaScript filtering/search functionality to main pages
-- Pagination or lazy loading for large KIP/FLIP tables
+- Pagination or lazy loading for large KIP/FLIP tables (text search and
+  column filtering/sorting are already in place client-side)
 - Real-time updates via webhooks
 - Internationalization support
 - Database backend instead of CSV/JSON caching
@@ -570,10 +677,101 @@ announced_states.json ↔ git (committed with caches)
 
 ---
 
-**Last Updated:** 2026-10-05
+**Last Updated:** 2026-10-01
 **Maintainer:** Thomas Cooper
 
-## Recent Changes (2026-10-05)
+## Recent Changes (2026-10-01)
+
+### Proposal Event Log (ipper/events) + Social v2 Consumer
+
+**What Changed:**
+- New `ipper/events/` package: an append-only JSONL log
+  (`cache/events/events.jsonl`) of every detectable proposal change across
+  all five projects, maintained automatically by each project's `update`
+  command under an exclusive `fcntl.flock` (parallel `local_build.sh`
+  updates are safe)
+- Event taxonomy: `new`, `state_changed`, `renumbered`, `disappeared`,
+  `first_approval`, `changes_requested`, `vote_started` — everything is
+  logged; consumers decide what they care about
+- Every event carries `observed_at` plus `effective_at`/`effective_at_source`
+  (best-known actual change time; exact for GitHub, upper-bound for wiki);
+  `stable_id` (`{key}/{event_type}@{date}`) computed once at append and
+  stored on the record
+- Detection baselines moved to `cache/events/last_seen.json` (version
+  mismatch = hard `EventsVersionError`, never silently reseeded); GitHub
+  cache records gained full-ISO `created_at` and explicit `closed_on`
+  fields (Phase 2, optional with documented fallbacks)
+- Shared project config moved to `ipper/common/projects.py`
+  (`ipper/social/config.py` re-exports unchanged names)
+- One-time `events backfill` command synthesizes historical events from the
+  current caches (chronological, `backfilled: true`) and seeds baselines;
+  `events tail` / `events stats` for inspection
+- Consumer API in `ipper/events/consumer.py` (`filter_events`,
+  `newest_first`, `events_after_seq`, `max_seq`, `latest_snapshot`) plus
+  `headline`/`summary_text` display helpers shared with social messages —
+  the feed-facing surface for the Atom/RSS follow-up (PR #13)
+- Social announcement pipeline rewritten as a log consumer: state file v2
+  (per-destination cursors + pending queue of embedded `EventRecord`s);
+  old v1 baselines/pending are superseded (auto-seeded to the log head,
+  nothing historical posted); `ipper/social/detector.py` and
+  `ipper/social/adapters/` deleted
+
+**New Files:** `ipper/events/` (models, store, detection, backfill,
+presentation, consumer, cli, adapters/{kafka,flink,github}),
+`ipper/common/projects.py`, `ipper/social/consumer.py`,
+`tests/events/` (7 modules + golden fixture), `cache/events/`
+
+**Deleted Files:** `ipper/social/detector.py`, `ipper/social/adapters/`,
+`tests/social/test_detector.py`, `tests/social/test_adapters.py`
+
+**Modified Files:** `ipper/main.py` (events subcommand),
+`ipper/kafka/main.py`, `ipper/flink/main.py`, `ipper/common/github_cli.py`
+(update hooks + `created_at`/`closed_on` enrichment in
+`github_process.py`), `ipper/social/{models,cli}.py`, `tests/social/`
+(cli rewrite), `.gitignore` (`cache/events/.lock`)
+
+**Dev commands:**
+
+```bash
+uv run python ipper/main.py events backfill   # one-time migration
+uv run python ipper/main.py events tail
+uv run python ipper/main.py events stats
+```
+
+**Benefits:**
+- Full change history with best-known change times (the data PR #13's Atom
+  feeds needed)
+- Crash-safe append + replay-dedup; idempotent second runs
+- Social delivery state shrinks to cursors + pending; per-destination
+  retries preserved; new destinations never replay history
+- Future consumers (webhooks, JSON API) need no cache internals
+
+## Recent Changes (2026-09-29)
+
+### Client-Side Search, Sortable Tables & Agent Skill Page
+
+**What Changed:**
+- Column headings on the KIP, FLIP and GitHub proposal index pages are now
+  clickable to sort (click again to reverse) — `templates/assets/table-sort.js`;
+  sort keys ride on `data-sort` attributes (vote/review counts, activity
+  colour rank, ISO created date); `ipper/kafka/output.py` now emits `created_on`
+  (ISO) per KIP for age sorting; sorting composes with the dropdown filters
+- Global text search across all columns added to
+  `templates/assets/table-filter.js` alongside the existing column dropdown
+  filters
+- Multi-author support for KIPs/FLIPs: "Author(s)" column renders multiple
+  authors; `TableFilter` gained multi-value column support
+- Agent skill page: `templates/skills.html` + `templates/skill/ossip/SKILL.md`
+  (documents the JSON API endpoints for AI agents), linked from the landing
+  page and copied into `site_files/` by CI and `local_build.sh`
+- Social media links added to the landing page (`templates/index.html`)
+
+**Modified Files:** `templates/assets/table-sort.js` (new),
+`templates/assets/table-filter.js`, `templates/skills.html`,
+`templates/skill/ossip/SKILL.md`, `templates/index.html`,
+`templates/style.css`, the four index templates, `ipper/kafka/output.py`
+
+## Recent Changes (2026-09-27)
 
 ### Social Media Announcements (Mastodon + Bluesky)
 
@@ -620,7 +818,7 @@ announced_states.json ↔ git (committed with caches)
 - `pyproject.toml` — `atproto`, `Mastodon.py` dependencies
 - `README.md`, this file — documentation
 
-## Recent Changes (2026-10-04)
+## Recent Changes (2026-09-20)
 
 ### Review-Activity Columns for GitHub-Based Proposals (SIP / SHIP / KDP)
 
@@ -742,8 +940,3 @@ uv run python ipper/main.py flink keys info
 - Full backward compatibility (explicit binding/non-binding still works)
 - Detailed logging for auditing automatic detections
 - Fast performance (O(1) email lookup, fuzzy matching only as fallback)
-
----
-
-**Last Updated:** 2026-02-07
-**Maintainer:** Thomas Cooper

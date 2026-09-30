@@ -34,6 +34,24 @@ from ipper.common.github_process import (
 logger = logging.getLogger(__name__)
 
 
+def _update_event_log(project: str, cache_path: Path) -> None:
+    """Append proposal events to the event log (never fails the update).
+
+    An events crash before save_seen costs nothing (replay-dedup protects
+    the next run), but a version mismatch means we cannot safely detect at
+    all, so EventsVersionError propagates.
+    """
+    from ipper.events import EventsVersionError, update_from_cache
+
+    try:
+        appended = update_from_cache(project, cache_path)
+        logger.info("Event log: %d new event(s)", len(appended))
+    except EventsVersionError:
+        raise  # version problems must fail loudly, never guess
+    except Exception:
+        logger.exception("Event log update failed; events will be re-detected next run")
+
+
 def _build_client(config: GithubProjectConfig, require_token: bool) -> GithubClient:
     try:
         return GithubClient(config.owner, config.repo, require_token=require_token)
@@ -110,6 +128,7 @@ def run_update_cmd(config: GithubProjectConfig, args: Namespace) -> None:
         len(cache["pr_index"]),
         cache_path,
     )
+    _update_event_log(config.key, cache_path)
 
 
 def run_output_cmd(config: GithubProjectConfig, args: Namespace) -> None:

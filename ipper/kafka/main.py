@@ -26,6 +26,24 @@ from ipper.kafka.wiki import get_kip_information, get_kip_main_page_info
 logger = logging.getLogger(__name__)
 
 
+def _update_event_log(project: str, cache_path: Path) -> None:
+    """Append proposal events to the event log (never fails the update).
+
+    An events crash before save_seen costs nothing (replay-dedup protects
+    the next run), but a version mismatch means we cannot safely detect at
+    all, so EventsVersionError propagates.
+    """
+    from ipper.events import EventsVersionError, update_from_cache
+
+    try:
+        appended = update_from_cache(project, cache_path)
+        logger.info("Event log: %d new event(s)", len(appended))
+    except EventsVersionError:
+        raise  # version problems must fail loudly, never guess
+    except Exception:
+        logger.exception("Event log update failed; events will be re-detected next run")
+
+
 def setup_kafka_parser(top_level_subparsers) -> None:
     """Add the kafka subcommands to the supplied top level subparser"""
 
@@ -273,6 +291,7 @@ def run_update_cmd(args: Namespace) -> None:
     args.overwrite = False
     args.chunk = 100  # Default chunk size for wiki download
     setup_wiki_download(args)
+    _update_event_log("kafka", Path("cache/kip_wiki_cache.json"))
 
     logger.info("Updating Developer Mailing List Archives")
     # Use metadata to download only new months

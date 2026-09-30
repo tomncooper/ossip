@@ -24,3 +24,4 @@ htmlcov/
 
 # Ruff cache
 .ruff_cache/
+cache/events/.lock

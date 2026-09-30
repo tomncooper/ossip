@@ -682,6 +682,8 @@ class TestInitCache:
         assert merged_record["pr_number"] == 245
         assert merged_record["title"] == "Kafka Exporter re-implementation"
         assert merged_record["created_on"] == "2026-01-10"
+        assert merged_record["created_at"] == "2026-01-10T00:00:00Z"
+        assert merged_record["closed_on"] == ""
         assert merged_record["merged_on"] == "2026-02-01T00:00:00Z"
         assert merged_record["frozen"] is True
         assert merged_record["web_url"].endswith("blob/main/157-kafka-exporter.md")
@@ -702,6 +704,8 @@ class TestInitCache:
         rejected_record = cache["proposals"]["pr-248"]
         assert rejected_record["state"] == "not accepted"
         assert rejected_record["frozen"] is True
+        assert rejected_record["created_at"] == "2026-01-01T00:00:00Z"
+        assert rejected_record["closed_on"] == "2026-02-03T00:00:00Z"
         assert [v["name"] for v in rejected_record["reviews"]["changes_requested"]] == [
             "dev2"
         ]
@@ -835,6 +839,18 @@ class TestIncrementalUpdate:
         cache = init_cache(STRIMZI_CONFIG, client)
         return cache, client
 
+    def test_old_cache_records_without_new_timestamp_fields(self):
+        """Pre-enrichment caches lack created_at/closed_on; update must tolerate them."""
+        cache, _ = self._initial_cache()
+        for record in cache["proposals"].values():
+            record.pop("created_at", None)
+            record.pop("closed_on", None)
+        client = _strimzi_init_client()  # same payloads, no bumps
+        update_cache(STRIMZI_CONFIG, cache, client)
+
+        # untouched old records keep working (fields stay absent)
+        assert "created_at" not in cache["proposals"]["pr-247"]
+
     def test_no_changes_means_no_per_pr_calls(self):
         cache, _ = self._initial_cache()
         client = _strimzi_init_client()  # same payloads
@@ -935,6 +951,8 @@ class TestIncrementalUpdate:
         record = cache["proposals"]["pr-247"]
         assert record["state"] == "not accepted"
         assert record["frozen"] is True
+        assert record["created_at"] == "2026-02-05T00:00:00Z"
+        assert record["closed_on"] == "2026-02-12T00:00:00Z"
         assert record["activity_status"] is None
         assert [v["name"] for v in record["reviews"]["accepted"]] == ["final1"]
         assert [v["name"] for v in record["reviews"]["changes_requested"]] == ["final2"]
