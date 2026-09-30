@@ -312,6 +312,8 @@ def _base_record(config: GithubProjectConfig, pull: dict[str, Any]) -> dict[str,
         "created_by": author,
         "authors": [author] if author else [],
         "created_on": (pull.get("created_at") or "")[:10],
+        "created_at": pull.get("created_at") or "",
+        "closed_on": "",
         "state": "",
         "web_url": "",
         "reviews": {"accepted": [], "commented": [], "changes_requested": []},
@@ -360,6 +362,7 @@ def build_rejected_record(
     record["id"] = pull["number"] if config.numbering == "pr_number" else None
     record["web_url"] = pull.get("html_url", "")
     record["reviews"] = derive_review_activity(reviews, comments, author)
+    record["closed_on"] = pull.get("closed_at") or ""
     record["last_activity"] = pull.get("closed_at") or pull.get("updated_at")
     record["activity_status"] = None
     record["frozen"] = True
@@ -478,6 +481,7 @@ def _promote_merged_record(
             "created_by": author,
             "authors": [author] if author else [],
             "created_on": (pull.get("created_at") or "")[:10],
+            "created_at": pull.get("created_at") or "",
             "merged_on": merged_on,
             "last_modified_on": merged_on,
             "web_url": merged_file.blob_url,
@@ -808,6 +812,7 @@ def _process_changed_pull(
             )
             if state == "closed":
                 record["state"] = IPState.NOT_ACCEPTED
+                record["closed_on"] = pull.get("closed_at") or ""
                 record["last_activity"] = pull.get("closed_at") or pull["updated_at"]
 
     elif state == "open" and previous_state == "closed":

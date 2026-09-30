@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-30T16:03:02Z",
+  "last_updated": "2026-09-30T20:14:22Z",
   "proposals": {
     "pr-245": {
       "pr_number": 245,
@@ -10753,7 +10753,8 @@
         ],
         "commented": [],
         "changes_requested": []
-      }
+      },
+      "created_at": "2020-06-03T20:03:33Z"
     }
   },
   "pr_index": {

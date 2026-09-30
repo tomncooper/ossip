@@ -3,6 +3,7 @@ from argparse import ArgumentParser, Namespace
 
 from ipper.common.github_cli import setup_github_project_parser
 from ipper.common.github_config import GITHUB_PROJECT_CONFIGS
+from ipper.events.cli import setup_events_parser
 from ipper.flink.main import setup_flink_parser
 from ipper.kafka.main import setup_kafka_parser
 from ipper.social.cli import setup_social_parser
@@ -62,6 +63,7 @@ def setup_top_level_parser() -> ArgumentParser:
         setup_github_project_parser(top_level_subparsers, github_config)
 
     setup_social_parser(top_level_subparsers)
+    setup_events_parser(top_level_subparsers)
 
     return top_level_parser
 

@@ -1,39 +1,42 @@
-"""Pydantic models for the social announcement pipeline."""
+"""Pydantic models for the social announcement pipeline (v2 state).
+
+Since the event log exists, social no longer stores detection baselines:
+it is a consumer of ``cache/events/events.jsonl``. Its state file holds
+per-destination cursors (acked-through seq) plus a pending queue of
+``EventRecord``s awaiting acknowledgement.
+
+``ProposalSnapshot``/``ProposalEvent`` are render-time mapping targets used
+by ``messages.build_message``; they are no longer stored state.
+"""
 
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
+from ipper.events.models import EventRecord
+
 
 class EventType(StrEnum):
-    """Announcement event types.
-
-    v1 emits only NEW, ACCEPTED and REJECTED. The remaining types are
-    modelled so they can be enabled via config later (see EventPolicy).
-    """
+    """Announcement vocabulary (mapping targets for event-log records)."""
 
     NEW = "new"
     ACCEPTED = "accepted"
     REJECTED = "rejected"
-    # Reserved for future use — disabled by default:
-    VOTE_STARTED = "vote_started"
-    FIRST_APPROVAL = "first_approval"
-    CHANGES_REQUESTED = "changes_requested"
 
 
 class ProposalSnapshot(BaseModel):
-    """Normalised view of one proposal from a project cache."""
+    """Normalised view of one proposal, built from an EventRecord for rendering."""
 
-    key: str  # baseline key, e.g. "kafka:kip-123" or "strimzi:pr-245"
+    key: str  # event key, e.g. "kafka:kip-123" or "strimzi:pr-245"
     project: str  # SOCIAL_PROJECTS key
     reference: str  # human-facing id, e.g. "KIP-123", "SIP-PR-245"
     title: str  # display title with the reference prefix stripped
-    state: str  # IPState value string from the cache
+    state: str  # proposal state string from the cache
     detail_url: str
 
 
 class ProposalEvent(BaseModel):
-    """A single detectable change to one proposal."""
+    """A single announcement, built from an EventRecord for rendering."""
 
     event_type: EventType
     snapshot: ProposalSnapshot
@@ -52,22 +55,16 @@ class DestinationStatus(BaseModel):
 class PendingEvent(BaseModel):
     """An event awaiting successful posting to all destinations."""
 
-    event: ProposalEvent
+    event: EventRecord
     destinations: dict[str, DestinationStatus] = Field(default_factory=dict)
 
 
-class BaselineRecord(BaseModel):
-    """Last-announced state of one proposal."""
-
-    state: str
-
-
 class SocialState(BaseModel):
-    """Root of announced_states.json."""
+    """Root of announced_states.json (v2)."""
 
-    version: int = 1
+    version: int = 2
     last_run: str | None = None
-    baselines: dict[str, BaselineRecord] = Field(default_factory=dict)
+    cursors: dict[str, int] = Field(default_factory=dict)  # dest -> acked_through_seq
     pending: list[PendingEvent] = Field(default_factory=list)
 
 
@@ -75,7 +72,7 @@ class EventPolicy(BaseModel):
     """What to announce and how much.
 
     Attributes:
-        enabled_event_types: types that generate posts.
+        enabled_event_types: announcement types that generate posts.
         max_posts: per-run cap; overflow stays pending for the next run.
         max_attempts: per-destination retry limit before dropping an event.
     """
