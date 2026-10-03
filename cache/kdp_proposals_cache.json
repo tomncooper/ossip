@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-02T15:57:22Z",
+  "last_updated": "2026-10-03T14:24:36Z",
   "proposals": {
     "pr-137": {
       "pr_number": 137,
@@ -1426,10 +1426,27 @@
       "web_url": "https://github.com/kroxylicious/design/pull/139",
       "reviews": {
         "accepted": [],
-        "commented": [],
+        "commented": [
+          {
+            "name": "SamBarker",
+            "timestamp": "2026-10-01T20:24:38Z"
+          },
+          {
+            "name": "k-wall",
+            "timestamp": "2026-10-01T16:07:42Z"
+          },
+          {
+            "name": "tombentley",
+            "timestamp": "2026-09-30T00:25:58Z"
+          },
+          {
+            "name": "robobario",
+            "timestamp": "2026-09-25T03:49:33Z"
+          }
+        ],
         "changes_requested": []
       },
-      "last_activity": "2026-09-22T07:37:25Z",
+      "last_activity": "2026-10-03T02:08:30Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -9272,11 +9289,89 @@
           "patch": "@@ -0,0 +1,138 @@\n+# 139 - API to expose the client's address to Filters\n+\n+Filters often need the client's network address \u2014 for authorization, audit logging, rate\n+limiting, or routing \u2014 but `FilterContext` has no accessor for it.\n+\n+The purpose of this proposal is to allow the filter to obtain client address information:\n+the direct peer address when the client connects directly, and the original client address\n+carried in the PROXY protocol header when a load balancer that speaks the PROXY protocol sits\n+in front.\n+\n+## Current situation\n+\n+Two gaps leave the client's address out of reach of filters:\n+\n+1. **No accessor for the peer address.** `FilterContext` exposes no way for a filter to read the\n+   address of the connection at all \u2014 not even the immediate TCP peer.\n+2. **The decoded PROXY header is stored but never exposed.** When PROXY protocol is in use\n+   (`proxyProtocol` mode `required` or `allowed`), the proxy already detects and decodes the\n+   header on the incoming connection and stores the source/destination address, port, and any\n+   TLV extensions in an internal `haProxyContext`. But no API surfaces it, so outside the\n+   runtime's own tests the decoded data is discarded.\n+\n+## Motivation\n+\n+Filters need the client's address for:\n+\n+* **Authorization** \u2014 controlling access by the client's address.\n+* **Audit logging** \u2014 recording the real client IP for compliance.\n+* **Rate limiting** \u2014 throttling requests per client address.\n+* **Routing** \u2014 selecting a route from the client's network or location.\n+* **Subject building** \u2014 including the client address in an authenticated subject.\n+\n+When PROXY protocol is in use, \"the client's address\" is the header's source address, not the\n+load balancer's \u2014 which is exactly why the accessor must account for the header.\n+\n+## Proposal\n+\n+The client address is already decoded in the runtime before any Kafka handling, so this is\n+purely an API to expose it.\n+\n+### 1. Three new accessors on `FilterContext`\n+\n+Three methods are added to `FilterContext`:\n+\n+```java\n+    /**\n+     * The client's address for this connection: the PROXY header's source address if\n+     * one was received, otherwise the immediate TCP peer (which, with no intermediary,\n+     * is the client itself).\n+     * @return the client's address\n+     */\n+    InetAddress clientAddress();\n+\n+    /**\n+     * The immediate TCP peer's address for this connection. This is simply the remote\n+     * address of the client-facing connection; it does not distinguish whether that\n+     * peer is the actual client or an intermediary (e.g. a load balancer). For the\n+     * client's address prefer {@link #clientAddress()}.\n+     * @return the direct TCP peer address\n+     */\n+    InetAddress peerAddress();\n+\n+    /**\n+     * The PROXY protocol (HAProxy) context for this connection.\n+     * @return the PROXY protocol context, or empty if no PROXY protocol header was received\n+     * on this connection (including when PROXY protocol support is disabled)\n+     */\n+    Optional<ClientHaProxyContext> clientHaProxyContext();\n+```\n+\n+`clientAddress()` is what a filter reaches for by default: it is the client whether or not a\n+load balancer sits in front. `peerAddress()` and `clientHaProxyContext()` exist for the minority\n+of filters that must reason about the load balancer hop or read the full header (e.g. the\n+destination address the client connected to).\n+\n+| Accessor                 | No PROXY header        | PROXY header received     |\n+|--------------------------|------------------------|---------------------------|\n+| `clientAddress()`        | client address         | header's source address   |\n+| `peerAddress()`          | = `clientAddress()`    | load balancer address     |\n+| `clientHaProxyContext()` | empty                  | present                   |\n+\n+### 2. A new `ClientHaProxyContext` interface\n+\n+`ClientHaProxyContext` is a new interface in a new package `io.kroxylicious.proxy.haproxy`,\n+mirroring `ClientTlsContext` and `ClientSaslContext` so the same data can later be offered to\n+non-filter plugins:\n+\n+```java\n+package io.kroxylicious.proxy.haproxy;\n+\n+import java.net.InetAddress;\n+\n+public interface ClientHaProxyContext {\n+    /** The original client address reported by the header. */\n+    InetAddress sourceAddress();\n+    /** The original client port reported by the header. */\n+    int sourcePort();\n+    /** The destination address the client connected to. */\n+    InetAddress destinationAddress();\n+    /** The destination port the client connected to. */\n+    int destinationPort();\n+}\n+```\n+\n+Two deliberate limits on the exposed data:\n+\n+* **INET addresses only.** `TCP4`/`TCP6` headers populate the fields above. A non-INET family\n+  (`UNIX` sockets) or the `UNKNOWN` transport has no meaningful `InetAddress`, so\n+  `clientHaProxyContext()` returns empty and `clientAddress()` falls back to the peer\n+  address \u2014 as if no header had arrived.\n+* **No TLVs.** PROXY v2 TLV extensions stay internal. A raw `Map<String, byte[]>` keyed by TLV\n+  type is a poor public surface, no motivating use case needs it, and copying it per access\n+  would sit on the connection hot path. A structured TLV API can be proposed later if needed.\n+\n+## Affected/not affected projects\n+\n+Affected: the `kroxylicious` repo \u2014 `kroxylicious-api`, `kroxylicious-runtime`, and the filter\n+test-support modules that provide `FilterContext` test doubles.\n+\n+Not affected: `kroxylicious-operator`, the KMS modules, and the authorizer API module (though a\n+future authorizer could consume `clientAddress()` through a filter).\n+\n+## Compatibility\n+\n+Purely additive: three new `FilterContext` methods and one new interface/package. No existing\n+configuration or API changes, and filters that ignore PROXY protocol are unaffected.\n+\n+## Rejected alternatives\n+\n+* **Reuse `clientAddress()` for the immediate TCP peer.** - The peer address is worth exposing in\n+  its own right (to reason about the network hop), so it gets a dedicated accessor named\n+  `peerAddress()`. Exposing it as `clientAddress()` would make the accessor whose name says\n+  \"client\" return a non-client address (the load balancer) in exactly the scenario this proposal\n+  exists for.\n+* **Name the client's address `clientSourceAddress()`.** - Once `peerAddress()` names the hop\n+  separately, there is no other address to distinguish the client's from, so the `source`\n+  qualifier adds nothing \u2014 the client's address is simply `clientAddress()`.\n+* **Expose TLVs as `Map<String, byte[]>`.** - see \"No TLVs\" above."
         }
       ],
-      "updated_at": "2026-09-22T07:37:25Z",
+      "updated_at": "2026-10-03T02:08:30Z",
       "head_sha": "681549c7dc44e0492144776693502685bacce778",
       "frozen": false,
-      "reviews_snapshot": [],
-      "comments_snapshot": [],
+      "reviews_snapshot": [
+        {
+          "name": "tombentley",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-23T05:10:04Z"
+        },
+        {
+          "name": "mapan1984",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-23T09:28:01Z"
+        },
+        {
+          "name": "robobario",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-25T03:49:33Z"
+        },
+        {
+          "name": "k-wall",
+          "state": "COMMENTED",
+          "timestamp": "2026-09-29T09:51:12Z"
+        }
+      ],
+      "comments_snapshot": [
+        {
+          "name": "k-wall",
+          "timestamp": "2026-09-24T10:29:07Z"
+        },
+        {
+          "name": "SamBarker",
+          "timestamp": "2026-09-28T04:33:48Z"
+        },
+        {
+          "name": "mapan1984",
+          "timestamp": "2026-09-28T11:54:00Z"
+        },
+        {
+          "name": "SamBarker",
+          "timestamp": "2026-09-28T22:52:22Z"
+        },
+        {
+          "name": "tombentley",
+          "timestamp": "2026-09-28T23:57:27Z"
+        },
+        {
+          "name": "tombentley",
+          "timestamp": "2026-09-29T00:05:44Z"
+        },
+        {
+          "name": "SamBarker",
+          "timestamp": "2026-09-29T03:23:22Z"
+        },
+        {
+          "name": "tombentley",
+          "timestamp": "2026-09-29T20:11:24Z"
+        },
+        {
+          "name": "SamBarker",
+          "timestamp": "2026-09-29T23:54:03Z"
+        },
+        {
+          "name": "tombentley",
+          "timestamp": "2026-09-30T00:25:58Z"
+        },
+        {
+          "name": "SamBarker",
+          "timestamp": "2026-09-30T01:57:58Z"
+        },
+        {
+          "name": "k-wall",
+          "timestamp": "2026-10-01T16:07:42Z"
+        },
+        {
+          "name": "SamBarker",
+          "timestamp": "2026-10-01T20:24:38Z"
+        },
+        {
+          "name": "mapan1984",
+          "timestamp": "2026-10-03T02:08:30Z"
+        }
+      ],
       "snapshots_fetched": true
     },
     "138": {
@@ -9766,5 +9861,5 @@
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-10-02T15:41:06Z"
+  "watermark": "2026-10-03T02:08:30Z"
 }
