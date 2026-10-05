@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-28T02:38:07.534055+00:00",
+  "last_updated": "2026-10-05T03:05:12.444755+00:00",
   "source_url": "https://downloads.apache.org/flink/KEYS",
   "committers": [
     {
@@ -389,6 +389,13 @@
         "xtsong@apache.org"
       ],
       "raw_uid": "Xintong Song (CODE SIGNING KEY) <xtsong@apache.org>"
+    },
+    {
+      "name": "Xiqian YU",
+      "emails": [
+        "yux@apache.org"
+      ],
+      "raw_uid": "Xiqian YU (CODE SIGNING KEY) <yux@apache.org>"
     },
     {
       "name": "Xuannan Su",
