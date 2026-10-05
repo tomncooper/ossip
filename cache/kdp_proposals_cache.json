@@ -1,43 +1,6 @@
 {
-  "last_updated": "2026-10-04T14:56:50Z",
+  "last_updated": "2026-10-05T18:42:43Z",
   "proposals": {
-    "pr-137": {
-      "pr_number": 137,
-      "pr_url": "https://github.com/kroxylicious/design/pull/137",
-      "title": "Add proposal for configurable upstream connect timeout (#4327)",
-      "created_by": "AdityaThakur1998",
-      "authors": [
-        "AdityaThakur1998"
-      ],
-      "created_on": "2026-09-11",
-      "state": "under discussion",
-      "web_url": "https://github.com/kroxylicious/design/pull/137",
-      "last_activity": "2026-10-02T14:47:21Z",
-      "activity_status": "green",
-      "last_activity_age": "0 days",
-      "amendments": [],
-      "frozen": false,
-      "id": 137,
-      "reviews": {
-        "accepted": [
-          {
-            "name": "robobario",
-            "timestamp": "2026-10-02T03:17:38Z"
-          },
-          {
-            "name": "k-wall",
-            "timestamp": "2026-10-01T16:33:19Z"
-          }
-        ],
-        "commented": [
-          {
-            "name": "MarkNSweep",
-            "timestamp": "2026-09-30T14:53:59Z"
-          }
-        ],
-        "changes_requested": []
-      }
-    },
     "pr-133": {
       "pr_number": 133,
       "pr_url": "https://github.com/kroxylicious/design/pull/133",
@@ -1683,6 +1646,47 @@
       "merged_on": "2026-10-01T10:43:08Z",
       "last_modified_on": "2026-10-01T10:43:08Z",
       "file_path": "proposals/135-dedicated-service-account.md"
+    },
+    "137": {
+      "pr_number": 137,
+      "pr_url": "https://github.com/kroxylicious/design/pull/137",
+      "title": "Configurable upstream connect timeout",
+      "created_by": "AdityaThakur1998",
+      "authors": [
+        "AdityaThakur1998"
+      ],
+      "created_on": "2026-09-11",
+      "state": "accepted",
+      "web_url": "https://github.com/kroxylicious/design/blob/main/proposals/137-configurable-upstream-connect-timeout.md",
+      "last_activity": null,
+      "activity_status": null,
+      "last_activity_age": null,
+      "amendments": [],
+      "frozen": true,
+      "id": 137,
+      "reviews": {
+        "accepted": [
+          {
+            "name": "k-wall",
+            "timestamp": "2026-10-05T16:23:45Z"
+          },
+          {
+            "name": "robobario",
+            "timestamp": "2026-10-02T03:17:38Z"
+          }
+        ],
+        "commented": [
+          {
+            "name": "MarkNSweep",
+            "timestamp": "2026-09-30T14:53:59Z"
+          }
+        ],
+        "changes_requested": []
+      },
+      "key": "137",
+      "merged_on": "2026-10-05T16:26:04Z",
+      "last_modified_on": "2026-10-05T16:26:04Z",
+      "file_path": "proposals/137-configurable-upstream-connect-timeout.md"
     }
   },
   "pr_index": {
@@ -2300,9 +2304,9 @@
       "snapshots_fetched": true
     },
     "137": {
-      "state": "open",
+      "state": "merged",
       "classification": "proposal",
-      "proposal_key": "pr-137",
+      "proposal_key": "137",
       "files": [
         {
           "sha": "b570c5a7cb3c2208a2f84e2bf32c9440d87c5fb5",
@@ -2317,9 +2321,9 @@
           "patch": "@@ -0,0 +1,205 @@\n+# 137 - Configurable upstream connect timeout\n+\n+Add a `connectTimeout` key to `ClusterDefinition` that governs how long the proxy waits for the\n+TCP connect to an upstream broker to complete. Netty's existing 30-second default is retained when\n+the key is unset; setting it changes behaviour only for the clusters that opt in.\n+\n+## Current situation\n+\n+The proxy sets no connect timeout on its upstream connections \u2014 `ServerConnectionStateMachine`,\n+which builds the Netty bootstrap for each one, configures only auto-read and TCP no-delay. Netty's\n+own default of 30 seconds therefore applies. That is not a considered choice by Kroxylicious; it is\n+whatever Netty ships with, and it governs every deployment today, invisibly and with no way to\n+change it. This proposal is about taking control of a bound already in force, not introducing one.\n+\n+It applies to both places the proxy dials upstream: the bootstrap connection, whose address is\n+chosen from the cluster's `bootstrapServers` by the configured selection strategy (round robin by\n+default), and per-broker connections, whose addresses come from cluster metadata.\n+\n+## Non-goals\n+\n+**DNS resolution.** The proxy connects by hostname and Netty resolves the name before the connect\n+begins, so this bounds the TCP connect only. A slow or hanging resolver is a separate failure mode\n+with its own remedy; folding it in would make one number mean two different things depending on\n+which part was slow.\n+\n+**Operator/CRD exposure.** Scoped to proxy configuration. The operator has no path to the new key;\n+surfacing it through the CRD is a separate change with its own API surface to design.\n+\n+**Kafka-style escalation.** Kafka clients lengthen their connect timeout on each successive failure\n+against a node, because a long-lived client object holds a per-node failure count. The proxy has no\n+equivalent: everything involved in an upstream connection attempt is discarded when the attempt\n+fails, and the only state outliving it is the round-robin counter, which counts connections handed\n+out rather than failures. Escalation would mean introducing per-address failure state with its own\n+lifetime and reset rules \u2014 a feature in its own right.\n+\n+**Jitter.** Not proposed, rather than judged inapplicable. Every client behind the proxy stalls for\n+the same duration against a blackholed address and reconnects on the same cadence, most visibly\n+after a proxy restart. Jitter would spread that out; it is simply not addressed here.\n+\n+## Motivation\n+\n+The problem only appears when an upstream address **silently drops** packets rather than refusing\n+the connection \u2014 a firewall or security group configured to drop, a `NetworkPolicy` that does the\n+same, or a dead host whose address still routes. A refused connection returns in about one round\n+trip and never comes near the timeout. Silence is the only case that reaches it, which is why a\n+30-second wait buried in a networking library has gone this long without anyone needing to\n+configure it.\n+\n+When it does happen, the proxy makes no attempt to recover. There is no retry and no failover: the\n+connect fails, the attempt is torn down, and the downstream connection goes with it. Progress past\n+a bad address depends entirely on the client reconnecting, which advances the shared round-robin\n+counter to the next address. That counter advances once per downstream connection, not once per\n+upstream attempt, so each bad address costs a full timeout and a client reconnect before the next\n+is tried.\n+\n+Total cost therefore scales with the number of bad addresses, and the client has its own patience\n+to spend. Measured with an `AdminClient` on default timeouts, against a bootstrap list of one\n+working broker behind unreachable RFC 5737 TEST-NET-1 addresses:\n+\n+| Bad addresses ahead of the working one | Connect timeout | Result | Elapsed |\n+|---|---|---|---|\n+| 1 | unset (30s) | success | 30702ms |\n+| 3 | unset (30s) | **failed** \u2014 `TimeoutException: Timed out waiting for a node assignment` | 60368ms |\n+| 1 | 2s | success | 2652ms |\n+| 3 | 2s | success | 7082ms |\n+\n+The non-default rows were produced by hardcoding the option on a scratch branch, since no\n+configuration for it exists yet \u2014 they show what the timings look like at a given value, not that\n+the mechanism proposed below works.\n+\n+The three-address row is the important one: at today's default this is not merely slow, it does not\n+work at all. The client's own budget runs out before the round robin reaches a broker that would\n+have answered.\n+\n+Total time tracks roughly the number of bad addresses multiplied by the timeout in force, but not\n+exactly \u2014 each address cost somewhat more than the configured timeout (~650ms extra at one address,\n+~1080ms at three), which is not fully accounted for here. All runs used an `AdminClient`; a producer\n+resends rather than failing, so the outright-failure outcome should not be assumed to generalise.\n+\n+The 30 seconds is the proxy's bound, not the client's. On the same scratch branch, raising the\n+option to 50 seconds moved both the proxy's connect-timeout exception and the total elapsed time\n+with it, confirming the proxy gives up rather than the client. The distinction is easy to miss\n+because Kafka's `request.timeout.ms` also defaults to 30 seconds, putting the two timers in a race\n+at today's default.\n+\n+Per-broker connections have it worse, because there is nothing to fall back to. That address comes\n+from cluster metadata rather than a list, so a blackholed broker is a flat stall with no next\n+address to advance to, whatever the timeout is set to.\n+\n+The same key serves the opposite need. Operators on high-latency links or in test environments have\n+hit the reverse problem, where 30 seconds is too *short*, and today have no way to raise it.\n+\n+## Proposal\n+\n+### Configuration\n+\n+```yaml\n+clusterDefinitions:\n+  - name: my-cluster\n+    bootstrapServers: broker1.example.com:9092,broker2.example.com:9092\n+    connectTimeout: 10s\n+```\n+\n+| Key | Type | Default | Purpose |\n+|---|---|---|---|\n+| `connectTimeout` | duration | 30s (Netty's default, applied when the key is unset) | Maximum time to wait for the upstream TCP connect to complete, for both the bootstrap connection and per-broker connections to this cluster |\n+\n+`connectTimeout` is a provisional name and a clearer one is welcome. It uses the proxy's existing\n+duration format, so `10s` and `500ms` are both valid.\n+\n+The behaviour this implies:\n+\n+- The value is per-cluster. Each cluster definition carries its own, and clusters that do not set\n+  one keep the 30-second default.\n+- The default is applied when the value is read, not stored on the field. A cluster built through\n+  the fluent API and one parsed from YAML that omits the key therefore remain equal.\n+- Negative durations are rejected at configuration load.\n+- The accepted range is bounded, so a value cannot overflow the millisecond `int` that the\n+  underlying channel option takes.\n+\n+`ClusterDefinition` carries the key and hands it to `TargetCluster`, which stays the runtime carrier\n+for upstream connection details and is where resolution and validation belong. This is the same\n+shape as the change that added `bootstrapServerSelection` to `ClusterDefinition` (#4840).\n+\n+The value is deliberately **not** exposed on the deprecated inline `targetCluster` form, tracked for\n+removal by #4462 in the 0.25.0 milestone. Adding configuration to a form scheduled to disappear in\n+the same release means adding something that is immediately removed again.\n+\n+### Retaining Netty's default\n+\n+The default stays at 30 seconds. Keeping it makes the change purely additive: no deployment behaves\n+differently on upgrade until an operator sets the key on a cluster.\n+\n+A lower default would trade a known, already-survivable problem for a silent regression in\n+deployments that work today. A healthy connect can legitimately take longer than 10 seconds \u2014 Linux\n+retransmits a lost SYN at roughly 1s, 3s, 7s and 15s, so a connect dropping four SYNs still succeeds\n+at around 15 seconds under the current bound, and a broker whose accept backlog is full under load\n+behaves the same way. A 10-second default would abort both, even though nothing about them was\n+broken. The 15-second retransmission in particular is what rules out a flat 10 seconds: a bound\n+clearing only the 1s and 3s retries would kill connections that were always going to succeed.\n+\n+Kafka's own client defaults remain useful as guidance for an operator choosing a value, rather than\n+as justification for changing this default. Kafka defaults `socket.connection.setup.timeout.ms` to\n+10 seconds, escalating to a 30-second ceiling, which makes 10 seconds a sensible starting point for\n+an operator tuning downward \u2014 reasoned from Kafka's defaults, not measured against this proxy.\n+\n+### Testing\n+\n+The existing `ResilienceIT` bootstrap test does not cover this path: its fake servers accept the TCP\n+connection before closing it, so the connect succeeds and the timeout is never reached. A regression\n+test needs an address that accepts no connection at all \u2014 a non-routable or firewalled address \u2014\n+which is a different fixture from the one in that suite. Unit coverage needs to exercise the real\n+bootstrap construction rather than the stubs used today, asserting the configured option for both\n+the default and an explicit override.\n+\n+## Affected/not affected projects\n+\n+**Affected:**\n+\n+- `kroxylicious/kroxylicious` \u2014 `ClusterDefinition` and `TargetCluster` gain the new field, and the\n+  upstream bootstrap reads it. Documentation and a changelog entry for the new key.\n+\n+**Not affected:**\n+\n+- `kroxylicious/kroxylicious-operator` \u2014 has no path to the new field; unaffected until and unless a\n+  future change exposes it through the CRD (see Non-goals).\n+- Existing configurations \u2014 the key is optional and additive, and the default is unchanged.\n+\n+## Compatibility\n+\n+`connectTimeout` is an additive, optional key on `ClusterDefinition`. Existing configurations parse\n+unchanged, and because the default is unchanged they behave identically too \u2014 nothing is observable\n+on upgrade unless an operator explicitly sets the key.\n+\n+## Future extensions\n+\n+**Intra-connection failover across the bootstrap list.** A failed connect is not retried by the\n+proxy; progress depends on the client reconnecting. A natural complement to a configurable timeout\n+is having the proxy try the next address itself before giving up. Deferred because it needs design\n+of its own \u2014 where the iteration state lives and how long it persists, how it interacts with the\n+configured selection strategy, and what happens to the downstream connection meanwhile. It is the\n+other half of making bootstrap resilient to a partially unavailable list, and warrants its own\n+issue.\n+\n+## Rejected alternatives\n+\n+**A `NettySettings` field.** `NettySettings` tunes Netty event loop groups, and `NetworkDefinition`\n+applies it to the management and proxy listeners \u2014 both downstream-facing. A connect timeout there\n+would be proxy-wide rather than per upstream cluster, and on the wrong semantic axis: it configures\n+listener-side event loops, not an upstream dial.\n+\n+**A `network.upstream` sibling to `NettySettings`.** More semantically honest, since it would be\n+scoped to upstream connections, but it introduces a new top-level config concept and a second place\n+to look, rather than reusing the record that is already the natural home for per-cluster upstream\n+settings.\n+\n+**An overall connection deadline instead of a per-attempt timeout.** Kafka's `default.api.timeout.ms`\n+and `max.block.ms` model a deadline across multiple retried attempts. That does not map onto the\n+proxy: there is no multi-attempt loop to put a deadline around, since a failed connect is torn down\n+immediately and any retrying happens above the proxy in the client's reconnect logic. A per-attempt\n+timeout is the only quantity the proxy controls.\n+\n+**Lowering the default below 30 seconds.** Considered and rejected on review \u2014 existing deployments\n+may depend on the current bound in slow-network environments, and some test environments need\n+*longer* rather than shorter."
         }
       ],
-      "updated_at": "2026-10-02T14:47:21Z",
+      "updated_at": "2026-10-05T16:26:04Z",
       "head_sha": "56dfed13b5671377ff4625129c7b9883064beb2f",
-      "frozen": false,
+      "frozen": true,
       "reviews_snapshot": [
         {
           "name": "MarkNSweep",
@@ -2360,6 +2364,16 @@
           "name": "AdityaThakur1998",
           "state": "COMMENTED",
           "timestamp": "2026-10-02T13:54:33Z"
+        },
+        {
+          "name": "k-wall",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-05T16:22:02Z"
+        },
+        {
+          "name": "k-wall",
+          "state": "APPROVED",
+          "timestamp": "2026-10-05T16:23:45Z"
         }
       ],
       "comments_snapshot": [
@@ -9861,5 +9875,5 @@
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-10-03T02:08:30Z"
+  "watermark": "2026-10-05T16:26:04Z"
 }
