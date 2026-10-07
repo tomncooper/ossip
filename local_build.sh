@@ -139,6 +139,14 @@ from pathlib import Path
 generate_api_index(Path('site_files/api/v1'))
 "
 
+# Generate Atom feeds
+echo "📡 Generating Atom feeds..."
+uv run python -c "
+from ipper.common.feed_output import write_feeds
+from pathlib import Path
+write_feeds(Path('site_files/api/v1'), Path('site_files'))
+"
+
 # Social media announcement preview (no credentials required, never posts,
 # never writes the state file)
 if [[ "$SOCIAL_DRY_RUN" == true ]]; then
