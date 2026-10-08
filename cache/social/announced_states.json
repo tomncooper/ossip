@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "last_run": "2026-10-07T16:46:07+00:00",
+  "last_run": "2026-10-08T16:44:48+00:00",
   "baselines": {
     "kafka:kip-1": {
       "state": "accepted"
