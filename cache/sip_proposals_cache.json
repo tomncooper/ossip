@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-09T16:26:41Z",
+  "last_updated": "2026-10-10T15:31:21Z",
   "proposals": {
     "pr-203": {
       "pr_number": 203,
@@ -10716,46 +10716,6 @@
       "frozen": false,
       "id": null
     },
-    "4": {
-      "pr_number": 1,
-      "pr_url": "https://github.com/strimzi/proposals/pull/1",
-      "title": "GitHub repository restructuring",
-      "created_by": "scholzj",
-      "authors": [
-        "scholzj"
-      ],
-      "created_on": "2020-06-03",
-      "state": "accepted",
-      "web_url": "https://github.com/strimzi/proposals/blob/main/004-github-repository-restructuring.md",
-      "last_activity": null,
-      "activity_status": null,
-      "last_activity_age": null,
-      "amendments": [],
-      "frozen": true,
-      "key": "4",
-      "id": 4,
-      "merged_on": "2020-06-04T09:10:00Z",
-      "last_modified_on": "2020-06-04T09:10:00Z",
-      "file_path": "004-github-repository-restructuring.md",
-      "reviews": {
-        "accepted": [
-          {
-            "name": "Frawless",
-            "timestamp": "2020-06-04T08:43:40Z"
-          },
-          {
-            "name": "ppatierno",
-            "timestamp": "2020-06-04T07:52:16Z"
-          },
-          {
-            "name": "tombentley",
-            "timestamp": "2020-06-04T07:34:03Z"
-          }
-        ],
-        "commented": [],
-        "changes_requested": []
-      }
-    },
     "158": {
       "pr_number": 245,
       "pr_url": "https://github.com/strimzi/proposals/pull/245",
@@ -10816,6 +10776,46 @@
       "merged_on": "2026-10-08T17:43:51Z",
       "last_modified_on": "2026-10-08T17:43:51Z",
       "file_path": "158-kafka-exporter-re-implementation.md"
+    },
+    "4": {
+      "pr_number": 1,
+      "pr_url": "https://github.com/strimzi/proposals/pull/1",
+      "title": "GitHub repository restructuring",
+      "created_by": "scholzj",
+      "authors": [
+        "scholzj"
+      ],
+      "created_on": "2020-06-03",
+      "state": "accepted",
+      "web_url": "https://github.com/strimzi/proposals/blob/main/004-github-repository-restructuring.md",
+      "last_activity": null,
+      "activity_status": null,
+      "last_activity_age": null,
+      "amendments": [],
+      "frozen": true,
+      "key": "4",
+      "id": 4,
+      "merged_on": "2020-06-04T09:10:00Z",
+      "last_modified_on": "2020-06-04T09:10:00Z",
+      "file_path": "004-github-repository-restructuring.md",
+      "reviews": {
+        "accepted": [
+          {
+            "name": "Frawless",
+            "timestamp": "2020-06-04T08:43:40Z"
+          },
+          {
+            "name": "ppatierno",
+            "timestamp": "2020-06-04T07:52:16Z"
+          },
+          {
+            "name": "tombentley",
+            "timestamp": "2020-06-04T07:34:03Z"
+          }
+        ],
+        "commented": [],
+        "changes_requested": []
+      }
     }
   },
   "pr_index": {
