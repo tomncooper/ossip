@@ -123,6 +123,16 @@ jobs:
           generate_api_index(Path('site_files/api/v1'))
           "
 
+      - name: Generate Atom feeds
+        id: feeds-build
+        continue-on-error: true
+        run: |
+          uv run python -c "
+          from ipper.common.feed_output import write_feeds
+          from pathlib import Path
+          write_feeds(Path('site_files/api/v1'), Path('site_files'))
+          "
+
       - name: Check build results
         if: always()
         run: |
@@ -140,6 +150,9 @@ jobs:
           fi
           if [ "${{ steps.kroxylicious-build.outcome }}" = "failure" ]; then
             echo "::warning::Kroxylicious build failed — JSON API will not include KDP data"
+          fi
+          if [ "${{ steps.feeds-build.outcome }}" = "failure" ]; then
+            echo "::warning::Atom feed generation failed — feeds will be missing from this deploy"
           fi
           if [ "${{ steps.kafka-build.outcome }}" = "failure" ] && [ "${{ steps.flink-build.outcome }}" = "failure" ] && [ "${{ steps.strimzi-build.outcome }}" = "failure" ] && [ "${{ steps.streamshub-build.outcome }}" = "failure" ] && [ "${{ steps.kroxylicious-build.outcome }}" = "failure" ]; then
             echo "::error::All project builds failed"
