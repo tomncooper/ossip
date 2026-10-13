@@ -353,7 +353,7 @@ tr:hover {
 
 /* Proposal index tables: the header row stays at the top while scrolling.
    Separate borders keep the header's bottom border attached to the sticky
-   cells. The top offset clears the fixed .theme-toggle button. */
+   cells. */
 table.proposal-table {
     border-collapse: separate;
     border-spacing: 0;
@@ -367,13 +367,18 @@ table.proposal-table td {
 
 table.proposal-table thead th {
     position: sticky;
-    top: 60px;
+    top: 0;
     z-index: 1;
 }
 
 /* Keyboard focus scrolls into view below the sticky header */
 html:has(table.proposal-table) {
-    scroll-padding-top: 8rem;
+    scroll-padding-top: 5rem;
+}
+
+/* The theme toggle scrolls away instead of covering the sticky header */
+html:has(table.proposal-table) .theme-toggle {
+    position: absolute;
 }
 
 /* Tooltip container */
