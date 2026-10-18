@@ -351,6 +351,36 @@ tr:hover {
     background-color: var(--sol-bg);
 }
 
+/* Proposal index tables: the header row stays at the top while scrolling.
+   Separate borders keep the header's bottom border attached to the sticky
+   cells. */
+table.proposal-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-width: 1px 0 0 1px;
+}
+
+table.proposal-table th,
+table.proposal-table td {
+    border-width: 0 1px 1px 0;
+}
+
+table.proposal-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+/* Keyboard focus scrolls into view below the sticky header */
+html:has(table.proposal-table) {
+    scroll-padding-top: 5rem;
+}
+
+/* The theme toggle scrolls away instead of covering the sticky header */
+html:has(table.proposal-table) .theme-toggle {
+    position: absolute;
+}
+
 /* Tooltip container */
 .tooltip {
     position: relative;
