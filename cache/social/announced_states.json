@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "last_run": "2026-10-19T16:36:03+00:00",
+  "last_run": "2026-10-20T14:26:34+00:00",
   "baselines": {
     "kafka:kip-1": {
       "state": "accepted"
@@ -6465,7 +6465,7 @@
       "state": "accepted"
     },
     "strimzi:pr-248": {
-      "state": "under discussion"
+      "state": "accepted"
     },
     "strimzi:pr-249": {
       "state": "accepted"
@@ -6670,6 +6670,9 @@
     },
     "kafka:kip-1383": {
       "state": "unknown"
+    },
+    "kafka:kip-1384": {
+      "state": "under discussion"
     }
   },
   "pending": []
