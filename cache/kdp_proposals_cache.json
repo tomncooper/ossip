@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-20T14:26:23Z",
+  "last_updated": "2026-10-22T14:37:23Z",
   "proposals": {
     "pr-133": {
       "pr_number": 133,
@@ -1758,39 +1758,6 @@
       "last_modified_on": "2026-10-14T06:01:13Z",
       "file_path": "proposals/139-expose-client-address-to-filters.md"
     },
-    "pr-144": {
-      "pr_number": 144,
-      "pr_url": "https://github.com/kroxylicious/design/pull/144",
-      "title": "PQC support (data in transit), revised proposal",
-      "created_by": "MarkNSweep",
-      "authors": [
-        "MarkNSweep"
-      ],
-      "created_on": "2026-10-16",
-      "state": "under discussion",
-      "web_url": "https://github.com/kroxylicious/design/pull/144",
-      "reviews": {
-        "accepted": [
-          {
-            "name": "k-wall",
-            "timestamp": "2026-10-19T13:41:19Z"
-          }
-        ],
-        "commented": [
-          {
-            "name": "tombentley",
-            "timestamp": "2026-10-19T01:34:10Z"
-          }
-        ],
-        "changes_requested": []
-      },
-      "last_activity": "2026-10-20T11:20:10Z",
-      "activity_status": "green",
-      "last_activity_age": "0 days",
-      "amendments": [],
-      "frozen": false,
-      "id": 144
-    },
     "pr-145": {
       "pr_number": 145,
       "pr_url": "https://github.com/kroxylicious/design/pull/145",
@@ -1813,6 +1780,117 @@
       "amendments": [],
       "frozen": false,
       "id": 145
+    },
+    "pr-146": {
+      "pr_number": 146,
+      "pr_url": "https://github.com/kroxylicious/design/pull/146",
+      "title": "Proposal: configure the TLS subject builder via the Kubernetes Operator",
+      "created_by": "AdityaThakur1998",
+      "authors": [
+        "AdityaThakur1998"
+      ],
+      "created_on": "2026-10-21",
+      "state": "under discussion",
+      "web_url": "https://github.com/kroxylicious/design/pull/146",
+      "reviews": {
+        "accepted": [],
+        "commented": [
+          {
+            "name": "tombentley",
+            "timestamp": "2026-10-22T02:09:42Z"
+          }
+        ],
+        "changes_requested": []
+      },
+      "last_activity": "2026-10-22T13:57:58Z",
+      "activity_status": "green",
+      "last_activity_age": "0 days",
+      "amendments": [],
+      "frozen": false,
+      "id": 146
+    },
+    "pr-148": {
+      "pr_number": 148,
+      "pr_url": "https://github.com/kroxylicious/design/pull/148",
+      "title": "Per-gateway source address filtering",
+      "created_by": "k-wall",
+      "authors": [
+        "k-wall"
+      ],
+      "created_on": "2026-10-22",
+      "state": "under discussion",
+      "web_url": "https://github.com/kroxylicious/design/pull/148",
+      "reviews": {
+        "accepted": [],
+        "commented": [],
+        "changes_requested": []
+      },
+      "last_activity": "2026-10-22T13:52:55Z",
+      "activity_status": "green",
+      "last_activity_age": "0 days",
+      "amendments": [],
+      "frozen": false,
+      "id": 148
+    },
+    "pr-147": {
+      "pr_number": 147,
+      "pr_url": "https://github.com/kroxylicious/design/pull/147",
+      "title": "Per-gateway PROXY protocol configuration",
+      "created_by": "k-wall",
+      "authors": [
+        "k-wall"
+      ],
+      "created_on": "2026-10-22",
+      "state": "under discussion",
+      "web_url": "https://github.com/kroxylicious/design/pull/147",
+      "reviews": {
+        "accepted": [],
+        "commented": [],
+        "changes_requested": []
+      },
+      "last_activity": "2026-10-22T11:26:15Z",
+      "activity_status": "green",
+      "last_activity_age": "0 days",
+      "amendments": [],
+      "frozen": false,
+      "id": 147
+    },
+    "144": {
+      "pr_number": 144,
+      "pr_url": "https://github.com/kroxylicious/design/pull/144",
+      "title": "PQC Support",
+      "created_by": "MarkNSweep",
+      "authors": [
+        "MarkNSweep"
+      ],
+      "created_on": "2026-10-16",
+      "state": "accepted",
+      "web_url": "https://github.com/kroxylicious/design/blob/main/proposals/144-pqc-support.md",
+      "reviews": {
+        "accepted": [
+          {
+            "name": "k-wall",
+            "timestamp": "2026-10-19T13:41:19Z"
+          }
+        ],
+        "commented": [
+          {
+            "name": "tombentley",
+            "timestamp": "2026-10-19T01:34:10Z"
+          }
+        ],
+        "changes_requested": []
+      },
+      "last_activity": null,
+      "activity_status": null,
+      "last_activity_age": null,
+      "amendments": [],
+      "frozen": true,
+      "id": 144,
+      "key": "144",
+      "merged_on": "2026-10-20T22:02:35Z",
+      "last_modified_on": "2026-10-20T22:02:35Z",
+      "file_path": "proposals/144-pqc-support.md"
     }
   },
   "pr_index": {
@@ -10300,7 +10378,7 @@
     "144": {
       "state": "open",
       "classification": "proposal",
-      "proposal_key": "pr-144",
+      "proposal_key": "144",
       "files": [
         {
           "sha": "7c631c66c255600ad8ecd4fc711f658410a8d475",
@@ -10317,7 +10395,7 @@
       ],
       "updated_at": "2026-10-20T11:20:10Z",
       "head_sha": "c9c1ec88aed1e296225118117f53a6117d178a98",
-      "frozen": false,
+      "frozen": true,
       "reviews_snapshot": [
         {
           "name": "tombentley",
@@ -10372,7 +10450,98 @@
       "reviews_snapshot": [],
       "comments_snapshot": [],
       "snapshots_fetched": true
+    },
+    "146": {
+      "state": "open",
+      "classification": "proposal",
+      "proposal_key": "pr-146",
+      "files": [
+        {
+          "sha": "898922cd83ce580d9cbeee913fb60859c0264caa",
+          "filename": "proposals/146-tls-subject-builder-crd.md",
+          "status": "added",
+          "additions": 199,
+          "deletions": 0,
+          "changes": 199,
+          "blob_url": "https://github.com/kroxylicious/design/blob/d9fc50488acc708c10c63d18a88c5511713b0205/proposals%2F146-tls-subject-builder-crd.md",
+          "raw_url": "https://github.com/kroxylicious/design/raw/d9fc50488acc708c10c63d18a88c5511713b0205/proposals%2F146-tls-subject-builder-crd.md",
+          "contents_url": "https://api.github.com/repos/kroxylicious/design/contents/proposals%2F146-tls-subject-builder-crd.md?ref=d9fc50488acc708c10c63d18a88c5511713b0205",
+          "patch": "@@ -0,0 +1,199 @@\n+# 146 - Configure the TLS subject builder through the Kubernetes Operator\n+\n+When clients authenticate with TLS client certificates, the proxy needs rules for turning a certificate into a user identity.\n+The standalone proxy supports these rules, but the Kubernetes Operator gives users no way to set them.\n+This proposal adds an optional `tlsSubjectBuilder` field to the `VirtualKafkaCluster` custom resource, which the Operator turns into the proxy's existing subject builder configuration.\n+\n+## Current situation\n+\n+When a client connects, the proxy works out who it is.\n+This identity is called the *subject*, and the names inside it, such as a user name, are called *principals*.\n+Filters such as Authorization use the subject to decide what a client may do.\n+\n+For clients that authenticate with SASL, the SASL filters build the subject from the login.\n+SASL subject builders are out of scope for this proposal.\n+\n+For clients that authenticate with a TLS client certificate, the proxy needs rules saying which part of the certificate becomes the user name. Or more generally which parts of the client certificate become which principals of the subject.\n+These rules are called the *subject builder*.\n+In the standalone proxy, each virtual cluster can configure one:\n+\n+```yaml\n+virtualClusters:\n+  - name: my-cluster\n+    # ...\n+    subjectBuilder:\n+      type: DefaultTransportSubjectBuilderService\n+      config:\n+        addPrincipals:\n+          - from: clientTlsSubject\n+            map:\n+              - replaceMatch: \"/CN=([^,]+),.*/$1/\"\n+              - else: anonymous\n+            principalFactory: UserFactory\n+```\n+\n+With these rules, a client whose certificate subject is `CN=myapp,OU=dev,O=example` becomes the user `myapp`.\n+\n+When the proxy runs under the Operator, users don't write this configuration themselves.\n+The Operator generates it from custom resources, and `VirtualKafkaCluster` has no field for a subject builder, so the Operator always leaves it unset.\n+\n+## Motivation\n+\n+Users who deploy with the Operator and authenticate clients with TLS certificates can't give those clients meaningful principals.\n+Without principals, Authorization rules can't refer to these clients, so this combination doesn't work today.\n+SASL users aren't affected.\n+\n+This was reported in [kroxylicious#3032](https://github.com/kroxylicious/kroxylicious/issues/3032), and it's likely to come up more often as users combine the Operator with certificate-based authentication.\n+\n+## Proposal\n+\n+### API\n+\n+Add an optional `tlsSubjectBuilder` field to the `VirtualKafkaCluster` spec.\n+It has two parts:\n+\n+- `type` (required): the subject builder plugin to use.\n+- `configTemplate` (optional): that plugin's settings, which may refer to values held in Kubernetes Secrets or ConfigMaps.\n+\n+The Operator resolves any references in `configTemplate` and writes the result, with `type`, into the `subjectBuilder` of the matching virtual cluster in the proxy configuration it generates.\n+\n+```yaml\n+apiVersion: kroxylicious.io/v1alpha1\n+kind: VirtualKafkaCluster\n+metadata:\n+  name: my-cluster\n+spec:\n+  proxyRef:\n+    name: my-proxy\n+  targetKafkaServiceRef:\n+    name: my-kafka\n+  ingresses:\n+    - ingressRef:\n+        name: cluster-ip\n+      tls:\n+        certificateRef:\n+          name: server-cert\n+        trustAnchorRef:\n+          kind: ConfigMap\n+          name: client-ca\n+          key: ca.pem\n+        tlsClientAuthentication: REQUIRED\n+  tlsSubjectBuilder:\n+    type: DefaultTransportSubjectBuilderService\n+    configTemplate:\n+      addPrincipals:\n+        - from: clientTlsSubject\n+          map:\n+            - replaceMatch: \"/CN=([^,]+),.*/$1/\"\n+            - else: anonymous\n+          principalFactory: UserFactory\n+```\n+\n+### Where the field lives\n+\n+The field is set once per virtual cluster, directly in the `VirtualKafkaCluster` resource.\n+In the custom resource, TLS settings sit on each ingress, but the proxy applies one set of subject builder rules to every connection to a virtual cluster, so the field sits at the cluster level to match.\n+This needs no change to the proxy.\n+The rules are usually a few lines and belong to a single cluster.\n+Keeping them in the cluster resource gives users one place to read and change them, and a change to one cluster's rules can't affect another cluster's identities.\n+\n+### Field shape and name\n+\n+`type` and `configTemplate` work the same way as on the `KafkaProtocolFilter` resource.\n+Existing proxy documentation and examples for subject builders apply directly, and custom subject builder plugins work without any change to the custom resource definition.\n+\n+The built-in subject builder needs no secrets, but other subject builders may, for example one that looks up users in LDAP or Active Directory, or one that uses OAuth token introspection.\n+`configTemplate` lets such values come from a Kubernetes Secret or ConfigMap instead of being written in the clear, using the same `${secret:<name>:<key>}` and `${configmap:<name>:<key>}` references as filters.\n+The Operator mounts each referenced entry as a file in the proxy container and replaces the reference with the file's path, so a subject builder that needs a secret must accept it as a file.\n+\n+The field is named `tlsSubjectBuilder` to make clear it only applies to TLS client certificates, following the naming of the existing `tlsClientAuthentication` setting.\n+\n+### Validation\n+\n+As with filter configuration today, the Operator checks that any Secrets and ConfigMaps referenced in `configTemplate` exist, and reports missing ones as a condition on the `VirtualKafkaCluster`.\n+It doesn't check the rest of the contents.\n+The proxy checks them at startup and refuses to start if they're invalid.\n+For the built-in subject builder, that includes unknown keys and badly formed rules.\n+So a mistake shows up as proxy pods failing to start, with the reason in the pod logs, rather than as a condition on the custom resource.\n+One proxy serves all the virtual clusters assigned to it, so a mistake in one cluster's rules stops the proxy for all of them.\n+\n+### Behaviour\n+\n+- If the field isn't set, nothing changes.\n+- If the ingress requires a certificate and the client doesn't send one, the connection is rejected.\n+- If a client presents no certificate, the client is anonymous.\n+  This happens when the ingress doesn't ask for a certificate, or when a certificate is optional and the client doesn't send one.\n+  The built-in authorizer denies anonymous clients by default.\n+- If SASL is also configured on the cluster, a successful SASL login replaces the certificate-based subject.\n+  A failed SASL login makes the client anonymous.\n+\n+These are all existing proxy behaviours, and the Operator documentation will describe them.\n+\n+## Out of scope\n+\n+Sidecar mode, where a proxy is injected into each application pod, isn't covered.\n+The application talks to its sidecar in plain text over localhost, so there's never a client certificate to build a subject from.\n+\n+## Future work\n+\n+If the Operator validated plugin configuration itself, it could report mistakes as a condition on the custom resource, and one cluster's mistake would no longer stop the proxy for the others.\n+This applies equally to filter configuration, so it's better handled as a separate change covering all plugin configuration.\n+\n+## Affected/not affected projects\n+\n+**Affected:**\n+\n+- `kroxylicious-kubernetes-api`: new optional field on the `VirtualKafkaCluster` custom resource definition.\n+- `kroxylicious-operator`: resolves references in `configTemplate`, mounts and watches the referenced Secrets and ConfigMaps, and writes the result into the generated proxy configuration.\n+- Operator documentation: describes the field, how it maps to the proxy's subject builder, how to refer to Secrets and ConfigMaps, and the behaviour when no certificate is presented or SASL is also used.\n+- Operator examples: a TLS client certificate version of the existing authorization example.\n+\n+**Not affected:**\n+\n+- The proxy and its configuration format.\n+- Sidecar mode (the admission webhook).\n+- Filters and authorizer plugins.\n+\n+## Compatibility\n+\n+### Backwards compatibility\n+\n+The field is optional and is added to the existing `v1alpha1` API.\n+Existing resources remain valid and behave exactly as before.\n+\n+### Forwards compatibility\n+\n+The field follows the proxy's current subject builder configuration.\n+If the proxy configuration format changes (see [design #96](https://github.com/kroxylicious/design/pull/96)), the Operator would translate this field into the new format, and the field itself would only change if the new format required it.\n+\n+## Rejected alternatives\n+\n+### A subject builder per ingress\n+\n+This would allow different rules on each ingress of the same cluster.\n+The proxy supports only one subject builder per virtual cluster, so this would need changes to the proxy configuration as well.\n+No use case for it has come up.\n+\n+### A separate, shared resource\n+\n+The rules would live in a new custom resource, referenced by name from each `VirtualKafkaCluster`, in the same way filters are.\n+This would allow clusters to share rules, and Kubernetes permissions could protect the rules separately from the cluster.\n+It was rejected because it adds a whole new resource type for the Operator to watch and report on, for rules that are typically a few lines long.\n+Sharing also means a single bad edit changes client identities in every cluster that uses it.\n+\n+### A fully described schema for the rules\n+\n+Describing every rule field in the custom resource definition would let Kubernetes reject typos when the resource is applied.\n+It was rejected because it would only cover the built-in subject builder, so custom plugins would need a separate way to be configured, and the schema would have to be kept in step with the proxy.\n+\n+### Naming the field `subjectBuilder`\n+\n+This would match the proxy configuration exactly.\n+It was rejected because the SASL filters already use `subjectBuilder` for something different: naming a plugin that builds subjects from SASL logins.\n+On a `VirtualKafkaCluster`, the name would also suggest the field controls all client identity, when it only handles TLS certificates.\n+\n+### Plain `config` without Secret references\n+\n+The field would be passed to the proxy as written, with no references to Secrets or ConfigMaps.\n+This is simpler for the Operator, and enough for the built-in subject builder, which has no secret settings.\n+It was rejected because other subject builders may need credentials, and the only way to supply them would be in the clear in the custom resource."
+        }
+      ],
+      "updated_at": "2026-10-22T13:57:58Z",
+      "head_sha": "d9fc50488acc708c10c63d18a88c5511713b0205",
+      "frozen": false,
+      "reviews_snapshot": [
+        {
+          "name": "tombentley",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-22T02:09:42Z"
+        },
+        {
+          "name": "AdityaThakur1998",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-22T11:09:57Z"
+        }
+      ],
+      "comments_snapshot": [],
+      "snapshots_fetched": true
+    },
+    "148": {
+      "state": "open",
+      "classification": "proposal",
+      "proposal_key": "pr-148",
+      "files": [
+        {
+          "sha": "98b34cbd8fc440ede11dddc391a32cb37ae24c65",
+          "filename": "proposals/148-per-gateway-source-address-filtering.md",
+          "status": "added",
+          "additions": 147,
+          "deletions": 0,
+          "changes": 147,
+          "blob_url": "https://github.com/kroxylicious/design/blob/fc1eeae17937e6d396d2756abe743fc27a0619cd/proposals%2F148-per-gateway-source-address-filtering.md",
+          "raw_url": "https://github.com/kroxylicious/design/raw/fc1eeae17937e6d396d2756abe743fc27a0619cd/proposals%2F148-per-gateway-source-address-filtering.md",
+          "contents_url": "https://api.github.com/repos/kroxylicious/design/contents/proposals%2F148-per-gateway-source-address-filtering.md?ref=fc1eeae17937e6d396d2756abe743fc27a0619cd",
+          "patch": "@@ -0,0 +1,147 @@\n+# 148 - Per-Gateway Source Address Filtering\n+\n+Proposes adding per-gateway source address filtering to Kroxylicious, allowing administrators to define CIDR-based allow and deny rules that control which IP addresses are permitted to open connections to each gateway.\n+\n+## Current situation\n+\n+Kroxylicious has no built-in mechanism for restricting connections by source IP address. Administrators wishing to limit access by network origin must rely entirely on external controls such as cloud security groups, host-based firewalls (`iptables`/`nftables`), or Kubernetes `NetworkPolicy`. These controls operate at the infrastructure level and have no awareness of the Kroxylicious gateway configuration.\n+\n+## Motivation\n+\n+### Defence in depth\n+\n+Firewalls and security groups are essential but can be misconfigured, circumvented, or out of the operator's direct control (e.g. shared infrastructure). Enforcing an allow/deny policy at the proxy layer provides a second line of defence that is co-located with the proxy configuration and version-controlled alongside it.\n+\n+### Per-gateway granularity\n+\n+A single Kroxylicious instance may expose multiple virtual clusters, each with multiple gateways, all sharing the same host address. A firewall rule applied to that host address cannot differentiate between gateways: allowing a port allows access to every gateway listening on that port.\n+\n+Kroxylicious can, however, distinguish gateways by SNI hostname after reading the TLS `ClientHello`. This means it can enforce different source-address policies on two gateways that share the same listening address and port \u2014 something a firewall cannot do.\n+\n+A typical example: a virtual cluster accessible via a public load-balancer gateway and a private on-cluster gateway on the same port. The load-balancer gateway should accept connections only from the known load-balancer CIDR; the on-cluster gateway should accept connections only from the pod CIDR. A single firewall rule cannot express both constraints simultaneously.\n+\n+### Restricting PROXY protocol header injection\n+\n+[Proposal 147](147-per-gateway-proxy-protocol.md) introduces per-gateway PROXY protocol configuration. The PROXY protocol specification warns that PROXY headers must only be accepted from known, trusted intermediaries \u2014 if any connecting host can send a PROXY header, a malicious client can forge its apparent origin.\n+\n+Source address filtering provides the mechanism to enforce this: a gateway configured with `proxyProtocol: mode: required` can additionally use `sourceAddressFilter` to restrict connections to the known load-balancer CIDR. Any peer that does not pass the source filter is rejected before it can present a PROXY header, closing the injection vector.\n+\n+## Out of scope\n+\n+### Kubernetes CRD\n+\n+Adding `sourceAddressFilter` to `KafkaProxyIngress` or other CRDs is not covered by this proposal. The plain configuration API is the focus here; a follow-up can extend the operator.\n+\n+### Automatic source filter population from Service status\n+\n+When a `KafkaProxyIngress` uses a `LoadBalancer`-type Service, the cloud provider assigns one or more external IP addresses that are reflected in the Service's `status.loadBalancer.ingress` field. It would be possible for the operator to read those addresses and automatically populate the gateway's `sourceAddressFilter` \u2014 so that only traffic originating from the assigned load-balancer IP is accepted, without the administrator having to configure CIDRs manually. This auto-population behaviour is not covered by this proposal and is left for consideration alongside the Kubernetes CRD work.\n+\n+## Proposal\n+\n+### Proxy Configuration\n+\n+Add an optional `sourceAddressFilter` block to `VirtualClusterGateway`. When absent, all connections are accepted (current behaviour; backward compatible).\n+\n+```yaml\n+virtualClusters:\n+  - name: my-cluster\n+    gateways:\n+      - name: external\n+        sniHostIdentifiesNode:\n+          # ...\n+        tls:\n+          # ...\n+        sourceAddressFilter:\n+          allow:\n+            - 203.0.113.0/24       # trusted load-balancer IPv4 range\n+            - 2001:db8::/32        # trusted load-balancer IPv6 range\n+          deny:\n+            - 203.0.113.100/32     # specific host blocked within the allow range\n+\n+      - name: internal\n+        portIdentifiesNode:\n+          # ...\n+        sourceAddressFilter:\n+          allow:\n+            - 10.0.0.0/8           # pod CIDR only\n+\n+      - name: unrestricted\n+        portIdentifiesNode:\n+          # ...\n+        # no sourceAddressFilter \u2014 all source addresses are accepted\n+```\n+\n+Both `allow` and `deny` are lists of CIDR strings in the notation defined by [RFC 4632](https://datatracker.ietf.org/doc/html/rfc4632) (IPv4) and [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291) (IPv6). Single-host addresses may be expressed as `/32` (IPv4) or `/128` (IPv6); there is no special syntax for them.\n+\n+When `sourceAddressFilter` is present, at least one of `allow` or `deny` must contain at least one entry. An empty filter block is rejected at startup as a configuration error, since its intent is ambiguous. Malformed CIDR strings are also rejected at startup.\n+\n+### Evaluation semantics\n+\n+Rules are evaluated in the following order for every new connection:\n+\n+1. **Deny check**: if the source address falls within any `deny` entry, the connection is rejected.\n+2. **Allow check**: if the source address falls within any `allow` entry, the connection is accepted.\n+3. **Default**: if neither check matched:\n+   - When `allow` is non-empty \u2192 reject (implicit deny; the allow list acts as a whitelist).\n+   - When `allow` is empty or absent \u2192 accept (the deny list acts as a pure blacklist).\n+\n+Deny always takes priority. An address that matches both a `deny` entry and an `allow` entry (e.g. a specific host inside an allowed CIDR) is rejected.\n+\n+| `allow` configured | `deny` configured | Unmatched address |\n+|--------------------|-------------------|-------------------|\n+| Yes                | No                | Rejected          |\n+| No                 | Yes               | Accepted          |\n+| Yes                | Yes               | Rejected          |\n+\n+### Sequencing constraint for SNI-based gateways\n+\n+For **port-based gateways** (`portIdentifiesNode`): the gateway is known at TCP accept time. Source address filtering is applied immediately \u2014 before TLS, before any Kafka protocol exchange. This is the fastest rejection path.\n+\n+For **SNI-based gateways** (`sniHostIdentifiesNode`) where multiple gateways share a listening port: the source IP is known at TCP accept time, but the gateway is only identified after the SNI name is extracted from the TLS `ClientHello`. Source address filtering is therefore deferred until after SNI resolution but before the TLS handshake completes. A rejected connection receives a TCP close without completing the handshake.\n+\n+This is the same sequencing constraint described in [Proposal 147](147-per-gateway-proxy-protocol.md) for PROXY protocol. The implementation will apply source filtering at the same pipeline stage as PROXY protocol enforcement for SNI-based gateways.\n+\n+### Observability\n+\n+When a connection is rejected by source address filtering:\n+\n+- A WARN-level log entry is emitted including the remote address and the gateway name.\n+- The existing `kroxylicious_client_to_proxy_disconnects` metric is incremented with a new `cause` label value: `source_address_denied`.\n+\n+### Interaction with PROXY protocol\n+\n+Source address filtering operates on the **network-layer source address** (the TCP peer address as reported by the OS). It is not affected by PROXY protocol headers.\n+\n+When a gateway is configured with both `sourceAddressFilter` and `proxyProtocol: mode: required`, the source filter acts as a guard on which peers are trusted to send PROXY headers. Only peers that pass the source filter reach the PROXY protocol decoding stage. This provides a natural way to restrict PROXY header injection to known load-balancer addresses without any additional configuration.\n+\n+## Affected/not affected projects\n+\n+**Affected:**\n+\n+- `kroxylicious-runtime` \u2014 `VirtualClusterGateway` configuration model; Netty pipeline initialisation (new channel handler for source filtering); startup validation (CIDR parsing)\n+\n+**Not affected:**\n+\n+- `kroxylicious-api` \u2014 no public filter API changes; source address is already planned for exposure via `FilterContext` in [Proposal 139](https://github.com/kroxylicious/design/blob/main/proposals/139-expose-client-address-to-filters.md)\n+- `kroxylicious-filters` \u2014 no filter changes\n+- `kroxylicious-kubernetes/*` \u2014 Kubernetes CRD changes are out of scope for this proposal\n+\n+## Compatibility\n+\n+`sourceAddressFilter` is a new optional field. Existing configurations without it continue to behave as today (all connections accepted). No migration is required.\n+\n+The new `cause=source_address_denied` metric label value is additive and does not affect existing dashboards that do not reference it.\n+\n+## Rejected alternatives\n+\n+### Hostname / DNS-based rules\n+\n+Rules based on reverse-DNS lookup of the source address were considered. DNS resolution at connection time introduces latency, external failure modes, and the possibility of DNS-based spoofing. CIDR ranges are sufficient for the target use cases.\n+\n+### Global (non-per-gateway) filter\n+\n+A global filter applied to all gateways would be simpler to configure, but it cannot express the per-gateway differentiation that is the primary motivation for this feature. Per-gateway is the only design that enables the SNI-based use case described in the motivation.\n+\n+### Kubernetes CRD\n+\n+Deferred to a follow-up proposal. The plain configuration API is sufficient to validate the design; operator support can follow once the runtime implementation is stable."
+        }
+      ],
+      "updated_at": "2026-10-22T13:52:55Z",
+      "head_sha": "fc1eeae17937e6d396d2756abe743fc27a0619cd",
+      "frozen": false,
+      "reviews_snapshot": [],
+      "comments_snapshot": [],
+      "snapshots_fetched": true
+    },
+    "147": {
+      "state": "open",
+      "classification": "proposal",
+      "proposal_key": "pr-147",
+      "files": [
+        {
+          "sha": "1bbc2c7ee1b564727352cf355bcddbda0c8b30ee",
+          "filename": "proposals/147-per-gateway-proxy-protocol.md",
+          "status": "added",
+          "additions": 165,
+          "deletions": 0,
+          "changes": 165,
+          "blob_url": "https://github.com/kroxylicious/design/blob/b4ad3d89e1b129ba4c280b1f526ca2beb301e7d1/proposals%2F147-per-gateway-proxy-protocol.md",
+          "raw_url": "https://github.com/kroxylicious/design/raw/b4ad3d89e1b129ba4c280b1f526ca2beb301e7d1/proposals%2F147-per-gateway-proxy-protocol.md",
+          "contents_url": "https://api.github.com/repos/kroxylicious/design/contents/proposals%2F147-per-gateway-proxy-protocol.md?ref=b4ad3d89e1b129ba4c280b1f526ca2beb301e7d1",
+          "patch": "@@ -0,0 +1,165 @@\n+# 147 - Per-Gateway PROXY Protocol Configuration\n+\n+Proposal to allow PROXY protocol acceptance to be configured individually per gateway, replacing the existing global setting.\n+\n+## Current situation\n+\n+Kroxylicious has top-level support for the [HAProxy PROXY protocol](https://www.haproxy.org/download/3.1/doc/proxy-protocol.txt) via a `proxyProtocol` block in the root configuration:\n+\n+```yaml\n+proxyProtocol:\n+  mode: required   # or: allowed, disabled\n+```\n+\n+This applies a single mode across every gateway of every virtual cluster in the proxy instance.\n+\n+The Kubernetes `KafkaProxyIngress` CRD has no equivalent field; there is no way to configure PROXY protocol acceptance via the operator.\n+\n+The proxy already decodes PROXY protocol headers from the wire when the mode is `required` or `allowed`, but currently makes **no programmatic use** of the decoded information \u2014 it is discarded. [Proposal 139](https://github.com/kroxylicious/design/blob/main/proposals/139-expose-client-address-to-filters.md) (recently approved, not yet implemented) will change this by exposing the client address to filters via `FilterContext`.\n+\n+## Motivation\n+\n+The existing global setting is too coarse for real deployments. A virtual cluster may be accessible via more than one gateway, where each gateway has a different trust relationship with its upstream.\n+\n+A common scenario is a virtual cluster with two gateways:\n+\n+- A **LoadBalancer** gateway for external clients routed through a cloud load balancer that supports PROXY protocol v2 (e.g., AWS NLB with the [AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/guide/service/annotations/#proxy-protocol-v2)). PROXY protocol headers arriving on this gateway are expected and trustworthy.\n+- A **ClusterIP** gateway for on-cluster clients connecting directly to the proxy. PROXY protocol headers on this gateway are _not_ expected \u2014 if accepted, they would allow a malicious on-cluster client to forge its apparent network origin.\n+\n+With the current global setting, an administrator cannot achieve this split. Enabling PROXY protocol globally creates an injection risk on the ClusterIP gateway; disabling it means the real client address is lost on the LoadBalancer gateway.\n+\n+The [PROXY protocol specification](https://www.haproxy.org/download/3.1/doc/proxy-protocol.txt) is explicit on this point:\n+\n+> Implementers should be very careful about not trying to automatically detect whether they have to decode the header or not, but rather they must only rely on a configuration parameter. Indeed, if the opportunity is left to a normal client to use the protocol, it will be able to hide its activities or make them appear as coming from somewhere else.\n+\n+This means PROXY protocol must be **on or off**, with no auto-detection. A gateway that requires PROXY protocol must reject connections that do not carry the header; a gateway that does not require it must reject connections that do.\n+\n+## Out of scope\n+\n+### Source address filtering\n+\n+Even with per-gateway control, an administrator may want to restrict which sources are trusted to send PROXY protocol headers \u2014 accepting them only from a known intermediary rather than from any connecting host. This is a general source-address filtering concern that applies beyond PROXY protocol and will be addressed in a separate proposal.\n+\n+### Propagating PROXY protocol to the upstream\n+\n+This proposal covers only the acceptance of PROXY protocol headers from downstream clients. Propagating the header onward to the upstream is not in scope. Kafka brokers do not support PROXY protocol, so there is no upstream consumer for such a header today. If Kroxylicious proxies were ever chained, propagation could become relevant, but that scenario is not a current requirement.\n+\n+## Proposal\n+\n+### Plain configuration \u2014 `VirtualClusterGateway`\n+\n+Add an optional `proxyProtocol` block to `VirtualClusterGateway`. When absent the gateway behaves as `disabled`. The `allowed` (auto-detect) mode is not supported.\n+\n+```yaml\n+virtualClusters:\n+  - name: my-cluster\n+    gateways:\n+      - name: external\n+        sniHostIdentifiesNode:\n+          # ... SNI config ...\n+        tls:\n+          # ... TLS config ...\n+        proxyProtocol:\n+          mode: required   # load balancer sends PROXY headers; require them\n+\n+      - name: internal\n+        portIdentifiesNode:\n+          # ... port config ...\n+        # no proxyProtocol block \u2014 defaults to disabled\n+```\n+\n+**Mode semantics:**\n+\n+| Mode | Behaviour |\n+|------|-----------|\n+| `required` | Every connection must begin with a valid PROXY v1 or v2 header. Connections that do not carry the header are rejected. |\n+| `disabled` | No PROXY protocol handling. Connections that carry a PROXY header are rejected to prevent injection. This is the default when `proxyProtocol` is omitted. |\n+\n+### Kubernetes API \u2014 `KafkaProxyIngress`\n+\n+Add an optional `proxyProtocol` block under `spec.loadBalancer` in the `KafkaProxyIngress` CRD. The field is placed here because cloud load balancers are the primary consumers of PROXY protocol in Kubernetes (see [Rejected alternatives](#rejected-alternatives) for why `clusterIP` and `openShiftRoute` are excluded).\n+\n+```yaml\n+apiVersion: kroxylicious.io/v1alpha1\n+kind: KafkaProxyIngress\n+metadata:\n+  name: public\n+spec:\n+  proxyRef:\n+    name: my-proxy\n+  loadBalancer:\n+    proxyProtocol:\n+      mode: required\n+```\n+\n+The operator translates this to a `proxyProtocol` block on the corresponding `VirtualClusterGateway` in the generated proxy configuration.\n+\n+> **Note:** Setting `mode: required` configures Kroxylicious to expect and enforce PROXY protocol headers on this gateway. It does **not** automatically configure the cloud load balancer to send them. The administrator is responsible for enabling PROXY protocol on the load balancer separately. For example, when using the AWS Load Balancer Controller, the annotation `service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: proxy_protocol_v2.enabled=true` must be applied to the Kubernetes Service \u2014 this can be done via the `spec.infrastructure.annotations` field on the `KafkaProxyIngress`.\n+\n+### Implementation note \u2014 port sharing under TLS/SNI\n+\n+When multiple gateways share a listening port and are distinguished by SNI hostname, there is a sequencing constraint: the PROXY protocol header arrives before the TLS `ClientHello`, and therefore before SNI resolution identifies which gateway is being targeted.\n+\n+The proxy will resolve this by operating speculatively at the port level: if any gateway bound to a port has `mode: required`, the proxy will attempt to decode a PROXY header on that port. Once SNI resolution has identified the gateway, the per-gateway mode is enforced:\n+\n+- Gateway is `required` and a header was received \u2192 accepted.\n+- Gateway is `required` and no header was received \u2192 connection closed immediately; closure is logged; `kroxylicious_client_to_proxy_disconnects` is incremented with `cause=proxy_protocol_header_missing`.\n+- Gateway is `disabled` and no header was received \u2192 accepted (normal path).\n+- Gateway is `disabled` and a header was received \u2192 connection closed immediately; closure is logged; `kroxylicious_client_to_proxy_disconnects` is incremented with `cause=proxy_protocol_header_unexpected`.\n+\n+This is an implementation detail. The user-visible API remains binary: `required` or `disabled`, per gateway.\n+\n+### Migration from the global `proxyProtocol` field\n+\n+The top-level `proxyProtocol` field in the plain configuration is superseded by this proposal. When the field is present, the proxy will log a startup warning and **ignore the value**. Administrators should migrate to per-gateway configuration.\n+\n+The `allowed` mode present in the legacy global field is also ignored when encountered. No equivalent is provided in the per-gateway API.\n+\n+## Affected/not affected projects\n+\n+**Affected:**\n+- `kroxylicious-runtime` \u2014 configuration model (`VirtualClusterGateway`), Netty pipeline initialisation, startup validation\n+- `kroxylicious-kubernetes/kroxylicious-kubernetes-api` \u2014 `KafkaProxyIngress` CRD schema (`spec.loadBalancer`)\n+- `kroxylicious-kubernetes/kroxylicious-operator` \u2014 reconciler generating proxy configuration from `KafkaProxyIngress`\n+\n+**Not affected:**\n+- `kroxylicious-api` \u2014 no public filter API changes\n+- `kroxylicious-filters` \u2014 no filter changes; client address exposure is tracked in proposal 139\n+\n+## Compatibility\n+\n+- The existing global `proxyProtocol` field is deprecated and ignored. This is a **behavioural breaking change** for any deployment that relied on it; those deployments must migrate to per-gateway configuration.\n+- The `allowed` mode is removed. Any configuration using it falls back to the deprecation behaviour above (ignored, warned).\n+- The per-gateway `proxyProtocol` field is new and additive; existing configurations without it continue to work with `disabled` semantics.\n+- The `KafkaProxyIngress` CRD change is additive (new optional field under `spec.loadBalancer`). Existing resources without the field retain `disabled` behaviour.\n+\n+## Rejected alternatives\n+\n+### Top-level `spec.proxyProtocol` on `KafkaProxyIngress`\n+\n+Placing the field at the top level of `KafkaProxyIngress.spec` would imply it is meaningful regardless of ingress type, but the field would be inert or counterproductive for both `clusterIP` and `openShiftRoute` ingress types (see those sections below). Nesting it under `spec.loadBalancer` makes it explicit that PROXY protocol is a concern of the load balancer type only.\n+\n+### `spec.clusterIP.proxyProtocol`\n+\n+On-cluster clients connect directly to the proxy without an intermediate load balancer. Their network address is already accurate and directly observable. Accepting PROXY headers from on-cluster clients would allow any workload to claim an arbitrary source address, undermining the security model that this feature is designed to enforce.\n+\n+### `spec.openShiftRoute.proxyProtocol`\n+\n+OpenShift's ingress (HAProxy-based) is capable of consuming PROXY protocol headers from an upstream load balancer, but it cannot propagate the original client address to backend services using the PROXY protocol. It can propagate the address via HTTP headers such as `X-Forwarded-For`, but those are not accessible to Kroxylicious, which operates at the TCP/Kafka protocol layer. The field would therefore be inert.\n+\n+### Keeping the `allowed` (auto-detect) mode\n+\n+The PROXY protocol specification explicitly warns against automatic detection:\n+\n+> [I]f the opportunity is left to a normal client to use the protocol, it will be able to hide its activities or make them appear as coming from somewhere else.\n+\n+Auto-detection allows any client to inject a PROXY header and spoof its origin. The mode is therefore not included in the per-gateway API.\n+\n+### Retaining the global `proxyProtocol` field as a default fallback\n+\n+A global default (analogous to `defaultFilters`) might seem convenient during migration, but it would undermine the security guarantee this feature is designed to provide. An administrator who intends only the LoadBalancer gateway to accept PROXY headers could accidentally leave the global default active, enabling injection on all other gateways. Explicit per-gateway configuration is safer.\n+\n+### Restricting accepted PROXY protocol versions\n+\n+PROXY protocol v1 (text-based) and v2 (binary) are both widely deployed and accepted by the underlying Netty decoder without distinction. Restricting acceptance to a specific version \u2014 for example, requiring v2 only \u2014 was considered but is not included in this proposal. There is no pressing operational reason to exclude either format today; most modern load balancers that support PROXY protocol offer v2. The `proxyProtocol` configuration node is intentionally structured to accommodate a version constraint in a future proposal without a breaking API change.\n+"
+        }
+      ],
+      "updated_at": "2026-10-22T11:26:15Z",
+      "head_sha": "b4ad3d89e1b129ba4c280b1f526ca2beb301e7d1",
+      "frozen": false,
+      "reviews_snapshot": [],
+      "comments_snapshot": [
+        {
+          "name": "k-wall",
+          "timestamp": "2026-10-22T11:08:10Z"
+        }
+      ],
+      "snapshots_fetched": true
     }
   },
-  "watermark": "2026-10-20T11:20:10Z"
+  "watermark": "2026-10-22T13:57:58Z"
 }
