@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-22T14:37:13Z",
+  "last_updated": "2026-10-23T14:21:35Z",
   "proposals": {
     "pr-203": {
       "pr_number": 203,
@@ -10569,18 +10569,32 @@
         "ShubhamRwt"
       ],
       "created_on": "2026-10-05",
-      "state": "under discussion",
+      "state": "not accepted",
       "web_url": "https://github.com/strimzi/proposals/pull/250",
       "reviews": {
         "accepted": [],
-        "commented": [],
-        "changes_requested": []
+        "commented": [
+          {
+            "name": "ppatierno",
+            "timestamp": "2026-10-22T16:07:46Z"
+          },
+          {
+            "name": "tomncooper",
+            "timestamp": "2026-10-08T11:15:29Z"
+          }
+        ],
+        "changes_requested": [
+          {
+            "name": "scholzj",
+            "timestamp": "2026-10-11T20:52:00Z"
+          }
+        ]
       },
-      "last_activity": "2026-10-07T08:57:54Z",
-      "activity_status": "green",
-      "last_activity_age": "0 days",
+      "last_activity": "2026-10-23T08:16:00Z",
+      "activity_status": null,
+      "last_activity_age": null,
       "amendments": [],
-      "frozen": false,
+      "frozen": true,
       "id": null
     },
     "pr-251": {
@@ -10724,12 +10738,16 @@
         "commented": [
           {
             "name": "scholzj",
-            "timestamp": "2026-10-18T18:50:16Z"
+            "timestamp": "2026-10-22T19:30:50Z"
+          },
+          {
+            "name": "tinaselenge",
+            "timestamp": "2026-10-22T12:16:16Z"
           }
         ],
         "changes_requested": []
       },
-      "last_activity": "2026-10-19T06:37:09Z",
+      "last_activity": "2026-10-23T11:15:53Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -57812,7 +57830,7 @@
       "snapshots_fetched": true
     },
     "250": {
-      "state": "open",
+      "state": "closed",
       "classification": "proposal",
       "proposal_key": "pr-250",
       "files": [
@@ -57829,11 +57847,31 @@
           "patch": "@@ -0,0 +1,108 @@\n+# Rename KafkaRebalance states and annotations to make the process clearer\n+\n+This proposal renames `KafkaRebalance` states and annotations to clear up confusion between the dry-run simulation and what actually executes.\n+\n+## Current situation\n+\n+The `KafkaRebalance` custom resource allows users to rebalance their cluster using Cruise Control.\n+During the rebalance process, it moves through the following states:\n+\n+1. `New`: Initial state after the `KafkaRebalance` resource is created\n+2. `PendingProposal`: Waiting for Cruise Control to generate an optimization proposal\n+3. `ProposalReady`: Optimization proposal is available for review\n+4. `Rebalancing`: Partition reassignment is actively executing\n+5. `Ready`: Rebalancing completed successfully\n+6. `NotReady`: Rebalancing failed\n+7. `Stopped`: Rebalancing was stopped\n+\n+Users can also apply the following annotations to interact with the `KafkaRebalance` resource:\n+\n+- `strimzi.io/rebalance=approve`: Transitions from `ProposalReady` to `Rebalancing` (executes the rebalance)\n+- `strimzi.io/rebalance=refresh`: Re-generates the optimization proposal\n+- `strimzi.io/rebalance-auto-approval=true`: Automatically transitions from `ProposalReady` to `Rebalancing` without manual intervention\n+- `strimzi.io/rebalance=stop`: Stops the running rebalance\n+\n+## Motivation\n+\n+The current naming creates confusion about how Cruise Control rebalancing works.\n+The term `ProposalReady` suggests that users are reviewing the exact plan that will be executed.\n+In reality, what users see in `ProposalReady` is a **dry-run simulation** by Cruise Control based on cluster state at that moment.\n+When users apply `strimzi.io/rebalance=approve`, Cruise Control makes a fresh API call, generates a **new** optimization proposal based on **current** cluster state, and immediately executes it.\n+This new proposal can differ from the dry-run because cluster state may have changed (brokers added/removed, new topics, load shifts, etc.).\n+Similarly, the `approve` annotation implies approving a specific plan, when users are actually triggering a fresh execution.\n+\n+This has caused:\n+- User misconceptions about proposal accuracy (see issue [#12199](https://github.com/strimzi/strimzi-kafka-operator/issues/12199))\n+- Questions about why executed rebalances differ from proposals\n+- Documentation challenges explaining dry-run vs execution\n+\n+Using new terminology will provide:\n+- Clarity on what is actually happening during the rebalancing states\n+- Consistency with the Cruise Control terminology\n+- Correct expectations for users\n+\n+## Proposal\n+\n+### State Renamings\n+\n+| Current State     | New State          | Rationale                                                  |\n+|-------------------|--------------------|------------------------------------------------------------|\n+| `PendingProposal` | `DryRunInProgress` | Clearly indicates a dry-run simulation is being calculated |\n+| `ProposalReady`   | `DryRunComplete`   | Indicates the dry-run is completed                         |\n+\n+**States that remain unchanged:**\n+- `New` - Clear initial state\n+- `Rebalancing` - Accurately describes active partition movement\n+- `Ready` - Standard terminal success state\n+- `NotReady` - Standard terminal failure state\n+- `Stopped` - Clear terminal state for manual stops\n+\n+### Annotation Renamings\n+\n+| Current Annotation                        | New Annotation                              | Rationale                                                         |\n+|-------------------------------------------|---------------------------------------------|-------------------------------------------------------------------|\n+| `strimzi.io/rebalance=approve`            | `strimzi.io/rebalance=execute`              | \"Execute\" accurately describes triggering the rebalance operation |\n+| `strimzi.io/rebalance=refresh`            | `strimzi.io/rebalance=dry-run`              | Aligns with the dry-run terminology and intent                    |\n+| `strimzi.io/rebalance-auto-approval=true` | `strimzi.io/rebalance-auto-execute=true`    | Matches the `execute` terminology                                 |\n+\n+**Annotations that remain unchanged:**\n+- `strimzi.io/rebalance=stop` - Clear and unambiguous\n+- `strimzi.io/rebalance-template=\"true\"` - Used for auto-rebalancing templates, not affected by this change\n+\n+### Implementation Details\n+\n+Since both old and new enum values will exist in `KafkaRebalanceState` and `KafkaRebalanceAnnotation`, the existing `valueOf()` in `KafkaRebalanceUtils.rebalanceState()` will handle reading both old and new state names correctly without any changes.\n+\n+In `KafkaRebalanceAssemblyOperator`, the `rebalanceAnnotation()` method will be updated to map both old and new annotation strings to the same new enum values - so `approve` and `execute` will both resolve to `KafkaRebalanceAnnotation.execute`, and `refresh` and `dry-run` will both resolve to `KafkaRebalanceAnnotation.dryrun`.\n+This means users applying either old or new annotation values will get the same behaviour, with a deprecation warning logged when old values are detected.\n+The handler methods `onPendingProposal` and `onProposalReady` will be renamed to `onDryRunInProgress` and `onDryRunComplete`.\n+Inside these handlers, the annotation switch cases for `approve` and `refresh` will be updated to use `execute` and `dryrun`, and all other references to old enum values will be updated throughout the class.\n+For the auto-execute annotation, the old key `strimzi.io/rebalance-auto-approval` will be passed as a fallback to `booleanAnnotation()` so both old and new keys will be accepted.\n+\n+The `strimzi_reconciliations_*` metrics use state names as label values, so label values will change from `PendingProposal`/`ProposalReady` to `DryRunInProgress`/`DryRunComplete`.\n+Old metric labels will work as long as old values are supported, but will stop working once old values are removed in a future release.\n+\n+### Documentation Updates\n+\n+The Cruise Control concepts guide, KafkaRebalance API reference, and procedure docs (`proc-generating-optimization-proposals.adoc`, `proc-approving-optimization-proposal.adoc`) will need to be updated to reflect new state and annotation names, explain the dry-run nature of the initial proposal, and mark old values as deprecated.\n+The release notes will need to clearly call out the metric label change so users can update their dashboards and alerts before old values are removed.\n+\n+## Affected/not affected projects\n+\n+This change affects the Strimzi cluster operator, system tests, and documentation.\n+All other Strimzi projects are not affected as they do not interact with `KafkaRebalance`.\n+\n+### Required API Changes\n+\n+The following changes are required in the `api` module:\n+\n+- `KafkaRebalanceState` - will add new enum values `DryRunInProgress` and `DryRunComplete` (old values `PendingProposal` and `ProposalReady` will be kept as deprecated)\n+- `KafkaRebalanceAnnotation` - will add new enum values `execute` and `dryrun` (old values `approve` and `refresh` will be kept as deprecated)\n+- `ResourceAnnotations` - will add new constant `ANNO_STRIMZI_IO_REBALANCE_AUTO_EXECUTE` (old constant `ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL` will be kept as deprecated)\n+\n+## Compatibility\n+\n+Old annotation values (`approve`, `refresh`, `strimzi.io/rebalance-auto-approval`) and old state names (`PendingProposal`, `ProposalReady`) remain supported for at least 2 releases.\n+The operator logs a deprecation warning whenever old values are used.\n+Old and new values can coexist during the transition \u2014 users can migrate at their own pace.\n+Deprecated values are removed in a later release."
         }
       ],
-      "updated_at": "2026-10-07T08:57:54Z",
+      "updated_at": "2026-10-23T08:17:07Z",
       "head_sha": "050dffe046bc50339ab2fa62077b632c6a5b65cb",
-      "frozen": false,
-      "reviews_snapshot": [],
-      "comments_snapshot": [],
+      "frozen": true,
+      "reviews_snapshot": [
+        {
+          "name": "tomncooper",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-08T11:15:29Z"
+        },
+        {
+          "name": "scholzj",
+          "state": "CHANGES_REQUESTED",
+          "timestamp": "2026-10-11T20:52:00Z"
+        }
+      ],
+      "comments_snapshot": [
+        {
+          "name": "ppatierno",
+          "timestamp": "2026-10-22T16:07:46Z"
+        },
+        {
+          "name": "ShubhamRwt",
+          "timestamp": "2026-10-23T08:16:00Z"
+        }
+      ],
       "snapshots_fetched": true
     },
     "251": {
@@ -58131,7 +58169,7 @@
           "contents_url": "https://api.github.com/repos/strimzi/proposals/contents/images%2F161-kafka-restart-stability-window.png?ref=eb32446d968417f6cdca5c1e275223adadc0e905"
         }
       ],
-      "updated_at": "2026-10-19T06:37:09Z",
+      "updated_at": "2026-10-23T11:15:53Z",
       "head_sha": "eb32446d968417f6cdca5c1e275223adadc0e905",
       "frozen": false,
       "reviews_snapshot": [
@@ -58154,16 +58192,25 @@
           "name": "acgtun",
           "state": "COMMENTED",
           "timestamp": "2026-10-19T06:37:07Z"
+        },
+        {
+          "name": "tinaselenge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-22T12:16:16Z"
         }
       ],
       "comments_snapshot": [
         {
           "name": "acgtun",
           "timestamp": "2026-10-19T06:37:09Z"
+        },
+        {
+          "name": "scholzj",
+          "timestamp": "2026-10-22T19:30:50Z"
         }
       ],
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-10-22T13:28:06Z"
+  "watermark": "2026-10-23T11:15:53Z"
 }
