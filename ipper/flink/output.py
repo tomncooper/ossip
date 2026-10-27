@@ -14,6 +14,7 @@ from ipper.common.api_output import (
     write_proposal_details,
 )
 from ipper.common.constants import DATE_FORMAT, DEFAULT_TEMPLATES_DIR, NOT_SET_STR
+from ipper.common.feed_names import feed_file, feed_title
 from ipper.common.mailing_list import create_vote_dict as _create_vote_dict
 from ipper.common.models import (
     FlipDetail,
@@ -115,6 +116,8 @@ def render_flink_main_page(
 
     output: str = template.render(
         flip_data=flip_data,
+        feed_file=feed_file("flink"),
+        feed_title=feed_title("flink"),
         date=dt.datetime.now(dt.UTC).strftime(DATE_FORMAT),
     )
 

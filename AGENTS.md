@@ -230,6 +230,16 @@ processing logic changes.
    - Individual detail pages for each proposal (KIP-XXX.html, FLIP-XXX.html,
      SIP-XXX.html / SIP-PR-N.html for unnumbered open proposals, etc.)
 4. Emit JSON API files (`write_proposal_details`, `write_schemas`, `generate_api_index`)
+5. Emit Atom feeds (`ipper/common/feed_output.py`, `write_feeds`) from the JSON
+   API summaries: `site_files/feed.xml` (all projects) plus
+   `site_files/<project>.xml`; newest 50 *new* proposals per feed. Entry ids are
+   `tag:` URIs (GitHub projects key on the PR number, because SIP/SHIP proposals
+   are renumbered on merge); feed/index-page names and titles come from
+   `common/feed_names.py`. Must run after the API summaries exist.
+   Known limitation: an entry's `<updated>` is its creation date, so readers
+   keep an unnumbered SIP/SHIP entry's original `SIP-PR-N.html` link, which 404s
+   once the proposal merges and is renumbered (the same happens to old social
+   posts)
 
 ### Social Media Announcements (`ipper/social/`)
 
@@ -308,7 +318,8 @@ module in `posters/__init__.py`; add its env vars to CI. No other changes.
   3. Run `strimzi/streamshub/kroxylicious update` (incremental; `GITHUB_TOKEN`
      env passed from secrets — optional, update works unauthenticated)
   4. Generate HTML files from cached data (kafka.html, flink.html,
-     strimzi/streamshub/kroxylicious.html + individual detail pages + JSON API)
+     strimzi/streamshub/kroxylicious.html + individual detail pages + JSON API),
+     then the Atom feeds (`continue-on-error`; feeds are non-essential)
   5. Post social media announcements (`social announce`; dry-run unless
      `SOCIAL_POSTS_ENABLED=true`; `continue-on-error` so failed destinations
      retry next run without losing the cache commit)
@@ -387,7 +398,7 @@ KIP_PATTERN = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
   - **Social announcements:** `cache/social/announced_states.json`
     (baselines + pending announcement queue; committed with the caches)
 - **Mbox Files:** `cache/mailbox_files/*.mbox` (downloaded archives)
-- **Output:** `site_files/*.html`
+- **Output:** `site_files/*.html`, Atom feeds `site_files/feed.xml` and `site_files/<project>.xml`
 
 ## Development Commands
 
@@ -572,6 +583,33 @@ announced_states.json ↔ git (committed with caches)
 
 **Last Updated:** 2026-10-05
 **Maintainer:** Thomas Cooper
+
+## Recent Changes (2026-09-29)
+
+### Atom Feeds of New Proposals
+
+**What Changed:**
+- New `site_files/feed.xml` (all projects) and `site_files/<project>.xml`
+  Atom feeds: the newest 50 newly-created proposals, built from the JSON API
+  summaries by `write_feeds`; no state-change events (the social accounts
+  cover accepted/rejected)
+- Entry ids are `tag:` URIs (GitHub projects key on the PR number so
+  renumbering on merge does not duplicate entries); XML-illegal characters are
+  stripped; one unreadable summary skips only that project's feed
+- Project index pages get an "RSS" nav item + `<link rel="alternate">`; the
+  homepage gets an "RSS" link; Ossy (`assets/images/ossy.png`) is the feed
+  `<icon>`, the wide `ossy-banner.png` the `<logo>`
+- CI/`local_build.sh` gained a feed step after the API index
+  (`continue-on-error` in CI)
+
+**New Files:** `ipper/common/feed_output.py`, `ipper/common/feed_names.py`,
+`tests/common/test_feed_output.py`, `templates/assets/images/ossy*.png`
+
+**Modified Files:** `ipper/{kafka,flink}/output.py`,
+`ipper/common/github_output.py`, the three index templates, `templates/index.html`,
+`.github/workflows/publish.yaml`, `local_build.sh`, `README.md`, this file
+
+---
 
 ## Recent Changes (2026-10-05)
 

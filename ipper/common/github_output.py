@@ -12,6 +12,7 @@ from ipper.common.api_output import (
     write_proposal_details,
 )
 from ipper.common.constants import DATE_FORMAT, DEFAULT_TEMPLATES_DIR, IPState
+from ipper.common.feed_names import feed_file, feed_title
 from ipper.common.github_config import GithubProjectConfig
 from ipper.common.github_models import Amendment, GithubProposalDetail
 from ipper.common.models import (
@@ -136,6 +137,8 @@ def render_index_page(
         project_name=config.name,
         display_title=config.display_title,
         prefix=config.prefix,
+        feed_file=feed_file(config.key),
+        feed_title=feed_title(config.key),
         rows=rows,
         detail_dirname=detail_dir if detail_dir is not None else config.detail_dirname,
         date=dt.datetime.now(dt.UTC).strftime(DATE_FORMAT),
