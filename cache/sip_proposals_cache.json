@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-24T13:28:40Z",
+  "last_updated": "2026-10-27T15:29:42Z",
   "proposals": {
     "pr-203": {
       "pr_number": 203,
@@ -10952,11 +10952,16 @@
       "state": "under discussion",
       "web_url": "https://github.com/strimzi/proposals/pull/255",
       "reviews": {
-        "accepted": [],
+        "accepted": [
+          {
+            "name": "im-konge",
+            "timestamp": "2026-10-27T11:56:28Z"
+          }
+        ],
         "commented": [],
         "changes_requested": []
       },
-      "last_activity": "2026-10-23T23:40:13Z",
+      "last_activity": "2026-10-27T11:56:29Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -58376,10 +58381,51 @@
           "patch": "@@ -0,0 +1,190 @@\n+# Adopt the Strimzi Go API\n+\n+This proposal suggests adopting the [Strimzi Go API](https://github.com/scholzj/strimzi-go) project under the Strimzi GitHub organization.\n+It also describes how the project will be moved and how its existing users can migrate to the new location.\n+\n+## Current Situation\n+\n+Strimzi provides its custom resource APIs as a Java library (the `api` module).\n+Java applications can use it together with the Fabric8 Kubernetes client to manage Strimzi resources.\n+But Strimzi does not provide any APIs for other programming languages.\n+\n+The Strimzi Go API project is currently hosted in my personal GitHub account in the [`scholzj/strimzi-go`](https://github.com/scholzj/strimzi-go) repository.\n+It provides the Strimzi custom resource APIs for the Go programming language.\n+It lets users manage Strimzi resources using the Kubernetes Go client (`client-go`).\n+It contains:\n+\n+* Go types for all Strimzi custom resources (currently the `v1` API of the `kafka.strimzi.io` and `core.strimzi.io` API groups)\n+* Generated `ClientSets`, informers, and listers for the Strimzi custom resources\n+* Examples showing how to use the APIs\n+* Tests for the APIs, including serialization tests and tests against real Strimzi CRDs running in a Kubernetes cluster\n+\n+The Go types are generated from the Strimzi `api` module by a small Java-based generator (`strimzi-go-generator`) that is part of the repository.\n+The `ClientSets`, informers, and listers are generated from the Go types using the standard Kubernetes code generators.\n+Thanks to that, adding support for new Strimzi versions requires only minimal manual work.\n+\n+The project has been available since January 2025.\n+It has regular releases following the Strimzi releases (the latest version `0.12.0` supports Strimzi 1.3.x).\n+It is used, for example, by the [Kekspos\u00e9](https://github.com/scholzj/kekspose), [Strimzi Shutdown](https://github.com/scholzj/strimzi-shutdown), and [Strimzi Backup](https://github.com/scholzj/strimzi-backup) projects.\n+It is also used by other users who build Go applications or Kubernetes operators that integrate with Strimzi.\n+\n+## Motivation\n+\n+Go is one of the most widely used programming languages in the Kubernetes ecosystem.\n+Many Kubernetes tools and operators are written in Go.\n+Having official Strimzi Go APIs makes it easier for them to integrate with Strimzi.\n+\n+Users who want to integrate with Strimzi from Go currently have to choose between:\n+\n+* Using the _unstructured_ Kubernetes client and working with Strimzi resources without any type safety\n+* Writing and maintaining their own Go types for the Strimzi custom resources\n+* Using the Strimzi Go API project from my personal GitHub account\n+\n+The Strimzi Go API project currently says clearly that it is not part of the Strimzi CNCF project.\n+Some users might be reluctant to depend on a project that lives in a personal GitHub account and is maintained by a single person.\n+Moving it to the Strimzi GitHub organization would give users more confidence in using it.\n+It would also make it easier for other Strimzi maintainers and contributors to help maintain the project and keep it in sync with new Strimzi releases.\n+\n+## Proposal\n+\n+This proposal suggests adopting the Strimzi Go API project under the Strimzi umbrella.\n+It will live in the Strimzi GitHub organization in a repository called `go` (`strimzi/go`).\n+It will be maintained by the Strimzi maintainers in the same way as our other subprojects.\n+\n+### Moving the Repository\n+\n+The repository will be moved by using the GitHub [repository transfer](https://docs.github.com/en/repositories/creating-and-managing-repositories/transferring-a-repository) feature.\n+The repository will be transferred from `scholzj/strimzi-go` to the Strimzi GitHub organization and renamed to `go`.\n+Repeating `strimzi` in the repository name is not needed once it lives in the Strimzi GitHub organization.\n+\n+Transferring the repository keeps the Git history, issues, pull requests, releases, and stars.\n+GitHub also automatically redirects all requests for the old repository (web, Git, and API) to the new repository.\n+The redirect works for both the transfer and the rename.\n+This includes the requests made by the Go tooling.\n+So existing users are not immediately affected and can migrate at their own pace.\n+\n+To keep the redirects working, no new repository named `strimzi-go` will ever be created in the `scholzj` GitHub account or in the Strimzi GitHub organization.\n+\n+### Go Module Path\n+\n+The Go module path is currently `github.com/scholzj/strimzi-go`.\n+Transferring the repository does not change the module path.\n+The module path is defined in the `go.mod` file and is also used in the import statements in the generated code.\n+\n+The module path will be changed to `github.com/strimzi/go` to match the new location of the repository.\n+This is a breaking change for the users of the library, as they will need to update the imports in their code.\n+However, the project is still at version `0.x`, and the change will be done only once when moving to the Strimzi GitHub organization.\n+\n+All versions released before the move will remain available under the old module path.\n+They are cached by the Go module proxy (`proxy.golang.org`) and can also be fetched from the new repository thanks to the GitHub redirect.\n+So existing builds will continue to work without any changes.\n+New versions will be released only under the new module path.\n+\n+### Migration Path\n+\n+The move will be done in the following steps:\n+\n+1. The repository will be transferred from `scholzj/strimzi-go` to the Strimzi GitHub organization and renamed to `strimzi/go`.\n+2. A final release under the old module path will be created (for example `0.12.1`).\n+   This release will mark the old module as deprecated by adding a `Deprecated` comment to the `go.mod` file.\n+   The deprecation message will point users to the new module path:\n+   ```go\n+   // Deprecated: The Strimzi Go API moved to github.com/strimzi/go. Please use the new module path instead.\n+   module github.com/scholzj/strimzi-go\n+   ```\n+3. The module path will be changed to `github.com/strimzi/go` in the `go.mod` file, in the `strimzi-go-generator`, and in the `hack/codegen.sh` script.\n+   All the generated code will be re-generated to use the new module path.\n+4. The next regular release (for example `0.13.0`) will be released under the new module path.\n+5. The change will be announced in the release notes, in the `README.md` file, and on the Strimzi communication channels.\n+\n+The deprecation release ensures that the users who do not follow the announcements will learn about the move as well.\n+The Go tooling shows the deprecation message to the users (for example in `go get` or `go list -m -u all` commands).\n+It is also shown by IDEs using `gopls` and on [pkg.go.dev](https://pkg.go.dev/).\n+\n+The users will migrate to the new module path by updating the imports in their Go code and updating their dependencies.\n+For example:\n+\n+```sh\n+grep -rl 'github.com/scholzj/strimzi-go' --include='*.go' . | xargs perl -pi -e 's#github.com/scholzj/strimzi-go#github.com/strimzi/go#g'\n+go get github.com/strimzi/go@latest\n+go mod tidy\n+```\n+\n+The migration instructions will be included in the `README.md` file and in the release notes.\n+\n+Users who do not migrate will continue using the last release under the old module path.\n+They will not receive any new versions supporting new Strimzi releases until they migrate.\n+\n+### Other Changes After the Adoption\n+\n+Once the project is adopted, we should also do the following changes:\n+\n+* Remove the note saying that the project is not part of the Strimzi CNCF project from the `README.md` file\n+* Update the license headers in the generated code (`hack/boilerplate.go.txt`) to use the same copyright notice as the other Strimzi projects\n+* Move the Java code of the `strimzi-go-generator` from the `cz.scholz` package to the `io.strimzi` package\n+* Add the files required for Strimzi subprojects such as `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, and `MAINTAINERS.md`\n+* Configure the repository in the same way as other Strimzi repositories (DCO checks, branch protection, Dependabot etc.)\n+* Mention the Go APIs on the Strimzi website\n+\n+The project will keep using GitHub Actions for its CI.\n+It already has a GitHub Actions workflow that builds the project, checks that the generated code is up-to-date, and runs the tests against the Strimzi CRDs deployed in a Kind cluster.\n+The initial migration would use the existing CI as is.\n+But after the migration is done, we will _standardize_ the CI with other repositories (using shared actions where possible), onboard to license and CVE scanning, etc.\n+\n+### Versioning and Releases\n+\n+The project will keep its current versioning scheme.\n+Each minor release of the Strimzi Go API corresponds to a minor release of Strimzi.\n+The `README.md` file contains a table with the supported Strimzi versions for each Strimzi Go API release.\n+The releases will be done by the Strimzi maintainers by tagging the release in the Git repository and creating the GitHub release.\n+No other release artifacts are needed, as Go modules are distributed directly from the Git repository.\n+\n+The project will continue to be released separately from the Strimzi operators.\n+Ideally, a new release supporting the new Strimzi version will be done shortly after each Strimzi release.\n+\n+## Affected/Not Affected Projects\n+\n+The Strimzi Go API project will have its own repository.\n+It does not require any changes to other Strimzi projects.\n+\n+It depends only on the released Strimzi `api` module (used by the generator) and on the released Strimzi CRDs (used in the tests).\n+So it does not need to be released together with the Strimzi operators.\n+Any changes to the Strimzi `api` module and the CRDs are picked up when the project is updated to the new Strimzi version.\n+\n+## Compatibility\n+\n+All existing releases of the Strimzi Go API will remain available and usable under the old module path `github.com/scholzj/strimzi-go`.\n+Users using them will not be affected by the move.\n+\n+The change of the module path to `github.com/strimzi/go` is a breaking change.\n+Users will need to update their imports when upgrading to the first release under the new module path.\n+The migration path described in this proposal minimizes the impact on the users and makes sure they are informed about the change.\n+\n+## Rejected Alternatives\n+\n+### Creating a New Repository and Asking Users to Move\n+\n+Instead of transferring the repository, we could create a new repository in the Strimzi GitHub organization with a copy of the code and ask the users to move to it.\n+The original repository would be archived.\n+This would make it possible to keep full control over the old repository.\n+But it would lose the issues, pull requests, releases, and stars of the original repository.\n+It would also not provide any redirects to the new repository.\n+And users who do not follow the announcements could easily miss that the project moved.\n+The archived original repository would still be available to users, so this approach does not provide any benefits over the repository transfer.\n+\n+### Keeping the Original Module Path\n+\n+We could transfer the repository but keep the old module path `github.com/scholzj/strimzi-go`.\n+This would avoid the breaking change for the users.\n+But it would rely on the GitHub redirect forever.\n+It would also be confusing for the users, as the module path would not match the repository location.\n+And it would not be possible to fix it later without the same breaking change.\n+\n+### Using a Vanity Import Path\n+\n+We could use a custom import path not tied to GitHub, such as `strimzi.io/go`.\n+This requires serving a `go-import` meta tag from the Strimzi website.\n+It would make any future moves of the repository transparent to the users.\n+But it creates a dependency on the Strimzi website for all users of the library.\n+It also makes the project setup more complicated, and it is not commonly used by other CNCF projects.\n+So this proposal suggests using the plain GitHub-based module path instead."
         }
       ],
-      "updated_at": "2026-10-23T23:40:13Z",
+      "updated_at": "2026-10-27T11:56:29Z",
       "head_sha": "24d1c4cb5d861eea53a36da68f98ef32b7f8a990",
       "frozen": false,
-      "reviews_snapshot": [],
+      "reviews_snapshot": [
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-26T16:41:52Z"
+        },
+        {
+          "name": "scholzj",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-26T16:43:29Z"
+        },
+        {
+          "name": "scholzj",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-26T16:44:34Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-26T22:46:37Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-26T22:48:23Z"
+        },
+        {
+          "name": "scholzj",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-26T22:52:48Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-27T11:55:53Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "APPROVED",
+          "timestamp": "2026-10-27T11:56:28Z"
+        }
+      ],
       "comments_snapshot": [],
       "snapshots_fetched": true
     },
@@ -58421,5 +58467,5 @@
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-10-24T04:59:20Z"
+  "watermark": "2026-10-27T11:56:29Z"
 }
