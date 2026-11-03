@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-02T19:41:27Z",
+  "last_updated": "2026-11-03T17:13:28Z",
   "proposals": {
     "pr-133": {
       "pr_number": 133,
@@ -1776,47 +1776,6 @@
       "frozen": false,
       "id": 148
     },
-    "pr-147": {
-      "pr_number": 147,
-      "pr_url": "https://github.com/kroxylicious/design/pull/147",
-      "title": "Per-gateway PROXY protocol configuration",
-      "created_by": "k-wall",
-      "authors": [
-        "k-wall"
-      ],
-      "created_on": "2026-10-22",
-      "state": "under discussion",
-      "web_url": "https://github.com/kroxylicious/design/pull/147",
-      "reviews": {
-        "accepted": [
-          {
-            "name": "robobario",
-            "timestamp": "2026-11-02T00:07:09Z"
-          }
-        ],
-        "commented": [
-          {
-            "name": "tombentley",
-            "timestamp": "2026-11-02T00:32:36Z"
-          },
-          {
-            "name": "MarkNSweep",
-            "timestamp": "2026-10-30T11:58:38Z"
-          },
-          {
-            "name": "mapan1984",
-            "timestamp": "2026-10-23T03:58:30Z"
-          }
-        ],
-        "changes_requested": []
-      },
-      "last_activity": "2026-11-02T17:55:11Z",
-      "activity_status": "green",
-      "last_activity_age": "0 days",
-      "amendments": [],
-      "frozen": false,
-      "id": 147
-    },
     "144": {
       "pr_number": 144,
       "pr_url": "https://github.com/kroxylicious/design/pull/144",
@@ -2012,6 +1971,51 @@
       "amendments": [],
       "frozen": false,
       "id": 151
+    },
+    "147": {
+      "pr_number": 147,
+      "pr_url": "https://github.com/kroxylicious/design/pull/147",
+      "title": "Per-Gateway PROXY Protocol Configuration",
+      "created_by": "k-wall",
+      "authors": [
+        "k-wall"
+      ],
+      "created_on": "2026-10-22",
+      "state": "accepted",
+      "web_url": "https://github.com/kroxylicious/design/blob/main/proposals/147-per-gateway-proxy-protocol.md",
+      "reviews": {
+        "accepted": [
+          {
+            "name": "robobario",
+            "timestamp": "2026-11-02T21:30:46Z"
+          },
+          {
+            "name": "tombentley",
+            "timestamp": "2026-11-02T19:53:03Z"
+          }
+        ],
+        "commented": [
+          {
+            "name": "MarkNSweep",
+            "timestamp": "2026-10-30T11:58:38Z"
+          },
+          {
+            "name": "mapan1984",
+            "timestamp": "2026-10-23T03:58:30Z"
+          }
+        ],
+        "changes_requested": []
+      },
+      "last_activity": null,
+      "activity_status": null,
+      "last_activity_age": null,
+      "amendments": [],
+      "frozen": true,
+      "id": 147,
+      "key": "147",
+      "merged_on": "2026-11-03T15:47:11Z",
+      "last_modified_on": "2026-11-03T15:47:11Z",
+      "file_path": "proposals/147-per-gateway-proxy-protocol.md"
     }
   },
   "pr_index": {
@@ -10702,9 +10706,9 @@
       "snapshots_fetched": true
     },
     "147": {
-      "state": "open",
+      "state": "merged",
       "classification": "proposal",
-      "proposal_key": "pr-147",
+      "proposal_key": "147",
       "files": [
         {
           "sha": "21dd135d9cf77fd030787352191914693bbb01d5",
@@ -10719,9 +10723,9 @@
           "patch": "@@ -0,0 +1,205 @@\n+# 147 - Per-Gateway PROXY Protocol Configuration\n+\n+Proposal to allow PROXY protocol acceptance to be configured individually per gateway, replacing the existing global setting.\n+\n+## Current situation\n+\n+Kroxylicious has top-level support for the [HAProxy PROXY protocol](https://www.haproxy.org/download/3.1/doc/proxy-protocol.txt) via a `proxyProtocol` block in the root configuration:\n+\n+```yaml\n+proxyProtocol:\n+  mode: required   # or: allowed, disabled\n+```\n+\n+This applies a single mode across every gateway of every virtual cluster in the proxy instance.\n+\n+The Kubernetes `KafkaProxyIngress` CRD has no equivalent field; there is no way to configure PROXY protocol acceptance via the operator.\n+\n+The proxy already decodes PROXY protocol headers from the wire when the mode is `required` or `allowed`, but currently makes **no programmatic use** of the decoded information \u2014 it is discarded. [Proposal 139](https://github.com/kroxylicious/design/blob/main/proposals/139-expose-client-address-to-filters.md) (recently approved, not yet implemented) will change this by exposing the client address to filters via `FilterContext`.\n+\n+> **Implementation order:** This proposal must be implemented before Proposal 139. Once 139 exposes the client address to filters, the existing `allowed` mode would allow any client to forge its apparent origin by injecting a PROXY header. Removing `allowed` and enforcing per-gateway trust boundaries (this proposal) is a prerequisite for the address exposed by Proposal 139 to be trustworthy.\n+\n+## Motivation\n+\n+The existing global setting is too coarse for real deployments. A virtual cluster may be accessible via more than one gateway, where each gateway has a different trust relationship with its upstream.\n+\n+Accepting a PROXY header means trusting the peer to tell you the real client address. \n+That trust is per-gateway, not per-cluster: a virtual cluster can expose several gateways, one behind a load balancer that rightly sets the header and another taking direct connections from on-cluster clients whose address is already observable. \n+A single global setting forces one trust decision across all of them. \n+Worse, the allowed (auto-detect) mode makes the header optional on every gateway, so an untrusted peer can inject its own PROXY header and claim any source address.\n+\n+A common scenario is a virtual cluster with two gateways:\n+\n+- A **LoadBalancer** gateway for external clients routed through a cloud load balancer that supports PROXY protocol v2 (e.g., AWS NLB with the [AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/guide/service/annotations/#proxy-protocol-v2)). PROXY protocol headers arriving on this gateway are expected and trustworthy.\n+- A **ClusterIP** gateway for on-cluster clients connecting directly to the proxy. PROXY protocol headers on this gateway are _not_ expected \u2014 if accepted, they would allow a malicious on-cluster client to forge its apparent network origin.\n+\n+With the current global setting, an administrator cannot achieve this split. Enabling PROXY protocol globally creates an injection risk on the ClusterIP gateway; disabling it means the real client address is lost on the LoadBalancer gateway.\n+\n+The [PROXY protocol specification](https://www.haproxy.org/download/3.1/doc/proxy-protocol.txt) is explicit on this point:\n+\n+> Implementers should be very careful about not trying to automatically detect whether they have to decode the header or not, but rather they must only rely on a configuration parameter. Indeed, if the opportunity is left to a normal client to use the protocol, it will be able to hide its activities or make them appear as coming from somewhere else.\n+\n+This means PROXY protocol must be **on or off**, with no auto-detection. A gateway that requires PROXY protocol must reject connections that do not carry the header; a gateway that does not require it must reject connections that do.\n+\n+## Out of scope\n+\n+### Source address filtering\n+\n+Even with per-gateway control, an administrator may want to restrict which sources are trusted to send PROXY protocol headers \u2014 accepting them only from a known intermediary rather than from any connecting host. This is a general source-address filtering concern that applies beyond PROXY protocol and will be addressed in a separate proposal.\n+\n+### Propagating PROXY protocol to the upstream\n+\n+This proposal covers only the acceptance of PROXY protocol headers from downstream clients. Propagating the header onward to the upstream is not in scope. Kafka brokers do not support PROXY protocol, so there is no upstream consumer for such a header today. If Kroxylicious proxies were ever chained, propagation could become relevant, but that scenario is not a current requirement.\n+\n+## Proposal\n+\n+### Proxy \n+\n+#### Configuration\n+\n+Add an optional `proxyProtocol` block to `gateway` block.\n+This will specify if the gateway requires the proxy protocol to be sent or not.\n+When the `proxyProtocol` block is absent, the gateway behaves as `forbidden`.\n+If the block is present, `mode` is required \u2014 an empty block or a block without `mode` is a validation error at startup.\n+\n+```yaml\n+virtualClusters:\n+  - name: my-cluster\n+    gateways:\n+      - name: external\n+        sniHostIdentifiesNode:\n+          # ... SNI config ...\n+        tls:\n+          # ... TLS config ...\n+        proxyProtocol:\n+          mode: required   # load balancer sends PROXY headers; require them\n+\n+      - name: internal\n+        portIdentifiesNode:\n+          # ... port config ...\n+        # no proxyProtocol block \u2014 defaults to forbidden\n+```\n+\n+**Mode semantics:**\n+\n+| Mode | Behaviour |\n+|------|-----------|\n+| `required` | Every connection must begin with a valid PROXY v1 or v2 header. Connections that do not carry the header are rejected. |\n+| `forbidden` | PROXY protocol headers are not permitted. Connections that carry a PROXY header are rejected to prevent injection. This is the default when `proxyProtocol` is omitted. |\n+\n+#### Implementation notes\n+\n+##### Same-port mode constraint\n+\n+All gateways that share a listening port must declare the same `proxyProtocol` mode. The proxy validates this at startup and fails with a clear error if conflicting modes are configured on the same port. This constraint arises naturally from the implementation: the PROXY protocol decision must be made when the TCP connection is accepted, before the virtual cluster or gateway identity is known.\n+\n+Gateways assigned port 0 (OS-assigned) are exempt \u2014 each such gateway always receives its own unique ephemeral port.\n+\n+##### Static per-port pipeline\n+\n+The PROXY protocol decoder is wired into the Netty pipeline statically at connection-accept time based on the port's agreed mode, rather than sniffing each connection at runtime.\n+\n+For `required` mode, Netty's `HAProxyMessageDecoder` is installed at the front of the pipeline, ahead of the TLS/SNI handler. For `forbidden` mode, no decoder is installed. Enforcement is therefore a natural consequence of the pipeline configuration:\n+\n+| Mode | Behaviour |\n+|---|---|\n+| `required`, header present | Decoder extracts the client address; connection proceeds normally. |\n+| `required`, header absent | Decoder raises a protocol error; connection is closed. For TLS connections this occurs before the TLS handshake begins. |\n+| `forbidden`, header absent | Normal path \u2014 no decoder installed. |\n+| `forbidden`, header present | PROXY bytes reach the Kafka codec; the frame decoder raises a protocol error and the connection is closed. |\n+\n+##### PROXY protocol v2 LOCAL command\n+\n+PROXY protocol v2 defines two commands: `PROXY` (a normal proxied connection carrying real client address information) and `LOCAL` (a connection initiated directly by the load balancer itself, typically for health checks). A `LOCAL` connection carries the v2 magic bytes and is decoded by the PROXY decoder, but its source and destination addresses are meaningless \u2014 the PROXY protocol specification states that receivers must accept the connection and use the real TCP connection endpoints instead.\n+\n+When a `LOCAL` command connection arrives, the proxy logs this at WARN level. This is intended to help the administrator identify misconfigured load balancer health checks: if a `LOCAL` connection appears on a Kafka port, it indicates the load balancer is health checking that port directly rather than using the proxy's HTTP management endpoint, which is the recommended target for health checks.\n+\n+A `LOCAL` connection is subject to the same per-gateway enforcement as any other PROXY header. On a `required` gateway it passes (a PROXY header was received); on a `forbidden` gateway the PROXY bytes trigger a protocol error and the connection is closed. On a `required` gateway, the load balancer will send HTTP rather than a Kafka RPC after the header, so the proxy will treat the subsequent data as a failed TLS negotiation or an invalid Kafka RPC and close the connection, as it does today.\n+\n+### Kubernetes API\n+\n+Add an optional `proxyProtocol` block under `spec.loadBalancer` in the `KafkaProxyIngress` CRD. The field is placed here because cloud load balancers are the primary consumers of PROXY protocol in Kubernetes (see [Rejected alternatives](#rejected-alternatives) for why `clusterIP` and `openShiftRoute` are excluded).\n+\n+```yaml\n+apiVersion: kroxylicious.io/v1alpha1\n+kind: KafkaProxyIngress\n+metadata:\n+  name: public\n+spec:\n+  proxyRef:\n+    name: my-proxy\n+  loadBalancer:\n+    proxyProtocol:\n+      mode: required\n+```\n+\n+The operator translates this to a `proxyProtocol` block on the corresponding `gateway` in the generated proxy configuration.\n+\n+> **Note:** Setting `mode: required` configures Kroxylicious to expect and enforce PROXY protocol headers on this gateway.\n+> It does **not** automatically configure the cloud load balancer to send them.\n+> The administrator is responsible for enabling PROXY protocol on the load balancer separately.\n+> For example, when using the AWS Load Balancer Controller, the annotation `service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: proxy_protocol_v2.enabled=true` must be applied to the Kubernetes Service \u2014 this can be done via the `spec.infrastructure.annotations` field on the `KafkaProxyIngress`.\n+\n+\n+### Migration from the global `proxyProtocol` field\n+\n+The top-level `proxyProtocol` field in the plain configuration is superseded by this proposal. If the field is present at startup, the proxy will **fail to start** with a clear error message directing the administrator to migrate to per-gateway configuration. This fail-fast behaviour is preferable to silently ignoring the field, which would cause PROXY protocol to stop working at runtime without any indication of why.\n+\n+The `allowed` mode present in the legacy global field has no equivalent in the per-gateway API and is rejected at startup for the same reason.\n+\n+## Affected/not affected projects\n+\n+**Affected:**\n+- `kroxylicious-runtime` \u2014 configuration model (`VirtualClusterGateway`), Netty pipeline initialisation, startup validation\n+- `kroxylicious-kubernetes/kroxylicious-kubernetes-api` \u2014 `KafkaProxyIngress` CRD schema (`spec.loadBalancer`)\n+- `kroxylicious-kubernetes/kroxylicious-operator` \u2014 reconciler generating proxy configuration from `KafkaProxyIngress`\n+\n+**Not affected:**\n+- `kroxylicious-api` \u2014 no public filter API changes\n+- `kroxylicious-filters` \u2014 no filter changes; client address exposure is tracked in proposal 139\n+\n+## Compatibility\n+\n+- The existing global `proxyProtocol` field is removed. The proxy will fail to start if it is present. This is a **breaking change**; administrators must migrate to per-gateway configuration before upgrading.\n+- The `allowed` mode is removed. The proxy will fail to start if it is present in any configuration.\n+- The per-gateway `proxyProtocol` field is new and additive; existing configurations without it continue to work with `forbidden` semantics.\n+- The `KafkaProxyIngress` CRD change is additive (new optional field under `spec.loadBalancer`). Existing resources without the field retain `forbidden` behaviour.\n+\n+## Rejected alternatives\n+\n+### Top-level `spec.proxyProtocol` on `KafkaProxyIngress`\n+\n+Placing the field at the top level of `KafkaProxyIngress.spec` would imply it is meaningful regardless of ingress type, but the field would be inert or counterproductive for both `clusterIP` and `openShiftRoute` ingress types (see those sections below). Nesting it under `spec.loadBalancer` makes it explicit that PROXY protocol is a concern of the load balancer type only.\n+\n+### `spec.clusterIP.proxyProtocol`\n+\n+On-cluster clients connect directly to the proxy without an intermediate load balancer. Their network address is already accurate and directly observable. Accepting PROXY headers from on-cluster clients would allow any workload to claim an arbitrary source address, undermining the security model that this feature is designed to enforce.\n+\n+### `spec.openShiftRoute.proxyProtocol`\n+\n+OpenShift's ingress (HAProxy-based) is capable of consuming PROXY protocol headers from an upstream load balancer, but it cannot propagate the original client address to backend services using the PROXY protocol. It can propagate the address via HTTP headers such as `X-Forwarded-For`, but those are not accessible to Kroxylicious, which operates at the TCP/Kafka protocol layer. The field would therefore be inert.\n+\n+### Keeping the `allowed` (auto-detect) mode\n+\n+The PROXY protocol specification explicitly warns against automatic detection:\n+\n+> [I]f the opportunity is left to a normal client to use the protocol, it will be able to hide its activities or make them appear as coming from somewhere else.\n+\n+Auto-detection allows any client to inject a PROXY header and spoof its origin. The mode is therefore not included in the per-gateway API.\n+\n+### Retaining the global `proxyProtocol` field as a default fallback\n+\n+A global default (analogous to `defaultFilters`) might seem convenient during migration, but it would undermine the security guarantee this feature is designed to provide. An administrator who intends only the LoadBalancer gateway to accept PROXY headers could accidentally leave the global default active, enabling injection on all other gateways. Explicit per-gateway configuration is safer.\n+\n+### Runtime byte-sniffing to detect PROXY headers\n+\n+An earlier design considered sniffing the initial bytes of every incoming connection to determine whether a PROXY header is present, then dynamically installing the decoder only when detected. This was rejected: the sniff must identify a PROXY header in exactly the same way as the real decoder, duplicating fragile wire-format logic on the hot accept path and introducing risk if the two implementations ever diverge. The static pipeline approach is simpler \u2014 the decoder is either present or absent based on configuration, with no duplication.\n+\n+### Per-connection enforcement metrics\n+\n+Adding a dedicated metric (e.g. incrementing a counter with `cause=proxy_protocol_header_missing` or `cause=proxy_protocol_header_forbidden`) would require the proxy to distinguish enforcement rejections from other protocol errors at the point of closure. With the static pipeline approach this is not straightforward: a missing PROXY header produces a decoder protocol error, and a forbidden PROXY header produces a Kafka framing error \u2014 both are indistinguishable from genuine client misbehaviour at the metric layer without reintroducing the sniffing logic that was already rejected. For now, the logged protocol errors are sufficient for administrator diagnostics.\n+\n+### Restricting accepted PROXY protocol versions\n+\n+PROXY protocol v1 (text-based) and v2 (binary) are both widely deployed and accepted by the underlying Netty decoder without distinction. Restricting acceptance to a specific version \u2014 for example, requiring v2 only \u2014 was considered but is not included in this proposal. There is no pressing operational reason to exclude either format today; most modern load balancers that support PROXY protocol offer v2. The `proxyProtocol` configuration node is intentionally structured to accommodate a version constraint in a future proposal without a breaking API change.\n+"
         }
       ],
-      "updated_at": "2026-11-02T17:55:11Z",
+      "updated_at": "2026-11-03T15:47:16Z",
       "head_sha": "4d055c90979f935b438e43b61223f2fcec06885d",
-      "frozen": false,
+      "frozen": true,
       "reviews_snapshot": [
         {
           "name": "MarkNSweep",
@@ -10807,6 +10811,16 @@
           "name": "k-wall",
           "state": "COMMENTED",
           "timestamp": "2026-11-02T17:54:56Z"
+        },
+        {
+          "name": "tombentley",
+          "state": "APPROVED",
+          "timestamp": "2026-11-02T19:53:03Z"
+        },
+        {
+          "name": "robobario",
+          "state": "APPROVED",
+          "timestamp": "2026-11-02T21:30:46Z"
         }
       ],
       "comments_snapshot": [
@@ -10936,5 +10950,5 @@
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-02T17:55:11Z"
+  "watermark": "2026-11-03T15:47:16Z"
 }
