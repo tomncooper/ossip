@@ -61,6 +61,19 @@ curl -o ~/.claude/skills/ossip/SKILL.md https://ossip.dev/skill/ossip/SKILL.md
 
 For full documentation, see [ossip.dev/api.html](https://ossip.dev/api.html).
 
+## RSS / Atom Feeds
+
+Every project has an Atom feed of newly-created proposals (the newest 50,
+newest first), and there is a combined feed for all projects:
+
+- `https://ossip.dev/feed.xml` — all projects
+- `https://ossip.dev/kafka.xml`, `flink.xml`, `strimzi.xml`, `streamshub.xml`,
+  `kroxylicious.xml` — one project each
+
+Feed readers can also auto-discover them from each project's index page. The
+feeds are generated from the JSON API summaries, so they are produced by the
+same build (`./local_build.sh` or the publish workflow).
+
 ## Development
 
 ### Installation
@@ -225,16 +238,16 @@ $ ./local_build.sh --render-only
 
 #### Manual Build Steps
 
-To create the standalone Kafka site html run the command below where the first argument is the kip mentions cache file produced by the step above and the second is the html output filepath:
+To create the standalone Kafka site html run the command below. The arguments are the KIP mentions cache file produced by the step above, the html output filepath and the directory for the individual KIP pages; `--api-dir` also emits the JSON API files, which the Atom feeds are built from:
 
 ```bash
-$ uv run python ipper/main.py kafka output standalone cache/mailbox_files/kip_mentions.csv site_files/kafka.html
+$ uv run python ipper/main.py kafka output standalone cache/mailbox_files/kip_mentions.csv site_files/kafka.html site_files/kips --api-dir site_files/api/v1/kafka
 ```
 
 To create the Flink site html with individual FLIP pages:
 
 ```bash
-$ uv run python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips
+$ uv run python ipper/main.py flink output cache/flip_wiki_cache.json site_files/flink.html site_files/flips --api-dir site_files/api/v1/flink
 ```
 
 To create the GitHub-project site html with individual detail pages (example
@@ -242,11 +255,24 @@ for Strimzi; use `streamshub`/`ships` and `kroxylicious`/`kdps` for the
 others):
 
 ```bash
-$ uv run python ipper/main.py strimzi output cache/sip_proposals_cache.json site_files/strimzi.html site_files/sips
+$ uv run python ipper/main.py strimzi output cache/sip_proposals_cache.json site_files/strimzi.html site_files/sips --api-dir site_files/api/v1/strimzi
 ```
 
 This generates a main index page and individual detail pages in the specified output directory.
-Pass `--api-dir site_files/api/v1/strimzi` to also emit the JSON API files.
+`--api-dir` also emits the JSON API files (required for the Atom feeds).
+
+Once every project you want in the feeds has been built with `--api-dir`, generate
+the API index and the Atom feeds:
+
+```bash
+$ uv run python -c "
+from ipper.common.api_output import generate_api_index
+from ipper.common.feed_output import write_feeds
+from pathlib import Path
+generate_api_index(Path('site_files/api/v1'))
+write_feeds(Path('site_files/api/v1'), Path('site_files'))
+"
+```
 
 You will also need to copy over the static files from the `templates` directory to the `site_files` directory:
 
@@ -254,7 +280,7 @@ You will also need to copy over the static files from the `templates` directory 
 $ mkdir -p site_files/assets
 $ cp templates/index.html site_files
 $ cp templates/style.css site_files
-$ cp -r templates/assets site_files/assets
+$ cp -r templates/assets/. site_files/assets/
 ```
 
 ## Deployment

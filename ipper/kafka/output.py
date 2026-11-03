@@ -20,6 +20,7 @@ from ipper.common.constants import (
     DEFAULT_TEMPLATES_DIR,
     IPState,
 )
+from ipper.common.feed_names import feed_file, feed_title
 from ipper.common.mailing_list import create_vote_dict as _create_vote_dict
 from ipper.common.models import (
     KipDetail,
@@ -191,6 +192,8 @@ def render_standalone_status_page(
     output: str = template.render(
         kip_status=kip_status,
         kip_status_enum=KIPStatus,
+        feed_file=feed_file("kafka"),
+        feed_title=feed_title("kafka"),
         date=dt.datetime.now(dt.UTC).strftime(DATE_FORMAT),
     )
 
