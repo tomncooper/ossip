@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-03T17:13:23Z",
+  "last_updated": "2026-11-04T17:25:50Z",
   "proposals": {
     "pr-203": {
       "pr_number": 203,
@@ -10612,8 +10612,16 @@
         "accepted": [],
         "commented": [
           {
+            "name": "tinaselenge",
+            "timestamp": "2026-11-04T15:00:39Z"
+          },
+          {
+            "name": "ppatierno",
+            "timestamp": "2026-11-04T13:21:00Z"
+          },
+          {
             "name": "Frawless",
-            "timestamp": "2026-10-18T21:35:41Z"
+            "timestamp": "2026-10-21T19:51:05Z"
           },
           {
             "name": "scholzj",
@@ -10626,7 +10634,7 @@
         ],
         "changes_requested": []
       },
-      "last_activity": "2026-10-20T11:12:46Z",
+      "last_activity": "2026-11-04T15:00:39Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -58099,7 +58107,7 @@
           "patch": "@@ -0,0 +1,185 @@\n+# Adding support for enabling Kafka features in Strimzi\n+\n+This proposal suggests adding support for managing Kafka feature flags through the Strimzi Kafka CR.\n+\n+## Current situation\n+\n+Every time there is a new Kafka feature that has a significant impact on behavior, it is gated behind a feature flag.\n+These features can be enabled using the Kafka Admin client or the `kafka-features.sh` script that Kafka provides.\n+We have encountered features like this in the past \u2014 for example KRaft mode, where we were able to enable it based on a Strimzi feature gate.\n+Another example is Share Groups (Kafka Queues).\n+Some of the previous features are now enabled by default, but there will be more in the future.\n+\n+Today, there is no way to enable these features through the Strimzi Kafka resource \u2014 users have to use the `kafka-features.sh` script or their own Kafka Admin client implementation to do so.\n+\n+## Motivation\n+\n+The main motivation is to provide users with a convenient way to enable these features \u2014 such as Share Groups \u2014 without needing to run a script from a Pod or locally.\n+Users should be able to enable a desired feature using the Kafka CR.\n+Additionally, it should be visible which features are enabled and at what versions, again without needing to run scripts.\n+\n+## Proposal\n+\n+This proposal suggests adding new fields for managing Kafka features to our API.\n+The new fields will be added to the Kafka CR, under `.spec.kafka`:\n+\n+```yaml\n+spec:\n+  # ...\n+  kafka:\n+    features:\n+      - name: share.version\n+        version: 1\n+```\n+\n+The `features` field takes a list of features that the user wants to upgrade, downgrade, or enable.\n+There will be a list of forbidden features that cannot be configured using this field \u2014 for example `kraft.version` or `metadata.version`.\n+`metadata.version` should be configured using the `metadataVersion` field in the Kafka spec.\n+\n+A validation method in `KafkaCluster.fromCrd()` will check for duplicates and usage of forbidden features.\n+In both cases, an `InvalidResourceException` will be thrown \u2014 either indicating that a forbidden feature is configured or that there are duplicate entries for the same feature.\n+\n+If the list of features is valid, the operator will use a new class named `KafkaFeatureManager` to configure them.\n+Today, we are already using the Admin client's features endpoint for changing `metadata.version` \u2014 this is handled inside `KRaftMetadataManager`.\n+The `KafkaFeatureManager` will extract the shared feature update logic from `KRaftMetadataManager`.\n+From then on, `KRaftMetadataManager` will use `KafkaFeatureManager` for changing `metadata.version`, instead of handling it directly, avoiding code duplication.\n+\n+Before processing individual features, the `KafkaFeatureManager` will call `describeFeatures()` once to get both the supported and finalized features from Kafka.\n+The supported features will be used to verify that the features specified by the user actually exist in the running Kafka version.\n+If a feature from the user's list is not present in the supported features, it will be skipped and a warning will be stored in the Kafka's `.status` section with `KafkaFeatureUnsupported` reason.\n+The finalized features from the same call will be used to determine the current version of each feature.\n+\n+For each valid feature in the list, the `KafkaFeatureManager` will go through the following stages:\n+\n+* Using the finalized features from the initial `describeFeatures()` call, it will determine the current version of the feature (features not present in the finalized map are treated as version 0 \u2014 disabled).\n+  * If the current version of the feature is the same as the desired version, skip all steps below.\n+  * If the feature is not enabled or has a lower version than the desired version, it will mark the operation as an upgrade and use the `UPGRADE` flag.\n+  * If the feature is enabled and the current version is higher than the desired one, it will mark the operation as a downgrade and use the `SAFE_DOWNGRADE` flag.\n+* It will try to update the feature using the `updateFeatures` Admin client operation.\n+  * In case of an error during the update, the error will be stored in the Kafka's `.status` section with `KafkaFeatureUpdateFailed` reason. The remaining features will still be processed.\n+* At the end, the operator will list all enabled features in the Kafka's `.status` section.\n+\n+The status section will then look like this:\n+```yaml\n+  status:\n+    #...\n+    conditions:\n+    - lastTransitionTime: \"2026-10-08T21:05:54.120449331Z\"\n+      status: \"True\"\n+      type: Ready\n+    kafkaFeatures:\n+    - name: group.version\n+      version: 1\n+    - name: streams.version\n+      version: 1\n+    - name: transaction.version\n+      version: 2\n+    - name: eligible.leader.replicas.version\n+      version: 1\n+    - name: share.version\n+      version: 1\n+```\n+\n+And in case of a failed update operation:\n+```yaml\n+  status:\n+    # ...\n+    conditions:\n+      - lastTransitionTime: \"2026-10-08T21:05:54.002322524Z\"\n+        message: Failed to update share.version to 5\n+        reason: KafkaFeatureUpdateFailed\n+        status: \"True\"\n+        type: Warning\n+      - lastTransitionTime: \"2026-10-08T21:05:54.120449331Z\"\n+        status: \"True\"\n+        type: Ready\n+    kafkaFeatures:\n+      - name: group.version\n+        version: 1\n+      - name: streams.version\n+        version: 1\n+      - name: transaction.version\n+        version: 2\n+      - name: eligible.leader.replicas.version\n+        version: 1\n+      - name: share.version\n+        version: 1\n+```\n+\n+### Feature downgrade\n+\n+As with `metadata.version`, the operator will only attempt safe downgrades using `SAFE_DOWNGRADE`.\n+If the downgrade would cause changes that might break the cluster, users must perform the required operations manually and downgrade the feature version using the `kafka-features.sh` script.\n+Strimzi should not perform operations that could bring the cluster into a non-functional state.\n+\n+### Interaction with Kafka version upgrades and downgrades\n+\n+Finalized feature levels are stored in the KRaft metadata log and persist across binary changes.\n+They are not part of the broker configuration or the container image.\n+Changing the Kafka version in the CR triggers a rolling restart with a new binary, but the finalized feature levels in the metadata log remain unchanged.\n+\n+#### Upgrades\n+\n+Kafka upgrades are safe with regards to features.\n+Newer Kafka versions support the same or higher feature versions than older ones.\n+During a Kafka binary upgrade, features stay at their current finalized level \u2014 they are not automatically upgraded to the new Kafka version's defaults.\n+The operator processes feature updates after the rolling restart completes, same as with `metadata.version`.\n+Only features explicitly listed in `spec.kafka.features` are managed by the operator.\n+\n+If a user has `share.version: 1` configured and upgrades to a Kafka version where the default is `share.version: 2`, the feature stays at version 1 until the user updates the CR.\n+\n+#### Downgrades\n+\n+Kafka downgrades require more care.\n+If a feature is finalized at a version that the target Kafka binary does not support, brokers will refuse to start and the rolling update will stall.\n+This means features must be downgraded or disabled **before** the Kafka binary is downgraded.\n+\n+The recommended procedure for downgrading Kafka when features are configured:\n+\n+1. Update the `features` list in the CR \u2014 downgrade features to versions compatible with the target Kafka version, or set features that do not exist in the target version to `version: 0` to disable them.\n+2. Wait for the operator to reconcile and apply the feature changes.\n+3. Optionally remove the disabled features from the list.\n+4. Update `spec.kafka.version` to the target Kafka version.\n+\n+If the user changes both the features and the Kafka version in the CR at the same time, the operator will first perform the rolling restart with the new binary.\n+If the finalized feature levels are incompatible with the new binary, brokers will fail to start and the rolling update will stall.\n+This is consistent with how `metadata.version` downgrades are handled \u2014 the metadata version must be downgraded before the Kafka binary.\n+\n+The downgrade procedure for features must be documented as part of the implementation PR.\n+\n+### Removing a feature from the list\n+\n+When a feature is removed from the `features` list, the operator stops managing it.\n+The feature stays at whatever version it was last set to in the KRaft metadata log.\n+The operator will not reset it to any default value.\n+\n+There is no Kafka Admin API to determine the default feature version for a given Kafka release.\n+The default mappings are hardcoded in the Kafka server binary and only exposed through the `kafka-features.sh version-mapping` CLI command, which is not suitable for use during reconciliation.\n+Maintaining a copy of these mappings in Strimzi would create a maintenance burden and a risk of divergence with each Kafka release.\n+\n+To disable a feature, users should explicitly set it to `version: 0` in the `features` list rather than removing it.\n+This makes the intent clear and avoids leaving a feature at an unintended version.\n+\n+## Affected/not affected projects\n+\n+Changes made by this proposal affect the `strimzi-kafka-operator` repository.\n+Mainly the Kafka API module and the `KafkaReconciler` and `KRaftMetadataManager` classes.\n+\n+## Compatibility\n+\n+There are no backwards compatibility issues.\n+\n+## Rejected alternatives\n+\n+### Automatically upgrading features to match Kafka version defaults\n+\n+One option considered was to automatically upgrade feature versions to match the defaults of the deployed Kafka version during Kafka upgrades.\n+This was rejected because it violates the declarative principle \u2014 the operator should only set what the user explicitly declares in the CR.\n+Automatically upgrading features could lead to unexpected behavior changes after a Kafka version upgrade.\n+\n+### Resetting features to defaults when removed from the list\n+\n+Another option considered was to reset features to their Kafka release defaults when removed from the `features` list.\n+This was rejected because there is no Kafka Admin API to determine the default feature versions for a given release.\n+Maintaining a mapping of default versions per Kafka release in Strimzi would be error-prone and require updates with every Kafka release.\n+Instead, removing a feature from the list means the operator stops managing it, and users should set `version: 0` explicitly to disable a feature."
         }
       ],
-      "updated_at": "2026-10-20T11:12:46Z",
+      "updated_at": "2026-11-04T15:00:39Z",
       "head_sha": "268c2350b0425acd4ff3f0e8dd11950b7607f25e",
       "frozen": false,
       "reviews_snapshot": [
@@ -58222,6 +58230,116 @@
           "name": "im-konge",
           "state": "COMMENTED",
           "timestamp": "2026-10-20T11:12:46Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-21T12:05:54Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-21T12:09:49Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-21T12:12:59Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-21T12:18:33Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-21T19:46:07Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-21T19:51:05Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-21T20:13:12Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-27T16:13:58Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-27T19:05:39Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-27T19:08:31Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-27T19:09:41Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-27T19:12:29Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-27T19:16:33Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-28T07:34:26Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-10-28T07:56:48Z"
+        },
+        {
+          "name": "tinaselenge",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-04T12:41:25Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-04T13:01:54Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-04T13:12:16Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-04T13:14:13Z"
+        },
+        {
+          "name": "ppatierno",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-04T13:21:00Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-04T13:23:50Z"
+        },
+        {
+          "name": "tinaselenge",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-04T15:00:39Z"
         }
       ],
       "comments_snapshot": [
@@ -58648,5 +58766,5 @@
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-03T04:01:18Z"
+  "watermark": "2026-11-04T15:00:39Z"
 }
