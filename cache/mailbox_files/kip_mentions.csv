@@ -131640,3 +131640,7 @@ kip,mention_type,message_id,mbox_year,mbox_month,timestamp,from,vote
 1388,discuss,85,2026,11,2026-11-06 16:58:58+00:00,Nicole Du <nicoleywdu@gmail.com>,
 1388,body,85,2026,11,2026-11-06 16:58:58+00:00,Nicole Du <nicoleywdu@gmail.com>,
 1279,body,85,2026,11,2026-11-06 16:58:58+00:00,Nicole Du <nicoleywdu@gmail.com>,
+320,body,90,2026,11,2026-11-08 02:03:00+00:00,"""TaiJuWu (Jira) via dev"" <dev@kafka.apache.org>",
+1369,subject,99,2026,11,2026-11-08 15:36:58+00:00,"""Chia-Ping Tsai via dev"" <dev@kafka.apache.org>",
+1369,discuss,99,2026,11,2026-11-08 15:36:58+00:00,"""Chia-Ping Tsai via dev"" <dev@kafka.apache.org>",
+1369,body,99,2026,11,2026-11-08 15:36:58+00:00,"""Chia-Ping Tsai via dev"" <dev@kafka.apache.org>",
