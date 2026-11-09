@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-08T16:09:57Z",
+  "last_updated": "2026-11-09T19:58:38Z",
   "proposals": {
     "pr-203": {
       "pr_number": 203,
@@ -11029,10 +11029,19 @@
       "web_url": "https://github.com/strimzi/proposals/pull/258",
       "reviews": {
         "accepted": [],
-        "commented": [],
+        "commented": [
+          {
+            "name": "scholzj",
+            "timestamp": "2026-11-09T19:50:58Z"
+          },
+          {
+            "name": "antonio-pedro99",
+            "timestamp": "2026-11-05T18:01:22Z"
+          }
+        ],
         "changes_requested": []
       },
-      "last_activity": "2026-10-28T10:10:52Z",
+      "last_activity": "2026-11-09T19:50:59Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -11056,6 +11065,34 @@
         "changes_requested": []
       },
       "last_activity": "2026-11-08T07:13:12Z",
+      "activity_status": "green",
+      "last_activity_age": "0 days",
+      "amendments": [],
+      "frozen": false,
+      "id": null
+    },
+    "pr-260": {
+      "pr_number": 260,
+      "pr_url": "https://github.com/strimzi/proposals/pull/260",
+      "title": "Add proposal to remove support for PKCS12 certificates",
+      "created_by": "katheris",
+      "authors": [
+        "katheris"
+      ],
+      "created_on": "2026-11-09",
+      "state": "under discussion",
+      "web_url": "https://github.com/strimzi/proposals/pull/260",
+      "reviews": {
+        "accepted": [],
+        "commented": [
+          {
+            "name": "scholzj",
+            "timestamp": "2026-11-09T19:38:08Z"
+          }
+        ],
+        "changes_requested": []
+      },
+      "last_activity": "2026-11-09T19:38:08Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -58818,23 +58855,54 @@
       "proposal_key": "pr-258",
       "files": [
         {
-          "sha": "76ce420dac40bb2327b04e4357d4f93d4d20bcb4",
+          "sha": "2c1798c67b3c421ae9f719af1f026f97690b0e71",
           "filename": "162-http-bridge-request-decompression.md",
           "status": "added",
-          "additions": 77,
+          "additions": 86,
           "deletions": 0,
-          "changes": 77,
-          "blob_url": "https://github.com/strimzi/proposals/blob/b4a434d110db1a76438d4e9a2080374a8fc08aad/162-http-bridge-request-decompression.md",
-          "raw_url": "https://github.com/strimzi/proposals/raw/b4a434d110db1a76438d4e9a2080374a8fc08aad/162-http-bridge-request-decompression.md",
-          "contents_url": "https://api.github.com/repos/strimzi/proposals/contents/162-http-bridge-request-decompression.md?ref=b4a434d110db1a76438d4e9a2080374a8fc08aad",
-          "patch": "@@ -0,0 +1,77 @@\n+# Support compressed HTTP requests in the Strimzi Kafka Bridge\n+\n+This proposal adds HTTP request decompression to the Strimzi Kafka Bridge, so clients can send less data to the Bridge.\n+\n+## Current situation\n+\n+The HTTP Bridge does not support compressed request bodies.\n+Clients send every request uncompressed, including the JSON envelope and the record data.\n+\n+The Kafka producer compression configured in the Bridge only reduces traffic between the Bridge and the Kafka brokers.\n+Users who want to compress HTTP requests have to run a reverse proxy in front of the Bridge to decompress them.\n+\n+## Motivation\n+\n+Cloud providers charge for traffic between regions, so clients that send requests to a Bridge in another region incur data transfer costs.\n+JSON record payloads are often repetitive and compress well, and the Bridge can decompress them without an extra proxy.\n+\n+This proposal addresses [strimzi/strimzi-kafka-bridge#1198](https://github.com/strimzi/strimzi-kafka-bridge/issues/1198).\n+\n+## Proposal\n+\n+The Bridge will accept compressed bodies on all client API endpoints that accept a request body.\n+Clients enable compression per request with the `Content-Encoding` header, and users do not need to change the Bridge configuration.\n+The Bridge decompresses the body before JSON parsing, OpenAPI validation, and endpoint processing.\n+\n+### Supported compression algorithms\n+\n+The Bridge will support gzip and Zstandard.\n+Both are registered HTTP content codings.\n+The Bridge will use the decompression support available through Vert.x and Netty and validate the `Content-Encoding` header to enforce the supported encodings.\n+A future proposal can add Snappy or LZ4 if users request them.\n+\n+| Algorithm | `Content-Encoding` |\n+|-----------|--------------------|\n+| gzip | `gzip` |\n+| Zstandard | `zstd` |\n+\n+### Request handling\n+\n+Clients keep the existing `Content-Type` and compress the whole request body.\n+For example:\n+\n+```http\n+POST /topics/my-topic HTTP/1.1\n+Content-Type: application/vnd.kafka.json.v2+json\n+Content-Encoding: gzip\n+\n+<gzip-compressed JSON body>\n+```\n+\n+Requests without `Content-Encoding`, or with `Content-Encoding: identity`, go through the existing processing path.\n+After decompression, the Bridge sends the same records to Kafka as it would for the equivalent uncompressed request.\n+The Kafka producer still applies its configured `compression.type`, independent of the HTTP request compression.\n+\n+### Error handling\n+\n+The Bridge returns errors in the existing error response format:\n+\n+| Condition | HTTP status |\n+|-----------|-------------|\n+| Unsupported encoding or multiple content encodings | `415 Unsupported Media Type` |\n+| Invalid compressed body | `400 Bad Request` |\n+\n+## Affected/not affected projects\n+\n+This proposal affects only the [Strimzi Kafka Bridge](https://github.com/strimzi/strimzi-kafka-bridge).\n+\n+## Compatibility\n+\n+Existing clients that send uncompressed requests keep working without changes.\n+\n+## Rejected alternatives\n+\n+### Use a reverse proxy\n+\n+Users who already run a reverse proxy in front of the Bridge can decompress requests there, for example by creating an `EnvoyFilter` if using Istio.\n+Users without a reverse proxy would have to deploy and maintain one only to decompress requests for the Bridge."
+          "changes": 86,
+          "blob_url": "https://github.com/strimzi/proposals/blob/e0770eb939c17b5fb3a706a0c072da9cd4f06f5c/162-http-bridge-request-decompression.md",
+          "raw_url": "https://github.com/strimzi/proposals/raw/e0770eb939c17b5fb3a706a0c072da9cd4f06f5c/162-http-bridge-request-decompression.md",
+          "contents_url": "https://api.github.com/repos/strimzi/proposals/contents/162-http-bridge-request-decompression.md?ref=e0770eb939c17b5fb3a706a0c072da9cd4f06f5c",
+          "patch": "@@ -0,0 +1,86 @@\n+# Support compressed HTTP requests in the Strimzi Kafka Bridge\n+\n+This proposal adds HTTP request decompression to the Strimzi Kafka Bridge, so clients can send less data to the Bridge.\n+\n+## Current situation\n+\n+The HTTP Bridge does not support compressed request bodies.\n+Clients send every request uncompressed, including the JSON envelope and the record data.\n+\n+The Kafka producer compression configured in the Bridge only reduces traffic between the Bridge and the Kafka brokers.\n+Users who want to compress HTTP requests have to run a reverse proxy in front of the Bridge to decompress them.\n+\n+## Motivation\n+\n+Cloud providers charge for traffic between regions, so clients that send requests to a Bridge in another region incur data transfer costs.\n+JSON record payloads are often repetitive and compress well, and the Bridge can decompress them without an extra proxy.\n+\n+This proposal addresses [strimzi/strimzi-kafka-bridge#1198](https://github.com/strimzi/strimzi-kafka-bridge/issues/1198).\n+\n+## Proposal\n+\n+The Bridge will accept compressed bodies on all client API endpoints that accept a request body.\n+Clients enable compression per request with the `Content-Encoding` header, and users do not need to change the Bridge configuration.\n+The Bridge decompresses the body before JSON parsing, OpenAPI validation, and endpoint processing.\n+\n+### Supported compression algorithms\n+\n+The Bridge will support gzip and Zstandard.\n+Both are registered HTTP content codings.\n+The Bridge will use the decompression support available through Vert.x and validate the `Content-Encoding` header to enforce the supported encodings.\n+A future proposal can add Snappy or LZ4 if users request them.\n+\n+| Algorithm | `Content-Encoding` |\n+|-----------|--------------------|\n+| gzip | `gzip` |\n+| Zstandard | `zstd` |\n+\n+### Request handling\n+\n+Clients keep the existing `Content-Type` and compress the whole request body.\n+For example:\n+\n+```http\n+POST /topics/my-topic HTTP/1.1\n+Content-Type: application/vnd.kafka.json.v2+json\n+Content-Encoding: gzip\n+\n+<gzip-compressed JSON body>\n+```\n+\n+Requests without `Content-Encoding`, or with `Content-Encoding: identity`, go through the existing processing path.\n+After decompression, the Bridge sends the same records to Kafka as it would for the equivalent uncompressed request.\n+The Kafka producer still applies its configured `compression.type`, independent of the HTTP request compression.\n+\n+#### Multiple content encodings\n+\n+HTTP allows multiple content encodings to be applied sequentially, for example `Content-Encoding: gzip, zstd`.\n+The Bridge will support only a single content encoding per request.\n+A single compression algorithm addresses the data transfer reduction use case motivating this proposal.\n+Supporting multiple encodings would add additional complexity without an identified use case.\n+Requests specifying multiple content encodings will be rejected, even when each encoding is individually supported.\n+\n+### Error handling\n+\n+The Bridge returns errors in the existing error response format:\n+\n+| Condition | HTTP status |\n+|-----------|-------------|\n+| Unsupported content encoding | `415 Unsupported Media Type` |\n+| Multiple content encodings not supported | `415 Unsupported Media Type` |\n+| Invalid compressed body | `400 Bad Request` |\n+\n+## Affected/not affected projects\n+\n+This proposal affects only the [Strimzi Kafka Bridge](https://github.com/strimzi/strimzi-kafka-bridge).\n+\n+## Compatibility\n+\n+Existing clients that send uncompressed requests keep working without changes.\n+\n+## Rejected alternatives\n+\n+### Use a reverse proxy\n+\n+Users who already run a reverse proxy in front of the Bridge can decompress requests there, for example by creating an `EnvoyFilter` if using Istio.\n+Users without a reverse proxy would have to deploy and maintain one only to decompress requests for the Bridge."
         }
       ],
-      "updated_at": "2026-10-28T10:10:52Z",
-      "head_sha": "b4a434d110db1a76438d4e9a2080374a8fc08aad",
+      "updated_at": "2026-11-09T19:50:59Z",
+      "head_sha": "e0770eb939c17b5fb3a706a0c072da9cd4f06f5c",
       "frozen": false,
-      "reviews_snapshot": [],
-      "comments_snapshot": [],
+      "reviews_snapshot": [
+        {
+          "name": "antonio-pedro99",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-04T13:54:41Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-05T09:23:55Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-05T09:27:13Z"
+        },
+        {
+          "name": "antonio-pedro99",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-05T18:01:22Z"
+        },
+        {
+          "name": "scholzj",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-09T19:50:58Z"
+        }
+      ],
+      "comments_snapshot": [
+        {
+          "name": "smitthakkar96",
+          "timestamp": "2026-11-09T12:57:50Z"
+        }
+      ],
       "snapshots_fetched": true
     },
     "259": {
@@ -58873,7 +58941,38 @@
       "reviews_snapshot": [],
       "comments_snapshot": [],
       "snapshots_fetched": true
+    },
+    "260": {
+      "state": "open",
+      "classification": "proposal",
+      "proposal_key": "pr-260",
+      "files": [
+        {
+          "sha": "e68874d060da641c8bdf0e2af78f1268d0b657d8",
+          "filename": "000-remove-support-for-pkcs12-certificates.md",
+          "status": "added",
+          "additions": 53,
+          "deletions": 0,
+          "changes": 53,
+          "blob_url": "https://github.com/strimzi/proposals/blob/626fed45b2f72efadce0a6e6b423af83fdce0072/000-remove-support-for-pkcs12-certificates.md",
+          "raw_url": "https://github.com/strimzi/proposals/raw/626fed45b2f72efadce0a6e6b423af83fdce0072/000-remove-support-for-pkcs12-certificates.md",
+          "contents_url": "https://api.github.com/repos/strimzi/proposals/contents/000-remove-support-for-pkcs12-certificates.md?ref=626fed45b2f72efadce0a6e6b423af83fdce0072",
+          "patch": "@@ -0,0 +1,53 @@\n+# Remove support for PKCS12 certificates\n+\n+The support for generating PKCS12 format certificates in the CA and KafkaUser Secrets will be removed from Strimzi.\n+\n+## Current situation\n+\n+Strimzi uses PEM format certificates for all internal communications.\n+The only exception is Cruise Control which has an [open issue](https://github.com/strimzi/strimzi-kafka-operator/issues/12606) to move away from PKCS12.\n+As a community we have also [pushed back](https://github.com/strimzi/kafka-access-operator/issues/81) on requests to add PKCS12 support to new components such as Access Operator.\n+\n+In the CA and KafkaUser Secret resources, Strimzi generates an additional PKCS12 file and related password. \n+This is only generated if the environment variable `STRIMZI_PKCS12_KEYSTORE_GENERATION` on the cluster operator is set to true, which is currently the default value.\n+\n+Based on some discussion during a community call in the [1.3.0 release](https://github.com/strimzi/strimzi-kafka-operator/releases/tag/1.3.0) the support for PKCS12 has been declared as deprecated.\n+However, the deprecation does not specify when the env var will be set to false, and when/if it will be removed.\n+\n+## Motivation\n+\n+Java-based Apache Kafka clients have supported using PEM certificates directly for some time, and as a result Strimzi has been moving away from PKCS12 format certificates. \n+To this end [proposal 141](141-make-PKCS12-stores-in-CA-and-user-secrets-optional.md) introduced an env var to turn off the generation of PKCS12 certificates, and based on the discussion \n+on the [community call on September 13th 2026](https://youtu.be/eyZpjVnTzQI?si=UmZMn_T4Or9LX1_1&t=188) there seems to be consensus that it is the right time to fully remove support.\n+\n+## Proposal\n+\n+The env var `STRIMZI_PKCS12_KEYSTORE_GENERATION` will be set to false by default in the 1.5.0 release of Strimzi. \n+This is two releases after it was announced as deprecated.\n+\n+The env var and any related code will be removed two releases later, in the 1.7.0 release.\n+\n+## Affected/not affected projects\n+\n+This affects the cluster operator and the user operator.\n+\n+The Cruise Control component is the only one that hasn't been fully moved to use PEM files. \n+However, the generation of the PKCS12 files is done in a script in the container on startup. \n+This means we can safely remove any PKCS12 code from the cluster-operator certificate generation without affecting Cruise Control's use of PKCS12 certificates.\n+\n+## Compatibility\n+\n+These are breaking changes since files that users might be relying on will be removed from the relevant Secrets.\n+\n+## Rejected alternatives\n+\n+### Keep the env var as is\n+\n+Leaving the default value as true means that PKCS12 files are being issued even if they are not used. \n+This is unnecessary since most users are expected to have moved to PEM format certificates at this time.\n+\n+### Leave the env var indefinitely\n+\n+Rather than removing the env var, we could change the default to false and leave it there indefinitely. \n+This would allow users to still make use of PKCS12 if they wish to, however it means the added overhead of generating and testing the code paths. \n+It is unclear how many users are still using PKCS12 and cannot move to PEM, so we need more confirmation that this is needed to adopt this approach."
+        }
+      ],
+      "updated_at": "2026-11-09T19:38:08Z",
+      "head_sha": "626fed45b2f72efadce0a6e6b423af83fdce0072",
+      "frozen": false,
+      "reviews_snapshot": [
+        {
+          "name": "scholzj",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-09T19:38:08Z"
+        }
+      ],
+      "comments_snapshot": [],
+      "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-08T07:13:12Z"
+  "watermark": "2026-11-09T19:50:59Z"
 }
