@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-09T19:58:48Z",
+  "last_updated": "2026-11-10T17:12:57Z",
   "proposals": {
     "pr-133": {
       "pr_number": 133,
@@ -2037,6 +2037,29 @@
       "merged_on": "2026-11-03T15:47:11Z",
       "last_modified_on": "2026-11-03T15:47:11Z",
       "file_path": "proposals/147-per-gateway-proxy-protocol.md"
+    },
+    "pr-152": {
+      "pr_number": 152,
+      "pr_url": "https://github.com/kroxylicious/design/pull/152",
+      "title": "docs(proposals): shared ConfigResource type-classification utility",
+      "created_by": "SamBarker",
+      "authors": [
+        "SamBarker"
+      ],
+      "created_on": "2026-11-10",
+      "state": "under discussion",
+      "web_url": "https://github.com/kroxylicious/design/pull/152",
+      "reviews": {
+        "accepted": [],
+        "commented": [],
+        "changes_requested": []
+      },
+      "last_activity": "2026-11-10T02:26:39Z",
+      "activity_status": "green",
+      "last_activity_age": "0 days",
+      "amendments": [],
+      "frozen": false,
+      "id": 152
     }
   },
   "pr_index": {
@@ -11167,7 +11190,32 @@
       ],
       "comments_snapshot": [],
       "snapshots_fetched": true
+    },
+    "152": {
+      "state": "open",
+      "classification": "proposal",
+      "proposal_key": "pr-152",
+      "files": [
+        {
+          "sha": "803d6417cc7e6afd10b9e10f66ca9118cf7f8bc1",
+          "filename": "proposals/152-shared-config-resource-type-classification.md",
+          "status": "added",
+          "additions": 200,
+          "deletions": 0,
+          "changes": 200,
+          "blob_url": "https://github.com/kroxylicious/design/blob/34b3d4519234f780a84a6058ab2e03b4c680ff1d/proposals%2F152-shared-config-resource-type-classification.md",
+          "raw_url": "https://github.com/kroxylicious/design/raw/34b3d4519234f780a84a6058ab2e03b4c680ff1d/proposals%2F152-shared-config-resource-type-classification.md",
+          "contents_url": "https://api.github.com/repos/kroxylicious/design/contents/proposals%2F152-shared-config-resource-type-classification.md?ref=34b3d4519234f780a84a6058ab2e03b4c680ff1d",
+          "patch": "@@ -0,0 +1,200 @@\n+# 152 - Shared ConfigResource type-classification utility\n+\n+Multiple Kroxylicious filters need to determine whether a `ConfigResource` in a\n+`DescribeConfigs` request or response represents a topic name, a group id, or something else.\n+This logic has been independently implemented three times, each slightly differently. This\n+proposal introduces a small shared utility to consolidate the classification and eliminate the\n+duplication.\n+\n+## Current situation\n+\n+Three filter modules contain their own ConfigResource type-classification logic:\n+\n+1. **kroxylicious-authorization** \u2014 `ConfigResources.filter(stream, idFn, type)` filters a\n+   stream of config-resource entries by comparing the raw `resourceType()` byte against\n+   `ConfigResource.Type.TOPIC.id()` or `ConfigResource.Type.GROUP.id()`. Used by\n+   `DescribeConfigsEnforcement`.\n+\n+2. **kroxylicious-entity-isolation** \u2014 `EntityIsolation.fromConfigResourceType` decodes the raw\n+   byte via `ConfigResource.Type.forId`, then switches on the resulting enum to produce a\n+   semantic `EntityType.TOPIC_NAME` or `EntityType.GROUP_ID`. This is the most structured of the\n+   three: it decodes once and works with a typed enum rather than raw id comparisons.\n+\n+3. **kroxylicious-multitenant** (PR #5296, not yet merged) \u2014 `MultiTenantFilter`'s\n+   `onDescribeConfigsRequest` / `onDescribeConfigsResponse` methods compare\n+   `resourceType() == ConfigResource.Type.TOPIC.id() || resourceType() == ConfigResource.Type.GROUP.id()`\n+   inline. This is the crudest variant: raw byte comparisons duplicated across both request and\n+   response handlers.\n+\n+Each of these filter modules is independently pluggable and has no dependency on the others,\n+which is why the logic was reinvented rather than reused.\n+\n+## Motivation\n+\n+The duplication is small but carries real cost:\n+\n+- **Inconsistency.** The three implementations differ in structure: one decodes via `Type.forId`\n+  and switches on the enum; two compare raw `id()` bytes. A future protocol change that adds a\n+  new config-resource type relevant to rewriting (unlikely but not impossible) would need to be\n+  found and fixed in three places.\n+- **Fragility.** The inline raw-byte comparisons in particular are easy to get wrong and hard to\n+  spot in review \u2014 there is no type safety guiding the comparison, and the intent (classify this\n+  resource type) is obscured by the mechanism (comparing bytes).\n+- **Boilerplate.** Every new filter that touches `DescribeConfigs` will face the same question\n+  and likely copy one of the existing approaches, perpetuating the divergence.\n+\n+A single shared classification utility \u2014 small enough to be a single enum with a static factory\n+method \u2014 eliminates all three issues.\n+\n+## Proposal\n+\n+### Target module\n+\n+This proposal recommends **`kroxylicious-api`**. The utility depends on `ConfigResource.Type`,\n+which \u2014 per [proposal 116](./116-kafka-api-migration.md) \u2014 is being forked into a\n+Kroxylicious-owned type in `kroxylicious-api`. The utility must be expressed in terms of the\n+owned type, so it must live in a module that has visibility of it. Since `kroxylicious-api` is\n+where the owned type lives and every filter already depends on it, it is the natural and only\n+zero-new-dependency home.\n+\n+The API stability cost is low: the enum's shape is dictated by the Kafka protocol, not by\n+Kroxylicious design choices, so it is unlikely to need breaking changes.\n+\n+### API shape\n+\n+The utility is a single enum with a static factory method, modelled on the\n+`EntityIsolation.fromConfigResourceType` approach (decode once, switch on the typed enum):\n+\n+```java\n+// Uses the Kroxylicious-owned ConfigResource.Type (proposal 116),\n+// not org.apache.kafka.common.config.ConfigResource.\n+\n+/**\n+ * Classifies a {@link ConfigResource.Type} into the semantic entity it\n+ * names \u2014 a topic name, a group id, or something this classification\n+ * does not cover.\n+ */\n+public enum ConfigResourceEntityType {\n+\n+    /** The resource names a topic. */\n+    TOPIC_NAME,\n+\n+    /** The resource names a consumer group. */\n+    GROUP_ID;\n+\n+    /**\n+     * Classifies a raw {@code resourceType} byte from a {@code DescribeConfigs}\n+     * request or response entry.\n+     *\n+     * @param resourceType the {@link ConfigResource.Type#id()} byte\n+     * @return the classified entity type, or empty if the resource type\n+     *         is not one that names a topic or group (e.g. {@code BROKER},\n+     *         {@code BROKER_LOGGER}, or an unknown type)\n+     */\n+    public static Optional<ConfigResourceEntityType> fromResourceType(byte resourceType) {\n+        ConfigResource.Type type = ConfigResource.Type.forId(resourceType);\n+        return switch (type) {\n+            case TOPIC -> Optional.of(TOPIC_NAME);\n+            case GROUP -> Optional.of(GROUP_ID);\n+            default -> Optional.empty();\n+        };\n+    }\n+}\n+```\n+\n+Design choices:\n+\n+- **`Optional` return rather than a third enum constant.** A `fromResourceType` call site\n+  typically needs to branch on \"is this a type I need to rewrite?\" vs \"skip it\". Returning\n+  `Optional.empty()` for unrecognised or irrelevant types (broker, broker-logger, unknown) lets\n+  the caller use `ifPresent`, `map`, or `filter` directly. A third `OTHER` / `UNSUPPORTED`\n+  constant would force every caller to handle a value it has no use for.\n+\n+- **Decode via `Type.forId` once.** The raw byte is decoded to the `ConfigResource.Type` enum\n+  immediately, and all subsequent logic uses the typed enum. This avoids the raw byte\n+  comparisons that made the multitenant copy fragile.\n+\n+- **Enum, not an interface.** The set of relevant config-resource entity types is fixed by the\n+  Kafka protocol and small. An interface or sealed hierarchy would add abstraction without\n+  adding extensibility that is actually needed.\n+\n+### Migration\n+\n+The migration is mechanical and can be delivered incrementally:\n+\n+1. **kroxylicious-entity-isolation** \u2014 replace the private\n+   `EntityIsolation.fromConfigResourceType` method with a call to\n+   `ConfigResourceEntityType.fromResourceType`, mapping the result to the filter's own\n+   `EntityType` if it retains one, or switching to `ConfigResourceEntityType` directly.\n+\n+2. **kroxylicious-authorization** \u2014 replace the inline `ConfigResource.Type.TOPIC.id()` /\n+   `ConfigResource.Type.GROUP.id()` comparisons in `ConfigResources.filter` with a\n+   `ConfigResourceEntityType.fromResourceType` call and a match on the result.\n+\n+3. **kroxylicious-multitenant** \u2014 once PR #5296 lands, replace the raw byte comparisons in\n+   `MultiTenantFilter`'s `onDescribeConfigsRequest` / `onDescribeConfigsResponse` with the\n+   shared utility. This is a follow-up, not a prerequisite: the utility can land and the\n+   first two migrations can merge before #5296 does.\n+\n+Each migration is a small, independently reviewable change. No filter's external behaviour\n+changes \u2014 the classification logic is identical, just shared.\n+\n+## Affected/not affected projects\n+\n+**Affected:**\n+\n+- `kroxylicious/kroxylicious` \u2014 `kroxylicious-api` gains the `ConfigResourceEntityType` enum.\n+  The three filter modules listed above adopt it.\n+\n+**Not affected:**\n+\n+- `kroxylicious-operator` \u2014 no CRD or operator changes.\n+- KMS modules, authorizer APIs, proxy runtime \u2014 none touch `DescribeConfigs` classification.\n+- External filter authors \u2014 the utility is opt-in; existing filters continue to work unchanged.\n+\n+## Compatibility\n+\n+The change is purely additive. A new enum is introduced in `kroxylicious-api` expressed in\n+terms of the owned `ConfigResource.Type` from proposal 116; nothing existing is removed or has\n+its signature changed. Filter modules that adopt the shared utility replace private internal\n+logic with an equivalent shared call \u2014 no externally visible behaviour changes.\n+\n+## Rejected alternatives\n+\n+### Place the utility in `kroxylicious-kafka-message-tools`\n+\n+At first glance a natural fit \u2014 the module is described as \"tools for manipulating kafka\n+messages\" and has no dependency on the rest of Kroxylicious. However, it depends on\n+`kafka-clients`, and the utility must be expressed in terms of the Kroxylicious-owned\n+`ConfigResource.Type` from proposal 116, which lives in `kroxylicious-api`.\n+`kroxylicious-kafka-message-tools` does not depend on `kroxylicious-api`, and adding that\n+dependency would change the module's stated contract. Rejected.\n+\n+### Place the utility in a new `kroxylicious-protocol-support` module\n+\n+A dedicated module for protocol-level helpers would keep it off the public API surface, but\n+introducing a new module is unnecessary when `kroxylicious-api` already contains the owned\n+type the utility depends on and every filter already depends on it.\n+\n+### Return a third `OTHER` enum constant instead of `Optional`\n+\n+Rejected. Every call site that would receive `OTHER` would immediately discard or skip it. An\n+`Optional.empty()` expresses \"not relevant\" more naturally and lets callers use `ifPresent` /\n+`map` / `filter` without a dead branch.\n+\n+### A richer abstraction (interface, sealed hierarchy, or visitor)\n+\n+Rejected. The domain is two constants and a \"none of the above\" case. An interface or visitor\n+pattern would add ceremony without adding value \u2014 the set of config-resource types relevant to\n+entity rewriting is fixed by the Kafka protocol and unlikely to grow.\n+\n+### Reuse `EntityIsolation.EntityType` directly\n+\n+Rejected. `EntityType` is an internal type of the entity-isolation filter. Depending on it\n+would couple every consumer to that filter module, which is exactly the dependency this proposal\n+exists to avoid.\n+\n+### Keep the duplication\n+\n+Rejected. Three copies is past the threshold where the maintenance cost of divergence exceeds\n+the cost of a small shared utility. A fourth copy is already in progress (PR #5296)."
+        }
+      ],
+      "updated_at": "2026-11-10T02:26:39Z",
+      "head_sha": "34b3d4519234f780a84a6058ab2e03b4c680ff1d",
+      "frozen": false,
+      "reviews_snapshot": [],
+      "comments_snapshot": [],
+      "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-09T16:43:30Z"
+  "watermark": "2026-11-10T02:26:39Z"
 }
