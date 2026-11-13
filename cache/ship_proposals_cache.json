@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-12T17:41:50Z",
+  "last_updated": "2026-11-13T17:19:17Z",
   "proposals": {
     "pr-12": {
       "pr_number": 12,
@@ -12,20 +12,20 @@
       "created_on": "2026-09-09",
       "state": "under discussion",
       "web_url": "https://github.com/streamshub/proposals/pull/12",
-      "last_activity": "2026-11-06T12:10:09Z",
+      "last_activity": "2026-11-13T14:26:01Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
       "frozen": false,
       "id": null,
       "reviews": {
-        "accepted": [],
-        "commented": [
+        "accepted": [
           {
             "name": "MikeEdgar",
-            "timestamp": "2026-09-10T15:25:49Z"
+            "timestamp": "2026-11-13T14:26:01Z"
           }
         ],
+        "commented": [],
         "changes_requested": []
       }
     },
@@ -248,7 +248,7 @@
           "patch": "@@ -16,4 +16,5 @@ File name format and numbering is validated by the CI workflow defined in [valid\n | 001 | [StreamsHub Quick-start Kustomize Repository](./001-quickstart-kustomize-repo.md) |\n | 002 | [StreamsHub MCP: Strimzi MCP proposal](./002-streamshub-mcp-strimzi.md)           |\n | 003 | [Donation of streamshub-mcp to Strimzi](./003-donate-streamshub-mcp-to-strimzi.md) |\n+| 004 | [StreamsHub Console: Migrate the Console CRD API Group to `console.streamshub.io`](./004-streamshub-io-namespace-migration.md) |\n "
         }
       ],
-      "updated_at": "2026-11-06T12:10:09Z",
+      "updated_at": "2026-11-13T14:26:01Z",
       "head_sha": "203e4cf4b93d1e1f7187f2eb3cba8a47b3e05e81",
       "frozen": false,
       "reviews_snapshot": [
@@ -266,6 +266,11 @@
           "name": "tomncooper",
           "state": "COMMENTED",
           "timestamp": "2026-09-14T11:04:01Z"
+        },
+        {
+          "name": "MikeEdgar",
+          "state": "APPROVED",
+          "timestamp": "2026-11-13T14:26:01Z"
         }
       ],
       "comments_snapshot": [
@@ -1208,5 +1213,5 @@
       "comments_snapshot": []
     }
   },
-  "watermark": "2026-11-06T12:10:09Z"
+  "watermark": "2026-11-13T14:26:01Z"
 }

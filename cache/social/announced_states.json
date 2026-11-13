@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "last_run": "2026-11-12T17:42:01+00:00",
+  "last_run": "2026-11-13T17:19:28+00:00",
   "baselines": {
     "kafka:kip-1": {
       "state": "accepted"
@@ -2082,7 +2082,7 @@
       "state": "accepted"
     },
     "kafka:kip-723": {
-      "state": "under discussion"
+      "state": "not accepted"
     },
     "kafka:kip-724": {
       "state": "accepted"
@@ -3972,7 +3972,7 @@
       "state": "under discussion"
     },
     "kafka:kip-1370": {
-      "state": "under discussion"
+      "state": "accepted"
     },
     "kafka:kip-1371": {
       "state": "under discussion"
@@ -6765,7 +6765,13 @@
       "state": "under discussion"
     },
     "kafka:kip-1396": {
-      "state": "unknown"
+      "state": "under discussion"
+    },
+    "kafka:kip-1397": {
+      "state": "under discussion"
+    },
+    "kroxylicious:pr-153": {
+      "state": "under discussion"
     }
   },
   "pending": []

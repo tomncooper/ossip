@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-12T17:41:54Z",
+  "last_updated": "2026-11-13T17:19:21Z",
   "proposals": {
     "pr-133": {
       "pr_number": 133,
@@ -2068,6 +2068,29 @@
       "amendments": [],
       "frozen": false,
       "id": 152
+    },
+    "pr-153": {
+      "pr_number": 153,
+      "pr_url": "https://github.com/kroxylicious/design/pull/153",
+      "title": "docs(proposals): add Programmed condition to KafkaProxy",
+      "created_by": "matheusandre1",
+      "authors": [
+        "matheusandre1"
+      ],
+      "created_on": "2026-11-12",
+      "state": "under discussion",
+      "web_url": "https://github.com/kroxylicious/design/pull/153",
+      "reviews": {
+        "accepted": [],
+        "commented": [],
+        "changes_requested": []
+      },
+      "last_activity": "2026-11-12T23:40:54Z",
+      "activity_status": "green",
+      "last_activity_age": "0 days",
+      "amendments": [],
+      "frozen": false,
+      "id": 153
     }
   },
   "pr_index": {
@@ -11316,7 +11339,32 @@
       "reviews_snapshot": [],
       "comments_snapshot": [],
       "snapshots_fetched": true
+    },
+    "153": {
+      "state": "open",
+      "classification": "proposal",
+      "proposal_key": "pr-153",
+      "files": [
+        {
+          "sha": "f5fc789fb478d1962ab24e5011ed326c1de1f2e6",
+          "filename": "proposals/153-kafkaproxy-programmed-condition.md",
+          "status": "added",
+          "additions": 195,
+          "deletions": 0,
+          "changes": 195,
+          "blob_url": "https://github.com/kroxylicious/design/blob/8bd1d59d28d84fbcc8b86cfae3fdf0c4fd1707d3/proposals%2F153-kafkaproxy-programmed-condition.md",
+          "raw_url": "https://github.com/kroxylicious/design/raw/8bd1d59d28d84fbcc8b86cfae3fdf0c4fd1707d3/proposals%2F153-kafkaproxy-programmed-condition.md",
+          "contents_url": "https://api.github.com/repos/kroxylicious/design/contents/proposals%2F153-kafkaproxy-programmed-condition.md?ref=8bd1d59d28d84fbcc8b86cfae3fdf0c4fd1707d3",
+          "patch": "@@ -0,0 +1,195 @@\n+# 153 - Add a `Programmed` condition to `KafkaProxy`\n+\n+Today the operator marks a `KafkaProxy` as `Ready=True` as soon as reconciliation finishes without error, even if no proxy pod is running.\n+What that condition actually reports is \"the configuration has been applied to Kubernetes\", which is the meaning the Gateway API gives to the `Programmed` condition.\n+This proposal adds a `Programmed` condition with that meaning to the `KafkaProxy` status, and leaves `Ready` as it is until its meaning is defined in a separate proposal.\n+\n+Issue: [kroxylicious#4976](https://github.com/kroxylicious/kroxylicious/issues/4976).\n+\n+## Current situation\n+\n+The `KafkaProxyReconciler` manages five dependent resources, in this order: the state `ConfigMap`, the `ConfigMap` holding the proxy configuration, the `Deployment`, the `Services` for each virtual cluster and, on OpenShift, the `Routes`.\n+\n+The `KafkaProxy` status gets its `Ready` condition in two places:\n+\n+- `reconcile()` writes `Ready=True` (reason `Ready`) whenever it is called.\n+- `updateErrorStatus()` writes `Ready=Unknown`, with the exception's class name as the reason, when a dependent throws an exception.\n+\n+Neither looks at the state of the pods.\n+The result was reported in [kroxylicious#4906](https://github.com/kroxylicious/kroxylicious/issues/4906): with an invalid image, the pods sit in `ImagePullBackOff` and the `KafkaProxy` still shows `Ready=True`.\n+\n+There is a second detail.\n+The `Deployment` is declared with `readyPostcondition = DeploymentReadyCondition`, which is only met when `status.readyReplicas == status.replicas`.\n+In the Java Operator SDK, while that condition is not met, the dependents that come after it (`Services` and `Routes`) are not reconciled, but `reconcile()` is still called.\n+So today `Ready=True` can appear when the pods are not ready and also when the `Services` and `Routes` have not been created yet.\n+\n+The `Ready` condition is used in three user-visible places:\n+\n+- the `Ready` column of `kubectl get kafkaproxy`;\n+- `kubectl wait kafkaproxy/simple --for=condition=Ready=True` in the record encryption quick start and in `scripts/run-operator.sh`;\n+- the README of the `kroxylicious-kubernetes-api` module, which already lists `Programmed` as a standard condition and shows reasons (`ReconciliationSucceeded`, `DeploymentNotReady`) that the operator never emits.\n+\n+In the operator, only `KafkaProxy` uses `Ready`.\n+`KafkaProxyIngress`, `VirtualKafkaCluster`, `KafkaService` and `KafkaProtocolFilter` use `ResolvedRefs` and `Accepted`.\n+\n+## Motivation\n+\n+The Gateway API, which inspires the operator's conditions model, separates two concepts:\n+\n+- `Programmed`: the configuration has been generated and sent to the data plane.\n+- `Ready`: reserved for future use; it would guarantee that the data plane is already serving traffic.\n+\n+The community call on 2026-09-24 concluded that the current `Ready` on `KafkaProxy` has the semantics of `Programmed`, and that the meaning of `Ready` needs more research before it is decided.\n+\n+Adding `Programmed` now brings three benefits:\n+\n+- Users get a condition with a defined and documented meaning.\n+- `Ready` is free to be redefined in [kroxylicious#4906](https://github.com/kroxylicious/kroxylicious/issues/4906) without losing the information it carries today.\n+- Anyone automating on the status can move to `Programmed` before `Ready` changes behaviour.\n+\n+## Proposal\n+\n+### Meaning\n+\n+`Programmed` on a `KafkaProxy` means that the operator has generated, from the observed `metadata.generation`, all the Kubernetes resources the proxy needs, and that the API server has accepted all of them.\n+\n+`Programmed` does not mean that:\n+\n+- the proxy pods are running or ready;\n+- the `Services` have been assigned addresses or the `Routes` have been admitted;\n+- clients can connect.\n+\n+Those points belong to the definition of `Ready`, which is out of scope for this proposal.\n+\n+### Values\n+\n+| status | reason | When |\n+|---|---|---|\n+| `True` | `Programmed` | All active dependents were reconciled without error for the observed generation. |\n+| `Unknown` | the exception's class name | A dependent threw an exception. `message` carries the exception message. |\n+\n+This reuses the behaviour `StatusFactory` already has for the other conditions: the reason of a `True` condition is the type name, and unexpected errors become `Unknown`.\n+\n+When reconciliation is interrupted by a `StaleReferentStatusException`, the operator still does not update the status, as today.\n+In that case `Programmed` keeps its previous value, with the old `observedGeneration`, which tells the user it is out of date.\n+\n+Example status with the pods in `ImagePullBackOff`:\n+\n+```yaml\n+status:\n+  observedGeneration: 3\n+  replicas: 0\n+  conditions:\n+    - type: Ready\n+      status: \"True\"\n+      reason: Ready\n+      message: \"\"\n+      observedGeneration: 3\n+      lastTransitionTime: \"2026-11-12T10:30:00Z\"\n+    - type: Programmed\n+      status: \"True\"\n+      reason: Programmed\n+      message: \"\"\n+      observedGeneration: 3\n+      lastTransitionTime: \"2026-11-12T10:30:00Z\"\n+```\n+\n+### Create `Services` and `Routes` without waiting for the pods\n+\n+For `Programmed=True` to be true, all the resources must have been applied.\n+With the current `DeploymentReadyCondition` that does not happen until the pods become ready.\n+\n+The proposal is to remove the `readyPostcondition` from the `Deployment`, so that `Services` and `Routes` are created straight after the `Deployment`, without depending on the pods.\n+This is safe for traffic: a `Service` only forwards connections to ready pods, so creating it earlier does not expose a proxy that is not serving yet.\n+\n+With this change, by the time `reconcile()` is called all active dependents have been applied, and writing `Programmed=True` at that point is correct.\n+\n+### The `Ready` condition\n+\n+`Ready` continues to be written exactly as today, with the same status as `Programmed`.\n+The documentation will say that:\n+\n+- `Programmed` is the condition to check to find out whether the configuration has been applied;\n+- the meaning of `Ready` will change in a future release, following the decision on [kroxylicious#4906](https://github.com/kroxylicious/kroxylicious/issues/4906).\n+\n+### API changes\n+\n+- `Condition.Type` gains the value `Programmed`, added at the end of the enum so the order of existing conditions in the status does not change.\n+- The CRD schema does not change: `type` is already a free-form string.\n+- The `KafkaProxy` CRD gains a `Programmed` column in `additionalPrinterColumns`, next to `Ready`.\n+- The description of the `Ready` column is corrected. Today it says \"Whether the other resources referenced by this proxy can be found\", which does not match what the condition reports.\n+\n+Expected result:\n+\n+```\n+$ kubectl get kafkaproxy -n my-proxy\n+NAME     READY   PROGRAMMED\n+simple   True    True\n+```\n+\n+### Documentation\n+\n+- A new module in `kroxylicious-docs` explaining the `KafkaProxy` status, in the same format as the existing ones for `VirtualKafkaCluster` and `KafkaProxyIngress`.\n+- The `kroxylicious-kubernetes-api` README corrected to show only the conditions and reasons the operator actually emits.\n+- The quick start keeps using `--for=condition=Ready=True` until `Ready` is redefined.\n+\n+### Testing\n+\n+- `KafkaProxyReconcilerTest` and `KafkaProxyStatusFactoryTest`: `Programmed=True` on the happy path, `Unknown` on the error path, `lastTransitionTime` preserved when the status does not change.\n+- `KafkaProxyReconcilerIT`: `Services` are created even when the `Deployment` has no ready replicas, and `Programmed=True` is reported in that state.\n+- `ConditionAssert` gains the matching helpers (`isProgrammedTrue()` and so on).\n+\n+## Affected/not affected projects\n+\n+Affected:\n+\n+- `kroxylicious-kubernetes-api`: the `Condition.Type` enum and the `KafkaProxy` CRD.\n+- `kroxylicious-operator`: `KafkaProxyReconciler`, `KafkaProxyStatusFactory` and the workflow declaration.\n+- `kroxylicious-operator-test-support`: assertions.\n+- `kroxylicious-docs`.\n+\n+Not affected:\n+\n+- the proxy (`kroxylicious-runtime`), the filters and the plugin APIs;\n+- the operator's other CRDs;\n+- the admission webhook (`kroxylicious-admission`), which has its own `Condition` type.\n+\n+## Compatibility\n+\n+The change is additive.\n+`Ready` keeps its status, reason and transition time, so `kubectl wait --for=condition=Ready` and the `Ready` column keep working.\n+\n+On operator upgrade, existing `KafkaProxy` resources get `Programmed` on their first reconciliation.\n+The CRD must be reapplied for the new column to appear.\n+\n+`Services` and `Routes` are now created before the pods become ready.\n+Anyone who watches for the existence of the `Service` as a signal that the proxy is ready needs to watch the `KafkaProxy` status or the `Service` endpoints instead.\n+\n+Operator rollback is a risk to verify during implementation.\n+An older operator version reads a status containing a `Condition.Type` it does not know, and deserialising the enum may fail.\n+If it does, the proposal should include one of two mitigations: document that rollback requires clearing the status, or make deserialisation tolerant of unknown types in a release before the one that introduces `Programmed`.\n+\n+## Open questions\n+\n+1. **Reasons for failure.**\n+   The proposal keeps `Unknown` with the exception's class name, the same as the other conditions.\n+   The Gateway API uses `False` with reasons such as `Invalid` and `Pending`.\n+   Adopting that vocabulary would be better for users, but it would require classifying the reconciler's exceptions and should apply to all of the operator's conditions, not only `Programmed`.\n+2. **Removing `DeploymentReadyCondition`.**\n+   If there is a reason to keep the `Services` waiting for the pods, the alternative is to keep the condition and report `Programmed=False` with reason `Pending` while there are unreconciled dependents.\n+   In that case `Programmed` would depend on the pods again, which contradicts the definition in the issue.\n+3. **Other resources.**\n+   `VirtualKafkaCluster` and `KafkaProxyIngress` also result in Kubernetes resources, but it is the `KafkaProxy` reconciler that creates them.\n+   This proposal does not add `Programmed` to them.\n+4. **Fix `Ready` instead of adding `Programmed`.**\n+   [kroxylicious#4906](https://github.com/kroxylicious/kroxylicious/issues/4906) describes the option of tying `Ready` to the state of the `Deployment`, and the community call decided to research the meaning of `Ready` further before choosing.\n+   This proposal assumes the two are separate, but it is open whether the community would prefer to handle both in a single change.\n+5. **Keep, rename or stop writing `Ready`.**\n+   The proposal keeps `Ready` as it is, so as not to break `kubectl wait --for=condition=Ready`, the `kubectl get` column and existing automation.\n+   The other options are to rename `Ready` to `Programmed` in one step, or to stop writing `Ready` until it is redefined.\n+   Neither was discussed in the issue.\n+6. **Where to derive `Programmed` from.**\n+   The proposal derives it from the result of reconciling the dependents.\n+   Another option would be to use the `Deployment`'s conditions (`Available`, `Progressing`), but those describe the state of the pods, which by the issue's definition is not part of `Programmed`.\n+\n+## Rejected alternatives"
+        }
+      ],
+      "updated_at": "2026-11-12T23:40:54Z",
+      "head_sha": "8bd1d59d28d84fbcc8b86cfae3fdf0c4fd1707d3",
+      "frozen": false,
+      "reviews_snapshot": [],
+      "comments_snapshot": [],
+      "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-12T04:10:38Z"
+  "watermark": "2026-11-12T23:40:54Z"
 }
