@@ -131758,3 +131758,9 @@ kip,mention_type,message_id,mbox_year,mbox_month,timestamp,from,vote
 1384,subject,237,2026,11,2026-11-14 02:26:10+00:00,Chia-Ping Tsai <chia7712@gmail.com>,
 1384,discuss,237,2026,11,2026-11-14 02:26:10+00:00,Chia-Ping Tsai <chia7712@gmail.com>,
 1384,body,237,2026,11,2026-11-14 02:26:10+00:00,Chia-Ping Tsai <chia7712@gmail.com>,
+1388,subject,247,2026,11,2026-11-15 02:19:31+00:00,"""Sean Quah via dev"" <dev@kafka.apache.org>",
+1388,vote,247,2026,11,2026-11-15 02:19:31+00:00,"""Sean Quah via dev"" <dev@kafka.apache.org>",+1
+1388,body,247,2026,11,2026-11-15 02:19:31+00:00,"""Sean Quah via dev"" <dev@kafka.apache.org>",
+1388,subject,256,2026,11,2026-11-15 16:17:21+00:00,Nicole Du <nicoleywdu@gmail.com>,
+1388,vote,256,2026,11,2026-11-15 16:17:21+00:00,Nicole Du <nicoleywdu@gmail.com>,
+1388,body,256,2026,11,2026-11-15 16:17:21+00:00,Nicole Du <nicoleywdu@gmail.com>,
