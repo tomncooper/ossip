@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-17T18:43:55Z",
+  "last_updated": "2026-11-18T18:18:22Z",
   "proposals": {
     "pr-203": {
       "pr_number": 203,
@@ -11008,6 +11008,10 @@
         ],
         "commented": [
           {
+            "name": "scholzj",
+            "timestamp": "2026-11-18T16:38:30Z"
+          },
+          {
             "name": "tinaselenge",
             "timestamp": "2026-11-11T11:41:51Z"
           },
@@ -11016,17 +11020,13 @@
             "timestamp": "2026-11-10T21:13:38Z"
           },
           {
-            "name": "scholzj",
-            "timestamp": "2026-11-09T19:50:58Z"
-          },
-          {
             "name": "antonio-pedro99",
             "timestamp": "2026-11-05T18:01:22Z"
           }
         ],
         "changes_requested": []
       },
-      "last_activity": "2026-11-11T11:41:52Z",
+      "last_activity": "2026-11-18T18:02:59Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -58936,20 +58936,20 @@
       "proposal_key": "pr-258",
       "files": [
         {
-          "sha": "2c1798c67b3c421ae9f719af1f026f97690b0e71",
+          "sha": "91ed64a508f18940663681b7e4b3477daf4ab152",
           "filename": "162-http-bridge-request-decompression.md",
           "status": "added",
-          "additions": 86,
+          "additions": 141,
           "deletions": 0,
-          "changes": 86,
-          "blob_url": "https://github.com/strimzi/proposals/blob/e0770eb939c17b5fb3a706a0c072da9cd4f06f5c/162-http-bridge-request-decompression.md",
-          "raw_url": "https://github.com/strimzi/proposals/raw/e0770eb939c17b5fb3a706a0c072da9cd4f06f5c/162-http-bridge-request-decompression.md",
-          "contents_url": "https://api.github.com/repos/strimzi/proposals/contents/162-http-bridge-request-decompression.md?ref=e0770eb939c17b5fb3a706a0c072da9cd4f06f5c",
-          "patch": "@@ -0,0 +1,86 @@\n+# Support compressed HTTP requests in the Strimzi Kafka Bridge\n+\n+This proposal adds HTTP request decompression to the Strimzi Kafka Bridge, so clients can send less data to the Bridge.\n+\n+## Current situation\n+\n+The HTTP Bridge does not support compressed request bodies.\n+Clients send every request uncompressed, including the JSON envelope and the record data.\n+\n+The Kafka producer compression configured in the Bridge only reduces traffic between the Bridge and the Kafka brokers.\n+Users who want to compress HTTP requests have to run a reverse proxy in front of the Bridge to decompress them.\n+\n+## Motivation\n+\n+Cloud providers charge for traffic between regions, so clients that send requests to a Bridge in another region incur data transfer costs.\n+JSON record payloads are often repetitive and compress well, and the Bridge can decompress them without an extra proxy.\n+\n+This proposal addresses [strimzi/strimzi-kafka-bridge#1198](https://github.com/strimzi/strimzi-kafka-bridge/issues/1198).\n+\n+## Proposal\n+\n+The Bridge will accept compressed bodies on all client API endpoints that accept a request body.\n+Clients enable compression per request with the `Content-Encoding` header, and users do not need to change the Bridge configuration.\n+The Bridge decompresses the body before JSON parsing, OpenAPI validation, and endpoint processing.\n+\n+### Supported compression algorithms\n+\n+The Bridge will support gzip and Zstandard.\n+Both are registered HTTP content codings.\n+The Bridge will use the decompression support available through Vert.x and validate the `Content-Encoding` header to enforce the supported encodings.\n+A future proposal can add Snappy or LZ4 if users request them.\n+\n+| Algorithm | `Content-Encoding` |\n+|-----------|--------------------|\n+| gzip | `gzip` |\n+| Zstandard | `zstd` |\n+\n+### Request handling\n+\n+Clients keep the existing `Content-Type` and compress the whole request body.\n+For example:\n+\n+```http\n+POST /topics/my-topic HTTP/1.1\n+Content-Type: application/vnd.kafka.json.v2+json\n+Content-Encoding: gzip\n+\n+<gzip-compressed JSON body>\n+```\n+\n+Requests without `Content-Encoding`, or with `Content-Encoding: identity`, go through the existing processing path.\n+After decompression, the Bridge sends the same records to Kafka as it would for the equivalent uncompressed request.\n+The Kafka producer still applies its configured `compression.type`, independent of the HTTP request compression.\n+\n+#### Multiple content encodings\n+\n+HTTP allows multiple content encodings to be applied sequentially, for example `Content-Encoding: gzip, zstd`.\n+The Bridge will support only a single content encoding per request.\n+A single compression algorithm addresses the data transfer reduction use case motivating this proposal.\n+Supporting multiple encodings would add additional complexity without an identified use case.\n+Requests specifying multiple content encodings will be rejected, even when each encoding is individually supported.\n+\n+### Error handling\n+\n+The Bridge returns errors in the existing error response format:\n+\n+| Condition | HTTP status |\n+|-----------|-------------|\n+| Unsupported content encoding | `415 Unsupported Media Type` |\n+| Multiple content encodings not supported | `415 Unsupported Media Type` |\n+| Invalid compressed body | `400 Bad Request` |\n+\n+## Affected/not affected projects\n+\n+This proposal affects only the [Strimzi Kafka Bridge](https://github.com/strimzi/strimzi-kafka-bridge).\n+\n+## Compatibility\n+\n+Existing clients that send uncompressed requests keep working without changes.\n+\n+## Rejected alternatives\n+\n+### Use a reverse proxy\n+\n+Users who already run a reverse proxy in front of the Bridge can decompress requests there, for example by creating an `EnvoyFilter` if using Istio.\n+Users without a reverse proxy would have to deploy and maintain one only to decompress requests for the Bridge."
+          "changes": 141,
+          "blob_url": "https://github.com/strimzi/proposals/blob/d242ffd070c761bc259958fe43acf49cc434a2cc/162-http-bridge-request-decompression.md",
+          "raw_url": "https://github.com/strimzi/proposals/raw/d242ffd070c761bc259958fe43acf49cc434a2cc/162-http-bridge-request-decompression.md",
+          "contents_url": "https://api.github.com/repos/strimzi/proposals/contents/162-http-bridge-request-decompression.md?ref=d242ffd070c761bc259958fe43acf49cc434a2cc",
+          "patch": "@@ -0,0 +1,141 @@\n+# Support compressed HTTP requests in the Strimzi Kafka Bridge\n+\n+This proposal adds HTTP request decompression to the Strimzi Kafka Bridge, so clients can send less data to the Bridge.\n+\n+## Current situation\n+\n+The HTTP Bridge does not support compressed request bodies.\n+Clients send every request uncompressed, including the JSON envelope and the record data.\n+\n+The Kafka producer compression configured in the Bridge only reduces traffic between the Bridge and the Kafka brokers.\n+Users who want to compress HTTP requests have to run a reverse proxy in front of the Bridge to decompress them.\n+\n+## Motivation\n+\n+Cloud providers charge for traffic between regions, so clients that send requests to a Bridge in another region incur data transfer costs.\n+JSON record payloads are often repetitive and compress well, and the Bridge can decompress them without an extra proxy.\n+\n+This proposal addresses [strimzi/strimzi-kafka-bridge#1198](https://github.com/strimzi/strimzi-kafka-bridge/issues/1198).\n+\n+## Proposal\n+\n+The Bridge will accept compressed bodies on all client API endpoints that accept a request body.\n+Request decompression will be enabled by default, and clients choose whether to compress each request using the `Content-Encoding` header.\n+The Bridge decompresses the body before JSON parsing, OpenAPI validation, and endpoint processing.\n+\n+### Supported compression algorithms\n+\n+The Bridge will use the decompression support built into Vert.x and support the encodings it decodes with the libraries the Bridge already ships:\n+\n+| Algorithm | `Content-Encoding` |\n+|-----------|--------------------|\n+| gzip | `gzip` |\n+| Deflate | `deflate` |\n+| Snappy (framed) | `snappy` |\n+| Zstandard | `zstd` |\n+\n+**Note:** Zstandard decompression needs no additional library, because `zstd-jni` is already a transitive dependency of `kafka-clients`.\n+\n+Brotli is not supported, because it would require adding the `brotli4j` dependency.\n+\n+### Request handling\n+\n+Clients keep the existing `Content-Type` and compress the whole request body.\n+For example:\n+\n+```http\n+POST /topics/my-topic HTTP/1.1\n+Content-Type: application/vnd.kafka.json.v2+json\n+Content-Encoding: gzip\n+\n+<gzip-compressed JSON body>\n+```\n+\n+Requests without `Content-Encoding`, or with `Content-Encoding: identity`, go through the existing processing path.\n+After decompression, the Bridge sends the same records to Kafka as it would for the equivalent uncompressed request.\n+The Kafka producer still applies its configured `compression.type`, independent of the HTTP request compression.\n+\n+#### Multiple content encodings\n+\n+HTTP allows multiple content encodings to be applied sequentially, for example `Content-Encoding: gzip, zstd`.\n+The Bridge will support only a single encoding per request, which is enough for the data transfer reduction use case.\n+\n+Supporting multiple encodings would require custom logic in the Bridge to apply the decoders in reverse order, as Vert.x does not handle this automatically.\n+Requests specifying multiple encodings in a single `Content-Encoding` header will be rejected with `415 Unsupported Media Type`.\n+Repeated `Content-Encoding` headers cannot be reliably rejected using Vert.x's built-in decompression, because Netty's [`HttpContentDecoder`](https://github.com/netty/netty/blob/netty-4.2.20.Final/codec-http/src/main/java/io/netty/handler/codec/http/HttpContentDecoder.java#L92) reads only the first value and removes all occurrences when it selects a decoder.\n+\n+### Error handling\n+\n+The Bridge returns errors in the existing error response format:\n+\n+| Condition | HTTP status |\n+|-----------|-------------|\n+| Unsupported content encoding | `415 Unsupported Media Type` |\n+| Multiple content encodings not supported | `415 Unsupported Media Type` |\n+| Invalid compressed body | `400 Bad Request` |\n+\n+An empty body with `Content-Encoding: gzip` gets the same response as an empty uncompressed request.\n+\n+### Implementation\n+\n+Request decompression will be enabled in [http server configuration](https://github.com/strimzi/strimzi-kafka-bridge/blob/main/src/main/java/io/strimzi/kafka/bridge/http/HttpBridge.java#L357):\n+\n+```java\n+httpServerConfig.setCompressionConfig(\n+    new CompressionConfig()\n+        .setDecompressionEnabled(true)\n+        .addGzip()\n+        .addDeflate()\n+        .addSnappy()\n+        .addZstd());\n+```\n+\n+**Note:** Vert.x decodes all supported encodings regardless of which compressors are listed, and only requires the list to be non-empty to enable decompression.\n+\n+To reject unsupported encodings, the Bridge will add a router root handler that returns `415 Unsupported Media Type` for any request that still has a `Content-Encoding` other than `identity`.\n+This works because Vert.x removes the `Content-Encoding` header from requests it decodes, so a remaining header means an unsupported encoding or a comma-separated encoding list.\n+The Bridge will add error handling to return decompression failures as `400 Bad Request` in its existing error format.\n+During the PoC, Vert.x returned a `500` without this handling, suggesting a server error rather than an invalid request.\n+\n+### Testing\n+\n+Integration tests will cover the following scenarios:\n+\n+- gzip, Deflate, Snappy, and Zstandard requests produce the same Kafka records as uncompressed requests\n+- Requests with no `Content-Encoding` or with `identity` go through the existing processing path\n+- Unsupported encodings are rejected with `415 Unsupported Media Type`\n+- Comma-separated encodings are rejected with `415 Unsupported Media Type`\n+- Corrupt compressed bodies are rejected with `400 Bad Request` in the existing error format\n+- Empty compressed bodies get the same response as empty uncompressed requests\n+\n+### Documentation\n+\n+The documentation will be updated with the supported encodings, the new error responses, and an example of a compressed request.\n+\n+### Metrics\n+\n+Both existing metrics remain unchanged.\n+`strimzi_bridge_http_server_request_bytes` measures the body size after decompression, and `strimzi_bridge_http_server_requests_total` counts rejected requests under their HTTP status in the `code` label.\n+The Bridge will also log decompression failures at `ERROR` level, since they cannot be distinguished from other `400` responses in the request counter.\n+\n+## Affected/not affected projects\n+\n+This proposal affects only the [Strimzi Kafka Bridge](https://github.com/strimzi/strimzi-kafka-bridge).\n+\n+## Compatibility\n+\n+Existing clients that send uncompressed requests keep working without changes.\n+\n+## Rejected alternatives\n+\n+### Use a reverse proxy\n+\n+Users who already run a reverse proxy in front of the Bridge can decompress requests there, for example by creating an `EnvoyFilter` if using Istio.\n+Users without a reverse proxy would have to deploy and maintain one only to decompress requests for the Bridge.\n+\n+### Accept compressed Kafka record batches\n+\n+Clients could send compressed batches in [Kafka's record-batch format](https://kafka.apache.org/41/implementation/message-format/#record-batch), allowing the Bridge to forward them without decompression and recompression.\n+\n+This approach is rejected because it requires a new client request format and a separate sending implementation, as the Java Kafka client has no public API for sending prebuilt batches.\n+The proposed solution works with the existing request format and Java Kafka client. The trade-off is that the Bridge decompresses requests and recompresses them when Kafka producer compression is enabled."
         }
       ],
-      "updated_at": "2026-11-11T11:41:52Z",
-      "head_sha": "e0770eb939c17b5fb3a706a0c072da9cd4f06f5c",
+      "updated_at": "2026-11-18T18:02:59Z",
+      "head_sha": "d242ffd070c761bc259958fe43acf49cc434a2cc",
       "frozen": false,
       "reviews_snapshot": [
         {
@@ -58991,6 +58991,51 @@
           "name": "tinaselenge",
           "state": "COMMENTED",
           "timestamp": "2026-11-11T11:41:51Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-18T11:43:28Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-18T11:55:07Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-18T11:57:47Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-18T12:02:01Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-18T12:06:27Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-18T12:10:32Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-18T17:51:24Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-18T17:54:43Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-18T17:57:51Z"
         }
       ],
       "comments_snapshot": [
@@ -59001,6 +59046,18 @@
         {
           "name": "ppatierno",
           "timestamp": "2026-11-10T21:04:12Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "timestamp": "2026-11-18T11:39:32Z"
+        },
+        {
+          "name": "scholzj",
+          "timestamp": "2026-11-18T16:38:30Z"
+        },
+        {
+          "name": "smitthakkar96",
+          "timestamp": "2026-11-18T17:49:19Z"
         }
       ],
       "snapshots_fetched": true
@@ -59102,5 +59159,5 @@
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-17T13:28:51Z"
+  "watermark": "2026-11-18T18:02:59Z"
 }
