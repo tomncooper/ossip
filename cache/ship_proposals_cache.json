@@ -1,42 +1,6 @@
 {
-  "last_updated": "2026-11-18T18:18:26Z",
+  "last_updated": "2026-11-19T18:28:24Z",
   "proposals": {
-    "pr-12": {
-      "pr_number": 12,
-      "pr_url": "https://github.com/streamshub/proposals/pull/12",
-      "title": "Proposal to adopt streamshub.io as the canonical namespace for the Console",
-      "created_by": "tomncooper",
-      "authors": [
-        "tomncooper"
-      ],
-      "created_on": "2026-09-09",
-      "state": "under discussion",
-      "web_url": "https://github.com/streamshub/proposals/pull/12",
-      "last_activity": "2026-11-18T17:29:34Z",
-      "activity_status": "green",
-      "last_activity_age": "0 days",
-      "amendments": [],
-      "frozen": false,
-      "id": null,
-      "reviews": {
-        "accepted": [
-          {
-            "name": "Frawless",
-            "timestamp": "2026-11-18T17:29:34Z"
-          },
-          {
-            "name": "MikeEdgar",
-            "timestamp": "2026-11-18T17:21:25Z"
-          },
-          {
-            "name": "kornys",
-            "timestamp": "2026-11-18T17:11:22Z"
-          }
-        ],
-        "commented": [],
-        "changes_requested": []
-      }
-    },
     "pr-4": {
       "pr_number": 4,
       "pr_url": "https://github.com/streamshub/proposals/pull/4",
@@ -223,13 +187,53 @@
         ],
         "changes_requested": []
       }
+    },
+    "4": {
+      "pr_number": 12,
+      "pr_url": "https://github.com/streamshub/proposals/pull/12",
+      "title": "StreamsHub Console: Migrate the Console CRD API Group to `console.streamshub.io`",
+      "created_by": "tomncooper",
+      "authors": [
+        "tomncooper"
+      ],
+      "created_on": "2026-09-09",
+      "state": "accepted",
+      "web_url": "https://github.com/streamshub/proposals/blob/main/004-streamshub-io-namespace-migration.md",
+      "last_activity": null,
+      "activity_status": null,
+      "last_activity_age": null,
+      "amendments": [],
+      "frozen": true,
+      "id": 4,
+      "reviews": {
+        "accepted": [
+          {
+            "name": "Frawless",
+            "timestamp": "2026-11-18T17:29:34Z"
+          },
+          {
+            "name": "MikeEdgar",
+            "timestamp": "2026-11-18T17:21:25Z"
+          },
+          {
+            "name": "kornys",
+            "timestamp": "2026-11-18T17:11:22Z"
+          }
+        ],
+        "commented": [],
+        "changes_requested": []
+      },
+      "key": "4",
+      "merged_on": "2026-11-19T11:02:32Z",
+      "last_modified_on": "2026-11-19T11:02:32Z",
+      "file_path": "004-streamshub-io-namespace-migration.md"
     }
   },
   "pr_index": {
     "12": {
-      "state": "open",
+      "state": "merged",
       "classification": "proposal",
-      "proposal_key": "pr-12",
+      "proposal_key": "4",
       "files": [
         {
           "sha": "585acb11da5019188b7dd225060d8e297260029b",
@@ -256,9 +260,9 @@
           "patch": "@@ -16,4 +16,5 @@ File name format and numbering is validated by the CI workflow defined in [valid\n | 001 | [StreamsHub Quick-start Kustomize Repository](./001-quickstart-kustomize-repo.md) |\n | 002 | [StreamsHub MCP: Strimzi MCP proposal](./002-streamshub-mcp-strimzi.md)           |\n | 003 | [Donation of streamshub-mcp to Strimzi](./003-donate-streamshub-mcp-to-strimzi.md) |\n+| 004 | [StreamsHub Console: Migrate the Console CRD API Group to `console.streamshub.io`](./004-streamshub-io-namespace-migration.md) |\n "
         }
       ],
-      "updated_at": "2026-11-18T17:29:34Z",
+      "updated_at": "2026-11-19T11:02:32Z",
       "head_sha": "c62ab46125a4cbf9d9956242edd858ef6a5c3507",
-      "frozen": false,
+      "frozen": true,
       "reviews_snapshot": [
         {
           "name": "MikeEdgar",
@@ -1245,5 +1249,5 @@
       "comments_snapshot": []
     }
   },
-  "watermark": "2026-11-18T17:29:34Z"
+  "watermark": "2026-11-19T11:02:32Z"
 }

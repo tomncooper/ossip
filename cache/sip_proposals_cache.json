@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-18T18:18:22Z",
+  "last_updated": "2026-11-19T18:28:21Z",
   "proposals": {
     "pr-203": {
       "pr_number": 203,
@@ -10733,7 +10733,7 @@
     "pr-253": {
       "pr_number": 253,
       "pr_url": "https://github.com/strimzi/proposals/pull/253",
-      "title": "Delay between Kafka node restarts during rolling updates",
+      "title": "Availability recheck delay for Kafka node restarts",
       "created_by": "acgtun",
       "authors": [
         "acgtun"
@@ -10745,21 +10745,25 @@
         "accepted": [],
         "commented": [
           {
-            "name": "ppatierno",
-            "timestamp": "2026-10-26T11:52:17Z"
+            "name": "katheris",
+            "timestamp": "2026-11-19T17:31:17Z"
           },
           {
             "name": "scholzj",
-            "timestamp": "2026-10-22T19:30:50Z"
+            "timestamp": "2026-11-18T20:47:52Z"
           },
           {
             "name": "tinaselenge",
-            "timestamp": "2026-10-22T12:16:16Z"
+            "timestamp": "2026-11-18T14:21:29Z"
+          },
+          {
+            "name": "ppatierno",
+            "timestamp": "2026-10-26T11:52:17Z"
           }
         ],
         "changes_requested": []
       },
-      "last_activity": "2026-11-06T19:38:17Z",
+      "last_activity": "2026-11-19T17:31:17Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -58597,31 +58601,31 @@
       "proposal_key": "pr-253",
       "files": [
         {
-          "sha": "9bc87b7e6cac47ce9feaf0f6ce37b361b01a92da",
-          "filename": "162-post-kafka-restart-delay.md",
+          "sha": "b2058659791ac27fda888c7e74f6e2723b4fdbd6",
+          "filename": "163-kafka-availability-recheck-delay.md",
           "status": "added",
-          "additions": 183,
+          "additions": 175,
           "deletions": 0,
-          "changes": 183,
-          "blob_url": "https://github.com/strimzi/proposals/blob/a7fc0c95448cb08f3d2f887e458fd78b021dc24a/162-post-kafka-restart-delay.md",
-          "raw_url": "https://github.com/strimzi/proposals/raw/a7fc0c95448cb08f3d2f887e458fd78b021dc24a/162-post-kafka-restart-delay.md",
-          "contents_url": "https://api.github.com/repos/strimzi/proposals/contents/162-post-kafka-restart-delay.md?ref=a7fc0c95448cb08f3d2f887e458fd78b021dc24a",
-          "patch": "@@ -0,0 +1,183 @@\n+# Delay between Kafka node restarts during rolling updates\n+\n+This proposal adds an optional delay to rolling updates of Kafka nodes.\n+With the delay enabled, the Cluster Operator restarts a node only after the existing availability check has passed, the delay has elapsed, and the check has passed once more.\n+Its purpose is to avoid restarting a node right after another node rejoined the in-sync replicas, while it is still unclear whether that node stays in them.\n+The delay is set operator-wide with a new environment variable, `STRIMZI_POST_KAFKA_RESTART_DELAY_MS`, and overridden per cluster with a new annotation on the `Kafka` resource, `strimzi.io/post-kafka-restart-delay-ms`.\n+Both default to no delay, so the current behaviour is unchanged unless a user opts in.\n+\n+## Current situation\n+\n+Rolling updates of Kafka nodes are performed by the `KafkaRoller`.\n+Before restarting a node, it checks that no partition with a replica on that node would drop below `min.insync.replicas` for brokers, and that the controller quorum would stay available for controllers.\n+If the check fails, the `KafkaRoller` retries it with an exponential backoff, and the rolling update fails when the retries are exhausted.\n+After a restart, it waits for the pod to become ready and moves on to the next node.\n+\n+The availability check is a point-in-time check, so the next node is often restarted within seconds of the previously restarted node rejoining the in-sync replicas.\n+\n+## Motivation\n+\n+A node that has just rejoined the in-sync replicas can drop out again shortly afterwards, for example because of slow disks or log recovery that is still catching up.\n+If it drops out while the next node is down, partitions with replicas on both nodes fall below `min.insync.replicas`, for example with a replication factor of 3 and `min.insync.replicas=2`, and `acks=all` producers get `NOT_ENOUGH_REPLICAS`.\n+\n+This happened during a Kubernetes node upgrade.\n+Two Kubernetes nodes, hosting brokers A and B, were drained at the same time, and the Strimzi Drain Cleaner annotated both pods for a restart.\n+The events were:\n+\n+1. The `KafkaRoller` restarted A.\n+2. A became ready and rejoined the in-sync replicas of its partitions.\n+3. About 10 seconds after A rejoined, the availability check for B passed, because A was back in the in-sync replicas, and the `KafkaRoller` restarted B.\n+4. About 20 seconds after that, A stopped responding because of a slow disk, and the controller fenced it, which removed A from the in-sync replicas of all its partitions.\n+5. With A fenced and B restarting, partitions with replicas on both A and B fell below `min.insync.replicas`, and producers got `NOT_ENOUGH_REPLICAS` for a few minutes.\n+\n+With a 60-second delay, the check for B would still have passed in step 3, but it would have started the delay instead.\n+A was fenced about 30 seconds after it rejoined, so the check at the end would have failed, and B would have stayed up.\n+\n+The new `KafkaRoller` design in [PR #103 in strimzi/proposals](https://github.com/strimzi/proposals/pull/103), which was closed without being merged, included a delay between restarts, `postRestartDelayMs`.\n+This proposal adds a similar setting to the existing `KafkaRoller`.\n+\n+## Proposal\n+\n+### Behaviour\n+\n+When the effective delay is greater than zero, the `KafkaRoller` handles each node that needs a restart as follows:\n+\n+1. It runs the existing availability check for the node, as today.\n+2. When the check passes, it does not restart the node yet, but starts the delay.\n+3. When the delay ends, it runs the check once more and restarts the node if it passes.\n+4. If the check fails, it treats it like a failed check today: it retries with the same backoff, and when the check passes again, it starts a new delay from the beginning.\n+\n+![Kafka node rolling restart with a delay](./images/162-post-kafka-restart-delay.png)\n+\n+The check covers every partition with a replica on the node about to be restarted, so the check at the end also catches a replica on a third node that dropped out during the delay, not only the previously restarted node.\n+A node that drops out of the in-sync replicas and rejoins within the delay is not detected.\n+\n+### Where the delay sits\n+\n+In practice, the delay still sits between restarts.\n+When the partitions shared by the previous and the next node have no headroom above `min.insync.replicas`, the next node's check only passes once the previous node is back in the in-sync replicas, so the delay starts when the previous node has recovered, not when its pod became ready.\n+\n+Only one node waits for its own delay at a time.\n+Other nodes that need a restart or a reconfiguration wait for that delay to end before their own check runs.\n+\n+Because the delay comes before each restart rather than after it, nothing waits after the last restart, and a restart in a later reconciliation or after a Cluster Operator restart is delayed too, without storing anything between reconciliations.\n+The cost is that the first restart also waits, because the `KafkaRoller` cannot tell whether a node has just rejoined the in-sync replicas, so a rolling update that restarts N nodes waits for at least N delays.\n+\n+### Scope\n+\n+The delay applies to every restart that the availability check normally gates, for example for Kafka upgrades and downgrades, configuration changes, CA renewals, the `strimzi.io/manual-rolling-update` annotation, and the Strimzi Drain Cleaner.\n+A dynamic reconfiguration gets no delay of its own but waits for a pending delay of another node, and if it fails, the fallback restart waits for the delay.\n+\n+The delay does not apply to restarts that bypass the check, such as of a stuck pod or of a node that does not respond to the Kafka Admin API, or to a force-roll after the retries are exhausted, which still requires the check to pass.\n+These restarts do not wait for a pending delay of another node either; the check at the end of that delay catches their effect.\n+Pods deleted outside the Cluster Operator are not covered.\n+\n+### Effect on reconciliations\n+\n+Each failed check at the end of the delay uses one of the existing 10 attempts, so a node waits for at most about 10 delays plus about 2 minutes of backoff before the rolling update fails as it does today.\n+\n+The reconciliation stays in progress during the delay, so other reconciliations of the same `Kafka` resource cannot run until it ends, but other clusters are not blocked, because each `KafkaRoller` has its own thread.\n+Each restart adds at least the delay to a rolling update, which can then run past the end of a maintenance time window, and node drains with the Drain Cleaner take longer.\n+Drain timeouts in node-upgrade tooling must allow for the delay, because pods deleted directly when a drain times out are not covered.\n+\n+### Upper limit\n+\n+The delay cannot be longer than `STRIMZI_OPERATION_TIMEOUT_MS`.\n+This keeps a mistyped value, such as `60000000` instead of `60000`, from holding a reconciliation for hours.\n+If the environment variable is set to a higher value, the Cluster Operator fails to start with a configuration error.\n+If the annotation is set to a higher value, the operator logs a warning and uses `STRIMZI_OPERATION_TIMEOUT_MS` as the delay for that cluster.\n+\n+### Environment variable `STRIMZI_POST_KAFKA_RESTART_DELAY_MS`\n+\n+| Property | Value |\n+|:---------|:------|\n+| Name | `STRIMZI_POST_KAFKA_RESTART_DELAY_MS` |\n+| Type | Integer, milliseconds, `0` or less disables the delay |\n+| Default | `0`, no delay |\n+| Maximum | `STRIMZI_OPERATION_TIMEOUT_MS` |\n+| Scope | All `Kafka` clusters managed by the operator |\n+\n+The name uses the `_MS` suffix like `STRIMZI_OPERATION_TIMEOUT_MS`, and includes `KAFKA` because it applies only to Kafka nodes.\n+An operator-wide setting fits the motivating case, where a Kubernetes node upgrade drains nodes under every cluster the operator manages.\n+\n+### Annotation `strimzi.io/post-kafka-restart-delay-ms`\n+\n+| Property | Value |\n+|:---------|:------|\n+| Name | `strimzi.io/post-kafka-restart-delay-ms` |\n+| Resource | `Kafka` |\n+| Type | Integer, milliseconds, `0` or less disables the delay |\n+| Default | Unset, the environment variable applies |\n+| Maximum | `STRIMZI_OPERATION_TIMEOUT_MS` |\n+\n+This lets users enable the delay on the clusters where a restarted node needs time to stabilise, for example production clusters, and keep immediate restarts on others.\n+\n+The name mirrors the environment variable and keeps `kafka`, because the annotation is on the `Kafka` resource but applies only to its Kafka nodes.\n+\n+The annotation is read when the `KafkaRoller` is created, so a change during a rolling update takes effect from the next reconciliation.\n+\n+### Precedence\n+\n+| Environment variable | Annotation | Effective delay for the cluster |\n+|:---------------------|:-----------|:--------------------------------|\n+| Not set | Not set | None, current behaviour |\n+| Set | Not set | The environment variable value |\n+| Not set | Set | The annotation value |\n+| Set | Set | The annotation value, including `0`, which disables the delay for that cluster |\n+\n+If the annotation value is not an integer, the operator logs a warning and treats the annotation as not set.\n+\n+### Implementation\n+\n+- `ClusterOperatorConfig` adds a `POST_KAFKA_RESTART_DELAY_MS` parameter for the environment variable, validated against `STRIMZI_OPERATION_TIMEOUT_MS`.\n+- `ResourceAnnotations` in the `api` module adds an `ANNO_STRIMZI_IO_POST_KAFKA_RESTART_DELAY_MS` constant.\n+- `KafkaReconciler` and `CaReconciler`, the two places that create a `KafkaRoller`, resolve the effective delay, apply the cap, and pass it to the `KafkaRoller` constructor.\n+- When the check for a node passes, the `KafkaRoller` reschedules the node on its executor for the end of its delay, without sleeping on the roller's thread.\n+  If the check at the end fails, the existing retry and backoff handling applies.\n+- Other nodes that need a restart or a reconfiguration are rescheduled to the end of a pending delay, before the existing deferral of the active controller.\n+- Neither kind of rescheduling calls the backoff, so no node, including the active controller, uses up retries while it waits.\n+- A failed dynamic update is recorded, so that the node is restarted after its delay without trying the dynamic update again.\n+- An `INFO` message is logged when a delay starts, when the check at its end fails, and when the node is restarted.\n+\n+The environment variable is implemented in [PR #13212 in strimzi-kafka-operator](https://github.com/strimzi/strimzi-kafka-operator/pull/13212), which will be updated to this behaviour, and the annotation is added in the same release.\n+\n+## Testing strategy\n+\n+The behaviour is covered by unit tests, since timing-based system tests would be slow and prone to flakiness.\n+\n+- `KafkaRollerTest`, with scripted results for the availability and quorum checks and a short delay, covers that:\n+  - The node is restarted after the delay when the check passes at both ends, and when the check at the end fails, a new delay starts only after the check passes again.\n+  - The rolling update fails after the existing retries when the check keeps failing.\n+  - Each delay starts after the previous restart, and no delay follows the last restart.\n+  - Waiting for its own delay or for another node's uses up no retries, including those of an active controller that only needs a reconfiguration.\n+  - Reconfigurations wait only for a pending delay of another node, and restarts of stuck or unresponsive pods and force-rolls do not wait for any delay.\n+  - A failed dynamic update falls back to a delayed restart, without trying the dynamic update again.\n+  - The existing tests pass unchanged with the delay set to `0`.\n+- `ClusterOperatorConfigTest` covers the environment variable, its default, and the cap.\n+- The `KafkaReconciler` and `CaReconciler` tests cover the annotation precedence, including `0`, invalid values, and values above the cap.\n+\n+## Affected/not affected projects\n+\n+Only the Cluster Operator in `strimzi-kafka-operator` is affected.\n+The documentation of the Cluster Operator configuration and of the `Kafka` resource annotations is updated.\n+The Strimzi Drain Cleaner is not changed, since it only annotates pods and the delay is applied by the `KafkaRoller`.\n+Kafka Connect and MirrorMaker 2 use a different roller and are not affected, nor are the HTTP Bridge, the Topic Operator, and the User Operator.\n+\n+## Compatibility\n+\n+The change is fully backwards compatible, since both settings default to no delay.\n+A future replacement of the `KafkaRoller` can keep both settings with the same meaning.\n+\n+## Rejected alternatives\n+\n+### Fixed delay after a restarted node becomes ready\n+\n+The first version of this proposal, and the current version of PR #13212, wait for a fixed time after a restarted pod becomes ready, then run the availability check for the next node once.\n+If the restarted node is still catching up when the delay ends, the next node is restarted as soon as it rejoins the in-sync replicas.\n+It also has to wait after the last restart, to cover a next restart in a later reconciliation.\n+\n+### Stability window between Kafka node restarts during rolling updates\n+\n+The previous version of this proposal required the availability check to keep passing for a whole window, checking every 10 seconds, and started a new window whenever a check failed.\n+It catches a node that drops out for more than 10 seconds and rejoins within the window, but each check is still a point-in-time check, so a node that drops out and rejoins between two checks is missed too.\n+In exchange, it needs window state, a polling loop, and a describe call every 10 seconds, which is expensive on clusters with many partitions."
+          "changes": 175,
+          "blob_url": "https://github.com/strimzi/proposals/blob/584c9aeef067ec62551af925ee2d3b9dcbb48d0b/163-kafka-availability-recheck-delay.md",
+          "raw_url": "https://github.com/strimzi/proposals/raw/584c9aeef067ec62551af925ee2d3b9dcbb48d0b/163-kafka-availability-recheck-delay.md",
+          "contents_url": "https://api.github.com/repos/strimzi/proposals/contents/163-kafka-availability-recheck-delay.md?ref=584c9aeef067ec62551af925ee2d3b9dcbb48d0b",
+          "patch": "@@ -0,0 +1,175 @@\n+# Availability recheck delay for Kafka node restarts\n+\n+This proposal adds an optional recheck to the availability check that the Cluster Operator runs before restarting a Kafka node.\n+With a recheck delay set, the check has to pass, and pass again after the delay, before the node is restarted.\n+This avoids restarting a node while another node that has just rejoined the in-sync replicas might still drop out.\n+The delay is set with a Cluster Operator environment variable or a `Kafka` resource annotation, and is off by default.\n+\n+## Current situation\n+\n+The `KafkaRoller` performs rolling updates of Kafka nodes, one node at a time, on a thread of its own.\n+Before a restart, it checks that no partition with a replica on the node would drop below `min.insync.replicas`, and for a controller, that the quorum would stay available.\n+If the check fails, it retries with an exponential backoff, and the rolling update fails after 10 attempts.\n+After a restart, it waits for the pod to become ready and moves on to the next node.\n+A ready pod means that the broker is running, not that it is back in the in-sync replicas.\n+\n+The check is a point-in-time check, so the next node is often restarted within seconds of the previous node rejoining the in-sync replicas.\n+\n+## Motivation\n+\n+A node that has just rejoined the in-sync replicas can drop out again shortly afterwards, for example because of a slow disk.\n+If it drops out while the next node is down, partitions with replicas on both nodes fall below `min.insync.replicas`, and producers using `acks=all` get `NOT_ENOUGH_REPLICAS`.\n+\n+This happened during a Kubernetes node upgrade, on a cluster with a replication factor of 3 and `min.insync.replicas=2`.\n+Two Kubernetes nodes hosting brokers A and B were drained at the same time, and the Strimzi Drain Cleaner annotated both pods for a restart:\n+\n+1. The `KafkaRoller` restarted A.\n+2. A became ready and rejoined the in-sync replicas.\n+3. About 10 seconds later, the check for B passed, because A was back in the in-sync replicas, and the `KafkaRoller` restarted B.\n+4. About 20 seconds after that, A stopped responding because of a slow disk, and the controller fenced it.\n+5. With A fenced and B restarting, partitions with replicas on both fell below `min.insync.replicas`, and producers failed for a few minutes.\n+\n+With a 60-second recheck delay, the recheck for B would have run after A was fenced, and B would have stayed up.\n+\n+## Proposal\n+\n+### Behaviour\n+\n+With a recheck delay greater than zero, the availability check works as follows:\n+\n+1. It runs the existing check, as today.\n+2. If the check passes, it waits for the recheck delay.\n+3. It runs the existing check again.\n+4. If both pass, the node is restarted as today.\n+\n+If either check fails, the availability check fails, and the `KafkaRoller` retries with the existing backoff, starting again from the first check.\n+\n+![Availability check with a recheck delay](./images/163-kafka-availability-recheck-delay.png)\n+\n+The recheck covers the same partitions as the first check, so it fails if a replica on another node dropped out during the wait.\n+Controllers recheck the quorum, and nodes with both roles recheck both.\n+A replica that drops out and rejoins within the wait is not detected.\n+\n+### When it waits\n+\n+The wait is part of the check, so no state is kept, and only one node waits at a time.\n+\n+Each restart comes at least one delay after the previous node became ready, which also spaces out the leadership changes that clients see.\n+Some partitions may have replicas on both nodes and a replication factor of `min.insync.replicas` + 1, as in the incident.\n+For them, the first check fails until the previous node rejoins the in-sync replicas.\n+The wait then starts only once that node has rejoined.\n+\n+The first restart of a rolling update waits too, because the check cannot tell whether a node has just rejoined.\n+Nothing waits after the last restart, and a restart in a later reconciliation, or after the Cluster Operator restarts, is rechecked the same way.\n+\n+The check always passes for a single controller and for partitions whose replication factor is not above `min.insync.replicas`.\n+For those, the recheck adds only the delay.\n+\n+### Scope\n+\n+The recheck applies to every normal restart, such as for upgrades, configuration changes, CA renewals, and the Strimzi Drain Cleaner.\n+\n+A node that only needs a dynamic reconfiguration keeps the single check, because a reconfiguration does not take the node offline.\n+If the dynamic update fails and the node is restarted instead, it is rechecked before the restart.\n+\n+Restarts that skip the check today are not delayed, such as those of stuck pods and of nodes that do not respond to the Kafka Admin API.\n+Force-rolls after the retries are exhausted keep the single check.\n+Pods deleted outside the Cluster Operator are not covered.\n+\n+### Effect on reconciliations\n+\n+A failed recheck uses one of the 10 attempts.\n+If the recheck keeps failing, a node waits for 10 delays plus about 2 minutes of backoff before the rolling update fails, instead of about 2 minutes today.\n+\n+The wait blocks the cluster's `KafkaRoller` thread, as waiting for pod readiness already does.\n+This thread is not a Vert.x thread, and a non-blocking wait would let the `KafkaRoller` restart another node during the wait.\n+The `Kafka` resource stays locked meanwhile, so its other reconciliations are retried later, and other clusters are not affected.\n+Pausing reconciliation does not interrupt a wait that has started, as for any step of a rolling update.\n+Drain timeouts must allow for one delay per restart, because a drain tool that deletes a pod after its own timeout skips the check.\n+\n+### Configuration\n+\n+| Property | Environment variable | Annotation |\n+|:---------|:---------------------|:-----------|\n+| Name | `STRIMZI_KAFKA_AVAILABILITY_RECHECK_DELAY_MS` | `strimzi.io/kafka-availability-recheck-delay-ms` |\n+| Set on | Cluster Operator | `Kafka` resource |\n+| Applies to | All `Kafka` clusters | That cluster |\n+| Value | Milliseconds, default `0` | Milliseconds, unset by default |\n+\n+The annotation overrides the environment variable, and a value of `0` or less disables the recheck.\n+An annotation value that is not an integer is ignored with a warning.\n+A change to the annotation applies from the next reconciliation.\n+\n+The delay cannot be longer than `STRIMZI_OPERATION_TIMEOUT_MS`, so a mistyped value cannot hold a reconciliation for hours.\n+A higher environment variable stops the Cluster Operator from starting, and a higher annotation is capped with a warning.\n+\n+The names follow `STRIMZI_OPERATION_TIMEOUT_MS`, and include `kafka` because they apply only to Kafka nodes.\n+The environment variable suits node upgrades, which drain nodes under every cluster, and the annotation enables the recheck only where needed.\n+\n+### Implementation\n+\n+- `ClusterOperatorConfig` adds the environment variable, validated against `STRIMZI_OPERATION_TIMEOUT_MS`.\n+- `ResourceAnnotations` in the `api` module adds the annotation.\n+- `KafkaReconciler` and `CaReconciler`, which create the `KafkaRoller`, resolve the delay and pass it to its constructor.\n+- In `KafkaRoller.restartIfNecessary`, the `canRoll` call checks, waits, and checks again when the node needs a restart.\n+  The `canRoll` call before a force-roll is unchanged.\n+  Each check keeps its existing 60-second timeout, so the delay does not count against it.\n+  If the Cluster Operator stops during the wait, the node is not restarted, and the next reconciliation starts again from the first check.\n+- If the node only needs a dynamic reconfiguration, `canRoll` runs a single check, and a fallback restart is rechecked.\n+- The `KafkaRoller` logs at `INFO` level when it starts a wait and when a recheck fails.\n+\n+The environment variable is implemented in [PR #13212 in strimzi-kafka-operator](https://github.com/strimzi/strimzi-kafka-operator/pull/13212), which will be updated to this design.\n+\n+## Testing strategy\n+\n+Unit tests cover the behaviour, since timing-based system tests would be slow and flaky.\n+\n+- `KafkaRollerTest` scripts the check results through `TestingKafkaRoller`, which already overrides `availability` and `quorumCheck`.\n+  It also overrides the wait, so that no test sleeps, and covers that:\n+  - A node is restarted only when both checks pass, and a failed recheck retries from the first check.\n+  - The rolling update fails after 10 attempts when the recheck keeps failing.\n+  - A dynamic reconfiguration does not wait, and its fallback restart is rechecked.\n+  - Restarts of stuck or unresponsive pods and force-rolls do not wait.\n+  - The existing tests pass unchanged with no delay.\n+- `ClusterOperatorConfigTest` covers the environment variable, its default, and the cap.\n+- The `KafkaReconciler` and `CaReconciler` tests cover the annotation override, `0`, invalid values, and the cap.\n+\n+## Affected/not affected projects\n+\n+Only the Cluster Operator is affected, and its documentation is updated.\n+The Strimzi Drain Cleaner is unchanged, since it only annotates pods.\n+Kafka Connect and MirrorMaker 2 use a different roller and are not affected.\n+\n+## Compatibility\n+\n+The change is backwards compatible, since both settings default to no delay.\n+\n+## Rejected alternatives\n+\n+### Fixed delay after a restarted node becomes ready\n+\n+PR #13212 currently waits a fixed time after a restarted pod becomes ready, then checks the next node once.\n+The closed [PR #103 in strimzi/proposals](https://github.com/strimzi/proposals/pull/103) for a new `KafkaRoller` proposed the same as `postRestartDelayMs`.\n+It is the simplest option, and it would have prevented the incident above.\n+But a busy broker can take longer than the delay to catch up and rejoin the in-sync replicas.\n+The next check then passes as soon as it rejoins, and the next node is restarted with no wait.\n+The recheck starts its wait only when the check first passes, so it covers this case too.\n+A fixed delay also has to follow the last restart, to cover a restart in a later reconciliation.\n+Both options add one wait to the `KafkaRoller` thread, so the implementation cost is similar.\n+\n+### Delay outside the availability check\n+\n+Rescheduling the node for the end of the delay would avoid blocking the `KafkaRoller` thread.\n+For the same behaviour, it has to track pending delays across nodes and failed dynamic updates.\n+Since the `KafkaRoller` handles one node at a time anyway, a wait inside the check is simpler.\n+\n+### Stability window\n+\n+The check has to keep passing for a whole window, checked every 10 seconds.\n+Unlike the recheck, it also catches a replica that drops out and rejoins during the window, if it stays out for more than 10 seconds.\n+In exchange, it needs window state, a polling loop, and a describe call every 10 seconds, which is expensive on clusters with many partitions.\n+\n+### Field in the `Kafka` resource\n+\n+A field would get schema validation, but it is an API change for a setting that most clusters leave disabled.\n+The annotation can become a field later if it is widely used."
         },
         {
-          "sha": "c3e8d7c12d220ec478be2f126ec986c2eae48682",
-          "filename": "images/162-post-kafka-restart-delay.png",
+          "sha": "893789b84825f3c2bc0a15c4a6d313aacefb82d4",
+          "filename": "images/163-kafka-availability-recheck-delay.png",
           "status": "added",
           "additions": 0,
           "deletions": 0,
           "changes": 0,
-          "blob_url": "https://github.com/strimzi/proposals/blob/a7fc0c95448cb08f3d2f887e458fd78b021dc24a/images%2F162-post-kafka-restart-delay.png",
-          "raw_url": "https://github.com/strimzi/proposals/raw/a7fc0c95448cb08f3d2f887e458fd78b021dc24a/images%2F162-post-kafka-restart-delay.png",
-          "contents_url": "https://api.github.com/repos/strimzi/proposals/contents/images%2F162-post-kafka-restart-delay.png?ref=a7fc0c95448cb08f3d2f887e458fd78b021dc24a"
+          "blob_url": "https://github.com/strimzi/proposals/blob/584c9aeef067ec62551af925ee2d3b9dcbb48d0b/images%2F163-kafka-availability-recheck-delay.png",
+          "raw_url": "https://github.com/strimzi/proposals/raw/584c9aeef067ec62551af925ee2d3b9dcbb48d0b/images%2F163-kafka-availability-recheck-delay.png",
+          "contents_url": "https://api.github.com/repos/strimzi/proposals/contents/images%2F163-kafka-availability-recheck-delay.png?ref=584c9aeef067ec62551af925ee2d3b9dcbb48d0b"
         }
       ],
-      "updated_at": "2026-11-06T19:38:17Z",
-      "head_sha": "a7fc0c95448cb08f3d2f887e458fd78b021dc24a",
+      "updated_at": "2026-11-19T17:31:17Z",
+      "head_sha": "584c9aeef067ec62551af925ee2d3b9dcbb48d0b",
       "frozen": false,
       "reviews_snapshot": [
         {
@@ -58648,6 +58652,36 @@
           "name": "tinaselenge",
           "state": "COMMENTED",
           "timestamp": "2026-10-22T12:16:16Z"
+        },
+        {
+          "name": "scholzj",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-08T22:45:58Z"
+        },
+        {
+          "name": "acgtun",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-09T04:46:25Z"
+        },
+        {
+          "name": "tinaselenge",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-18T14:21:29Z"
+        },
+        {
+          "name": "acgtun",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-19T00:09:54Z"
+        },
+        {
+          "name": "acgtun",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-19T00:09:56Z"
+        },
+        {
+          "name": "acgtun",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-19T00:09:58Z"
         }
       ],
       "comments_snapshot": [
@@ -58674,6 +58708,26 @@
         {
           "name": "acgtun",
           "timestamp": "2026-11-06T19:38:17Z"
+        },
+        {
+          "name": "acgtun",
+          "timestamp": "2026-11-09T04:47:23Z"
+        },
+        {
+          "name": "scholzj",
+          "timestamp": "2026-11-18T20:47:52Z"
+        },
+        {
+          "name": "acgtun",
+          "timestamp": "2026-11-19T00:09:52Z"
+        },
+        {
+          "name": "acgtun",
+          "timestamp": "2026-11-19T00:09:53Z"
+        },
+        {
+          "name": "katheris",
+          "timestamp": "2026-11-19T17:31:17Z"
         }
       ],
       "snapshots_fetched": true
@@ -59159,5 +59213,5 @@
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-18T18:02:59Z"
+  "watermark": "2026-11-19T17:31:17Z"
 }
