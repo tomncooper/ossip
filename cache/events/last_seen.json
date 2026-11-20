@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "last_run": "2026-11-20T15:01:28+00:00",
+  "last_run": "2026-11-20T17:56:44+00:00",
   "projects": {
     "kafka": {
       "kafka:kip-1": {
@@ -21006,7 +21006,7 @@
         "state": "accepted",
         "detail_url": "https://ossip.dev/kips/KIP-1279.html",
         "created_on": "2026-02-13T06:23:54.000Z",
-        "last_modified_on": "2026-11-20T11:14:38.000Z",
+        "last_modified_on": "2026-11-20T15:19:43.000Z",
         "merged_on": null,
         "closed_on": null,
         "last_activity": null,
@@ -22876,7 +22876,7 @@
         "state": "under discussion",
         "detail_url": "https://ossip.dev/kips/KIP-1392.html",
         "created_on": "2026-11-05T14:01:51.000Z",
-        "last_modified_on": "2026-11-20T14:26:10.000Z",
+        "last_modified_on": "2026-11-20T17:54:50.000Z",
         "merged_on": null,
         "closed_on": null,
         "last_activity": null,
@@ -22995,7 +22995,7 @@
         "state": "unknown",
         "detail_url": "https://ossip.dev/kips/KIP-1399.html",
         "created_on": "2026-11-18T13:49:11.000Z",
-        "last_modified_on": "2026-11-20T14:52:49.000Z",
+        "last_modified_on": "2026-11-20T15:31:33.000Z",
         "merged_on": null,
         "closed_on": null,
         "last_activity": null,
@@ -23012,7 +23012,24 @@
         "state": "unknown",
         "detail_url": "https://ossip.dev/kips/KIP-1400.html",
         "created_on": "2026-11-20T03:20:47.000Z",
-        "last_modified_on": "2026-11-20T03:22:39.000Z",
+        "last_modified_on": "2026-11-20T16:06:21.000Z",
+        "merged_on": null,
+        "closed_on": null,
+        "last_activity": null,
+        "proposal_id": null,
+        "pr_number": null,
+        "vote_thread": null,
+        "reviews": null
+      },
+      "kafka:kip-1401": {
+        "key": "kafka:kip-1401",
+        "project": "kafka",
+        "reference": "KIP-1401",
+        "title": "Log divergence detection for share groups",
+        "state": "under discussion",
+        "detail_url": "https://ossip.dev/kips/KIP-1401.html",
+        "created_on": "2026-11-20T16:29:45.000Z",
+        "last_modified_on": "2026-11-20T16:32:51.000Z",
         "merged_on": null,
         "closed_on": null,
         "last_activity": null,
@@ -43355,13 +43372,22 @@
         "last_modified_on": null,
         "merged_on": null,
         "closed_on": null,
-        "last_activity": "2026-11-20T14:09:20Z",
+        "last_activity": "2026-11-20T16:08:46Z",
         "proposal_id": null,
         "pr_number": 259,
         "vote_thread": null,
         "reviews": {
           "accepted": [],
-          "commented": [],
+          "commented": [
+            {
+              "name": "tinaselenge",
+              "timestamp": "2026-11-20T16:08:46Z"
+            },
+            {
+              "name": "scholzj",
+              "timestamp": "2026-11-20T15:32:01Z"
+            }
+          ],
           "changes_requested": []
         }
       },

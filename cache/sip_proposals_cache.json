@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-20T15:01:23Z",
+  "last_updated": "2026-11-20T17:56:40Z",
   "proposals": {
     "pr-203": {
       "pr_number": 203,
@@ -11050,10 +11050,19 @@
       "web_url": "https://github.com/strimzi/proposals/pull/259",
       "reviews": {
         "accepted": [],
-        "commented": [],
+        "commented": [
+          {
+            "name": "tinaselenge",
+            "timestamp": "2026-11-20T16:08:46Z"
+          },
+          {
+            "name": "scholzj",
+            "timestamp": "2026-11-20T15:32:01Z"
+          }
+        ],
         "changes_requested": []
       },
-      "last_activity": "2026-11-20T14:09:20Z",
+      "last_activity": "2026-11-20T16:08:46Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -59147,10 +59156,26 @@
           "patch": "@@ -9,6 +9,7 @@ This repository lists proposals for the Strimzi project. A template for new prop\n \n | #  | Title                                                                 |\n |:--:|:----------------------------------------------------------------------|\n+| 162 | [HTTP Bridge authentication (OAuth, Basic and TLS client certificates)](./162-http-bridge-authentication.md) |\n | 161 | [Honor the `deletionTimestamp` on `KafkaUser` resources](./161-honor-deletion-timestamp-in-the-user-operator.md) |\n | 160 | [Strimzi MCP Servers](./160-mcp-servers.md) |\n | 159 | [Post-Quantum Hybrid Key Exchange (PQHKE) support in Strimzi](./159-post-quantum-hybrid-key-exchange.md) |"
         }
       ],
-      "updated_at": "2026-11-20T14:09:20Z",
+      "updated_at": "2026-11-20T16:08:46Z",
       "head_sha": "d0b7b131bad6b6d7c7f8201000d9361209b67506",
       "frozen": false,
-      "reviews_snapshot": [],
+      "reviews_snapshot": [
+        {
+          "name": "tinaselenge",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-20T15:29:30Z"
+        },
+        {
+          "name": "scholzj",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-20T15:32:01Z"
+        },
+        {
+          "name": "tinaselenge",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-20T16:08:46Z"
+        }
+      ],
       "comments_snapshot": [],
       "snapshots_fetched": true
     },
@@ -59214,5 +59239,5 @@
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-20T14:09:20Z"
+  "watermark": "2026-11-20T16:08:46Z"
 }
