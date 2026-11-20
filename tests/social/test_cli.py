@@ -589,6 +589,30 @@ class TestCursorRegressions:
         assert "1 successful post(s)" in out  # only flaky posted this run, not console too
 
 
+def test_unconfigured_poster_exits(event_dirs, tmp_path, monkeypatch):
+    """A destination whose credentials are missing aborts the run with SystemExit."""
+    import ipper.social.posters.base as poster_base
+    from ipper.social.posters.base import PosterNotConfigured
+
+    class Unconfigured:
+        name = "unconfigured"
+
+        @classmethod
+        def from_env(cls):
+            raise PosterNotConfigured("no token")
+
+    monkeypatch.setitem(poster_base.POSTER_REGISTRY, "unconfigured", Unconfigured)
+    write_event(1)
+    state_file = tmp_path / "state.json"
+    run_announce_cmd(make_args(post_to="console", state_file=str(state_file)))  # seed
+    write_event(
+        2, event_type="state_changed",
+        state_before="under discussion", state_after="accepted",
+    )
+    with pytest.raises(SystemExit):
+        run_announce_cmd(make_args(post_to="unconfigured", state_file=str(state_file)))
+
+
 def test_load_state_unparseable_file_is_seed(tmp_path):
     state_file = tmp_path / "state.json"
     state_file.write_text("not json at all", encoding="utf-8")

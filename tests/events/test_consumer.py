@@ -162,6 +162,22 @@ class TestReadEventsAlias:
 
 
 class TestPresentation:
+    def test_stable_id_chains_past_multiple_collisions(self):
+        from ipper.events.models import EventCandidate
+        from ipper.events.presentation import stable_id
+
+        candidate = EventCandidate(
+            project="kafka",
+            key="kafka:kip-1",
+            event_type="new",
+            reference="KIP-1",
+            title="T",
+            observed_at=NOW,
+            detail_url="https://x",
+        )
+        existing = {"kafka:kip-1/new@2026-10-01", "kafka:kip-1/new@2026-10-01-2"}
+        assert stable_id(candidate, "2026-10-01", existing) == "kafka:kip-1/new@2026-10-01-3"
+
     def test_headline_state_changed(self):
         event = record(
             3,
@@ -209,6 +225,24 @@ class TestPresentation:
             stable_id="kafka:kip-10/future_kind@2026-10-01",
         )
         assert "future_kind" in summary_text(unknown)
+        approval = record(
+            11,
+            event_type="first_approval",
+            stable_id="kafka:kip-11/first_approval@2026-10-01",
+        )
+        assert summary_text(approval) == "Received its first approval."
+        changes = record(
+            12,
+            event_type="changes_requested",
+            stable_id="kafka:kip-12/changes_requested@2026-10-01",
+        )
+        assert summary_text(changes) == "Changes were requested."
+        vote = record(
+            13,
+            event_type="vote_started",
+            stable_id="kafka:kip-13/vote_started@2026-10-01",
+        )
+        assert summary_text(vote) == "A vote has started."
 
     def test_event_time_prefers_effective(self):
         assert presentation.event_time(record(1)) == "2026-09-01T00:00:00+00:00"

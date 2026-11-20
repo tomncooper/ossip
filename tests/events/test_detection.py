@@ -98,6 +98,13 @@ class TestNew:
         assert c.effective_at == "2026-01-01"
         assert c.effective_at_source == "created_on"
 
+    def test_github_new_without_created_on_has_no_effective(self):
+        snap = github_snapshot(created_on=None)
+        candidates, _ = detect_events("strimzi", [snap], {}, NOW)
+        new = next(c for c in candidates if c.event_type == EventType.NEW)
+        assert new.effective_at is None
+        assert new.effective_at_source is None
+
     def test_github_day_one_reviews_emit_first_approval_and_changes(self):
         snap = github_snapshot(
             reviews={
@@ -182,6 +189,14 @@ class TestStateChange:
         candidates, new_seen = detect_events("kafka", [snap], {snap.key: snap}, NOW)
         assert candidates == []
         assert new_seen == {snap.key: snap}
+
+    def test_github_rejected_without_closed_or_activity_has_no_effective(self):
+        old = github_snapshot(state="under discussion")
+        new = github_snapshot(state="not accepted", closed_on=None, last_activity=None)
+        candidates, _ = detect_events("strimzi", [new], {new.key: old}, NOW)
+        c = candidates[0]
+        assert c.effective_at is None
+        assert c.effective_at_source is None
 
     def test_github_wiggle_without_activity_has_no_effective_source(self):
         # A reopen/wiggle with no last_activity has no effective_at; its source
