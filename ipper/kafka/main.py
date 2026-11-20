@@ -5,6 +5,7 @@ from pathlib import Path
 from pandas import DataFrame, concat
 
 from ipper.common.keys import get_committer_index
+from ipper.events.hooks import update_event_log
 from ipper.kafka.mailing_list import (
     KEYS_CACHE_PATH,
     KEYS_URL,
@@ -273,6 +274,7 @@ def run_update_cmd(args: Namespace) -> None:
     args.overwrite = False
     args.chunk = 100  # Default chunk size for wiki download
     setup_wiki_download(args)
+    update_event_log("kafka", Path("cache/kip_wiki_cache.json"))
 
     logger.info("Updating Developer Mailing List Archives")
     # Use metadata to download only new months

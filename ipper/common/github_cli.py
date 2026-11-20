@@ -30,6 +30,7 @@ from ipper.common.github_process import (
     save_cache,
     update_cache,
 )
+from ipper.events.hooks import update_event_log
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +111,7 @@ def run_update_cmd(config: GithubProjectConfig, args: Namespace) -> None:
         len(cache["pr_index"]),
         cache_path,
     )
+    update_event_log(config.key, cache_path)
 
 
 def run_output_cmd(config: GithubProjectConfig, args: Namespace) -> None:

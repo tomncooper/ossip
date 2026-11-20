@@ -9,6 +9,7 @@ from pandas import DataFrame, concat
 from ipper.common.constants import DEFAULT_TEMPLATES_DIR
 from ipper.common.keys import get_committer_index
 from ipper.common.mailing_list import process_all_mbox_in_directory
+from ipper.events.hooks import update_event_log
 from ipper.flink.mailing_list import (
     FLIP_MENTION_COLUMNS,
     KEYS_CACHE_PATH,
@@ -389,6 +390,7 @@ def run_update_cmd(args: Namespace) -> None:
     args.chunk = 100  # Default chunk size for wiki download
     args.refresh_days = 60  # Refresh FLIPs created in last 60 days
     process_wiki(args)
+    update_event_log("flink", Path("cache/flip_wiki_cache.json"))
 
     logger.info("Updating Developer Mailing List Archives")
     # Use metadata to download only new months
