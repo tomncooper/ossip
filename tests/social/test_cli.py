@@ -103,7 +103,7 @@ class TestSeeding:
         assert "[console]" not in out
         state = load_state_file(state_file)
         assert state.version == 2
-        assert state.cursors == {"console": 2}
+        assert state.cursors == {"kafka": {"console": 2}}
         assert state.pending == []
 
     def test_v1_state_file_treated_as_seed(self, event_dirs, tmp_path, capsys):
@@ -118,13 +118,13 @@ class TestSeeding:
         assert "[console]" not in out  # nothing historical posted
         state = load_state_file(state_file)
         assert state.version == 2
-        assert state.cursors == {"console": 1}
+        assert state.cursors == {"kafka": {"console": 1}}
 
     def test_empty_log_seeds_at_zero(self, event_dirs, tmp_path, capsys):
         state_file = tmp_path / "state.json"
         run_announce_cmd(make_args(state_file=str(state_file)))
         state = load_state_file(state_file)
-        assert state.cursors == {"console": 0}
+        assert state.cursors == {"kafka": {"console": 0}}
 
     def test_dry_run_first_run_never_writes_state(self, event_dirs, tmp_path, capsys):
         write_event(1)
@@ -152,7 +152,7 @@ class TestPosting:
         assert out.count("[console]") == 1
         assert "KIP-123 ✅ accepted" in out
         state = load_state_file(state_file)
-        assert state.cursors == {"console": 2}
+        assert state.cursors == {"kafka": {"console": 2}}
         assert state.pending == []
         # next run: nothing new
         run_announce_cmd(make_args(state_file=str(state_file)))
@@ -165,7 +165,9 @@ class TestPosting:
 
         write_event(1)
         state_file = tmp_path / "state.json"
-        run_announce_cmd(make_args(state_file=str(state_file)))  # seed
+        # seed BOTH destinations up front: this is an existing destination going
+        # down, not a newly-added one (which would correctly start at head).
+        run_announce_cmd(make_args(post_to="console,flaky", state_file=str(state_file)))
 
         class FlakyPoster:
             name = "flaky"
@@ -200,8 +202,8 @@ class TestPosting:
         )
         run_announce_cmd(make_args(post_to="console,flaky", state_file=str(state_file)))
         state = load_state_file(state_file)
-        assert state.cursors["console"] == 2  # console advanced
-        assert state.cursors["flaky"] == 1  # flaky held back
+        assert state.cursors["kafka"]["console"] == 2  # console advanced
+        assert state.cursors["kafka"]["flaky"] == 1  # flaky held back
         assert len(state.pending) == 1
 
         # retry run: console NOT re-posted, flaky is
@@ -211,7 +213,7 @@ class TestPosting:
         out = capsys.readouterr().out
         assert out.count("[console]") == 0
         final = load_state_file(state_file)
-        assert final.cursors == {"console": 2, "flaky": 2}
+        assert final.cursors == {"kafka": {"console": 2, "flaky": 2}}
         assert final.pending == []
 
     def test_new_destination_starts_at_head_no_history(
@@ -249,7 +251,7 @@ class TestPosting:
         out = capsys.readouterr().out
         assert out.count("[console]") == 0
         state = load_state_file(state_file)
-        assert state.cursors["newdest"] == 3  # starts at head
+        assert state.cursors["kafka"]["newdest"] == 3  # starts at head
 
 
 class TestCoalescing:
@@ -277,7 +279,7 @@ class TestCoalescing:
         assert "❌ not accepted" in out  # the LATEST event wins
         state = load_state_file(state_file)
         assert state.pending == []
-        assert state.cursors == {"console": 3}
+        assert state.cursors == {"kafka": {"console": 3}}
 
     def test_max_posts_overflow_stays_pending(self, event_dirs, tmp_path, capsys):
         write_event(1)  # seed
@@ -294,7 +296,7 @@ class TestCoalescing:
         assert out.count("[console]") == 2
         state = load_state_file(state_file)
         assert len(state.pending) == 1  # overflow stays pending
-        assert state.cursors["console"] == 3  # held just below the pending seq-4 event
+        assert state.cursors["kafka"]["console"] == 3  # held just below the pending seq-4 event
         # next run: overflow is re-discovered and posted
         run_announce_cmd(make_args(max_posts=2, state_file=str(state_file)))
         assert capsys.readouterr().out.count("[console]") == 1
@@ -366,7 +368,7 @@ class TestMapping:
         assert "[console]" not in capsys.readouterr().out
         # seeding at head means backfilled events are behind the cursor anyway
         state = load_state_file(state_file)
-        assert state.cursors == {"console": 1}
+        assert state.cursors == {"kafka": {"console": 1}}
 
 
 class TestReseedAndDryRun:
@@ -406,7 +408,7 @@ class TestReseedAndDryRun:
         )
         final = load_state_file(state_file)
         assert final.pending == []
-        assert final.cursors == {"failing": 2}
+        assert final.cursors == {"kafka": {"failing": 2}}
 
     def test_dry_run_never_writes_state_midflow(self, event_dirs, tmp_path, capsys):
         write_event(1)  # seed
@@ -422,7 +424,7 @@ class TestReseedAndDryRun:
         out = capsys.readouterr().out
         assert "\u2705 accepted" in out
         # state unchanged (no cursor advance)
-        assert load_state_file(state_file).cursors == {"console": 1}
+        assert load_state_file(state_file).cursors == {"kafka": {"console": 1}}
 
 
 class TestDemo:
@@ -451,6 +453,142 @@ class TestDemo:
         assert "\u274c not accepted" in out
 
 
+def _register(monkeypatch, name, *, ok, record_calls=None):
+    """Register a one-off poster that always succeeds/fails."""
+    import ipper.social.posters.base as poster_base
+    from ipper.social.posters.base import PostResult
+
+    class _P:
+        @classmethod
+        def from_env(cls):
+            return cls()
+
+        def post(self, event):
+            if record_calls is not None:
+                record_calls.append(event.snapshot.key)
+            return PostResult(
+                ok=ok, post_id="x" if ok else None, error=None if ok else "down"
+            )
+
+    _P.name = name
+    monkeypatch.setitem(poster_base.POSTER_REGISTRY, name, _P)
+
+
+class TestCursorRegressions:
+    def test_exhausted_event_not_resurrected(
+        self, event_dirs, tmp_path, capsys, monkeypatch
+    ):
+        """#2: a dropped (retry-exhausted) event must not re-post to a healthy
+        destination on subsequent runs."""
+        console_posts: list[str] = []
+        _register(monkeypatch, "good", ok=True, record_calls=console_posts)
+        _register(monkeypatch, "bad", ok=False)
+        write_event(1)
+        state_file = tmp_path / "state.json"
+        run_announce_cmd(make_args(post_to="good,bad", state_file=str(state_file)))  # seed
+        write_event(
+            2, event_type="state_changed",
+            state_before="under discussion", state_after="accepted",
+        )
+        # run twice with max_attempts=2 to exhaust "bad" and drop the event
+        run_announce_cmd(
+            make_args(post_to="good,bad", max_attempts=2, state_file=str(state_file))
+        )
+        run_announce_cmd(
+            make_args(post_to="good,bad", max_attempts=2, state_file=str(state_file))
+        )
+        assert console_posts == ["kafka:kip-123"]  # posted to "good" exactly once
+        state = load_state_file(state_file)
+        assert state.pending == []  # dropped, not lingering
+        assert state.cursors["kafka"] == {"good": 2, "bad": 2}
+        # a further run must not resurrect/re-post
+        run_announce_cmd(
+            make_args(post_to="good,bad", max_attempts=2, state_file=str(state_file))
+        )
+        assert console_posts == ["kafka:kip-123"]  # still exactly one
+
+    def test_projects_subset_does_not_skip_other_project(
+        self, event_dirs, tmp_path, capsys
+    ):
+        """#3: a --projects subset run must not advance another project's cursor
+        and skip its events."""
+        write_event(1, project="flink", key="flink:flip-1", reference="FLIP-1")
+        write_event(2)  # kafka
+        state_file = tmp_path / "state.json"
+        run_announce_cmd(
+            make_args(projects="kafka,flink", state_file=str(state_file))
+        )  # seed both at head
+        write_event(3, project="flink", key="flink:flip-2", reference="FLIP-2")
+        write_event(4, key="kafka:kip-900", reference="KIP-900")
+        capsys.readouterr()
+        # kafka-only run: must not touch flink's cursor
+        run_announce_cmd(make_args(projects="kafka", state_file=str(state_file)))
+        capsys.readouterr()
+        state = load_state_file(state_file)
+        assert state.cursors["flink"] == {"console": 2}  # unchanged
+        # later all-projects run still posts the flink event (not skipped)
+        run_announce_cmd(
+            make_args(projects="kafka,flink", state_file=str(state_file))
+        )
+        out = capsys.readouterr().out
+        assert "FLIP-2" in out
+
+    def test_new_destination_with_existing_behind_posts_no_backlog(
+        self, event_dirs, tmp_path, capsys, monkeypatch
+    ):
+        """#4: adding a destination while an existing one is behind must not
+        replay backlog to the new destination."""
+        newdest_posts: list[str] = []
+        _register(monkeypatch, "newdest", ok=True, record_calls=newdest_posts)
+        write_event(1)
+        state_file = tmp_path / "state.json"
+        run_announce_cmd(make_args(post_to="console", state_file=str(state_file)))  # seed
+        # build a backlog that console has NOT yet seen
+        write_event(2, key="kafka:kip-801", reference="KIP-801")
+        write_event(3, key="kafka:kip-802", reference="KIP-802")
+        capsys.readouterr()
+        # add newdest while console is still behind (cursor at 1, head at 3)
+        run_announce_cmd(
+            make_args(post_to="console,newdest", state_file=str(state_file))
+        )
+        state = load_state_file(state_file)
+        assert newdest_posts == []  # new destination replays nothing
+        assert state.cursors["kafka"]["newdest"] == 3  # starts at head
+
+    def test_success_tally_counts_only_this_run(
+        self, event_dirs, tmp_path, capsys, monkeypatch
+    ):
+        """#7: the printed success count reflects posts made this run, not prior acks."""
+        import ipper.social.posters.base as poster_base
+        from ipper.social.posters.base import PostResult
+
+        class Flaky:
+            name = "flaky"
+            ok = False
+
+            @classmethod
+            def from_env(cls):
+                return cls()
+
+            def post(self, event):
+                return PostResult(ok=type(self).ok, post_id="1", error=None)
+
+        monkeypatch.setitem(poster_base.POSTER_REGISTRY, "flaky", Flaky)
+        write_event(1)
+        state_file = tmp_path / "state.json"
+        run_announce_cmd(make_args(post_to="console,flaky", state_file=str(state_file)))
+        write_event(
+            2, event_type="state_changed",
+            state_before="under discussion", state_after="accepted",
+        )
+        run_announce_cmd(make_args(post_to="console,flaky", state_file=str(state_file)))
+        capsys.readouterr()  # discard: console acked, flaky failed
+        Flaky.ok = True
+        run_announce_cmd(make_args(post_to="console,flaky", state_file=str(state_file)))
+        out = capsys.readouterr().out
+        assert "1 successful post(s)" in out  # only flaky posted this run, not console too
+
+
 def test_load_state_unparseable_file_is_seed(tmp_path):
     state_file = tmp_path / "state.json"
     state_file.write_text("not json at all", encoding="utf-8")
@@ -458,7 +596,7 @@ def test_load_state_unparseable_file_is_seed(tmp_path):
 
 
 def test_seed_state_shape():
-    state = seed_state(7, ["mastodon", "bluesky"], NOW)
+    state = seed_state(7, ["kafka"], ["mastodon", "bluesky"], NOW)
     assert state.version == 2
-    assert state.cursors == {"mastodon": 7, "bluesky": 7}
+    assert state.cursors == {"kafka": {"mastodon": 7, "bluesky": 7}}
     assert state.pending == []

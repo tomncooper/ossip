@@ -183,6 +183,16 @@ class TestStateChange:
         assert candidates == []
         assert new_seen == {snap.key: snap}
 
+    def test_github_wiggle_without_activity_has_no_effective_source(self):
+        # A reopen/wiggle with no last_activity has no effective_at; its source
+        # must be None too (never a source string for a missing value).
+        old = github_snapshot(state="accepted")
+        new = github_snapshot(state="under discussion", last_activity=None)
+        candidates, _ = detect_events("strimzi", [new], {new.key: old}, NOW)
+        c = candidates[0]
+        assert c.effective_at is None
+        assert c.effective_at_source is None
+
 
 class TestRenumbered:
     def test_renumber_and_accept_emit_both(self):
@@ -217,6 +227,27 @@ class TestRenumbered:
         new = wiki_snapshot(title="Renamed")
         candidates, _ = detect_events("kafka", [new], {old.key: old}, NOW)
         assert candidates == []
+
+    def test_pr_number_project_does_not_renumber(self):
+        # KDP is numbered by PR number; backfill never synthesises a renumber
+        # for it, so live detection must not either (live/backfill parity).
+        old = github_snapshot(
+            key="kroxylicious:pr-245",
+            project="kroxylicious",
+            reference="KDP-PR-245",
+        )
+        new = github_snapshot(
+            key="kroxylicious:pr-245",
+            project="kroxylicious",
+            reference="KDP-245",
+            proposal_id=245,
+            state="accepted",
+            merged_on="2026-03-01T10:00:00Z",
+        )
+        candidates, _ = detect_events("kroxylicious", [new], {old.key: old}, NOW)
+        types = [c.event_type for c in candidates]
+        assert EventType.RENUMBERED not in types
+        assert EventType.STATE_CHANGED in types  # acceptance still logged
 
 
 class TestReviewEdges:

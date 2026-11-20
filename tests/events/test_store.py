@@ -325,6 +325,35 @@ class TestUpdateFromCache:
         with pytest.raises(EventsVersionError):
             update_from_cache("kafka", cache, now=NOW)
 
+    def test_empty_cache_with_baseline_skips_no_mass_disappear(
+        self, event_dirs, tmp_path, monkeypatch, caplog
+    ):
+        """A present-but-empty cache must not wipe the baseline (mass DISAPPEARED)."""
+        from ipper.events.models import SeenSnapshot
+
+        snap = SeenSnapshot(
+            key="kafka:kip-1",
+            project="kafka",
+            reference="KIP-1",
+            title="T",
+            state="under discussion",
+            detail_url="https://x",
+        )
+        cache = tmp_path / "cache.json"
+        cache.write_text("{}", encoding="utf-8")
+
+        # First run: adapter returns one proposal -> baseline seeded.
+        monkeypatch.setitem(store.ADAPTERS, "kafka", lambda p: [snap])
+        assert len(update_from_cache("kafka", cache, now=NOW)) == 1
+
+        # Second run: adapter returns nothing (failed/partial fetch).
+        monkeypatch.setitem(store.ADAPTERS, "kafka", lambda p: [])
+        appended = update_from_cache("kafka", cache, now=NOW)
+
+        assert appended == []  # no DISAPPEARED emitted
+        seen = load_seen(store.SEEN_FILE)
+        assert "kafka:kip-1" in seen.projects["kafka"]  # baseline retained
+
 
 # ---------------------------------------------------------------------------
 # locking

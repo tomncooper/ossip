@@ -60,11 +60,17 @@ class PendingEvent(BaseModel):
 
 
 class SocialState(BaseModel):
-    """Root of announced_states.json (v2)."""
+    """Root of announced_states.json (v2).
+
+    ``cursors`` is keyed per project then per destination
+    (``project -> dest -> acked_through_seq``) so a ``--projects`` subset run
+    only ever advances its own projects' cursors and can never skip another
+    project's events.
+    """
 
     version: int = 2
     last_run: str | None = None
-    cursors: dict[str, int] = Field(default_factory=dict)  # dest -> acked_through_seq
+    cursors: dict[str, dict[str, int]] = Field(default_factory=dict)
     pending: list[PendingEvent] = Field(default_factory=list)
 
 

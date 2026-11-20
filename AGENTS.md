@@ -196,16 +196,19 @@ ossip/
 
 ### Social Announcements (`social announce`)
 1. Load the event log (`cache/events/events.jsonl`) and compute its head seq
-2. Load `cache/social/announced_states.json` (v2: per-destination cursors +
-   pending queue); absent/v1/corrupt file → auto-seed cursors to the log head
-   (posts nothing)
-3. Discover announceable events past the least-advanced cursor; merge into the
-   pending queue (a newer event for a proposal replaces the pending one)
+2. Load `cache/social/announced_states.json` (v2: per-(project, destination)
+   cursors + pending queue); absent/v1/corrupt file → auto-seed cursors to the
+   log head (posts nothing)
+3. Discover announceable events past each project's least-advanced cursor; merge
+   into the pending queue (a newer event for a proposal replaces the pending one;
+   a destination is only put on the hook for events past its own cursor, so a
+   newly-added destination never replays backlog)
 4. Select up to `max_posts` (retries first, then ascending seq); overflow stays
    pending (cursors never advance past unacked pending events)
 5. Post via configured posters (per-destination acks; a retry re-posts only to
    the failed destination)
-6. Recompute cursors, prune fully-acked / exhausted events, save state atomically
+6. Prune fully-acked / exhausted events, then recompute cursors (prune first so a
+   dropped event never pins its cursor and resurrects), save state atomically
 
 `--dry-run` never writes the state file; `--reseed` clears pending and resets
 cursors to the log head explicitly.
@@ -280,8 +283,8 @@ ipper/social/
 ```
 
 **State file:** `cache/social/announced_states.json` v2 (committed to git
-with the other caches): `cursors` = per-destination acked-through seq into
-the event log; `pending` = events awaiting per-destination acknowledgement
+with the other caches): `cursors` = per-(project, destination) acked-through seq
+into the event log; `pending` = events awaiting per-destination acknowledgement
 (each embeds a full `EventRecord` copy). Absent, corrupt or v1 files are
 auto-seeded to the log head — nothing historical is ever posted.
 
@@ -485,7 +488,8 @@ KIP_PATTERN = re.compile(r"KIP-(?P<kip>\d+)", re.IGNORECASE)
     retained forever) · `cache/events/last_seen.json` (detection baselines)
     · `cache/events/.lock` (gitignored) — committed with the caches
   - **Social announcements:** `cache/social/announced_states.json` (v2:
-    per-destination cursors + pending announcement queue; committed with the caches)
+    per-(project, destination) cursors + pending announcement queue; committed
+    with the caches)
 - **Mbox Files:** `cache/mailbox_files/*.mbox` (downloaded archives)
 - **Output:** `site_files/*.html`
 
@@ -711,7 +715,7 @@ announced_states.json (v2 cursors/pending) ↔ git (committed with caches)
   `headline`/`summary_text` display helpers shared with social messages —
   the feed-facing surface for the Atom/RSS follow-up (PR #13)
 - Social announcement pipeline rewritten as a log consumer: state file v2
-  (per-destination cursors + pending queue of embedded `EventRecord`s);
+  (per-(project, destination) cursors + pending queue of embedded `EventRecord`s);
   old v1 baselines/pending are superseded (auto-seeded to the log head,
   nothing historical posted); `ipper/social/detector.py` and
   `ipper/social/adapters/` deleted

@@ -89,6 +89,15 @@ class TestTail:
         assert len(lines) == 2
         assert lines[0].startswith("     4")
 
+    def test_tail_limit_zero_prints_nothing(self, event_dirs, capsys):
+        for seq in range(1, 6):
+            write_record(seq, "kafka", "new")
+        parser = make_parser()
+        args = parser.parse_args(["events", "tail", "--limit", "0"])
+        args.func(args)
+        lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.strip()]
+        assert lines == []
+
     def test_tail_project_filter(self, event_dirs, capsys):
         write_record(1, "kafka", "new")
         write_record(2, "flink", "new")

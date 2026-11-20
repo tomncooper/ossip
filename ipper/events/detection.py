@@ -8,6 +8,7 @@ complete baseline to store for the project (ALL current snapshots).
 
 import logging
 
+from ipper.common.projects import renumbers_on_merge
 from ipper.events.models import (
     EventCandidate,
     EventType,
@@ -66,7 +67,7 @@ def _state_changed_effective(
     # reopens / other wiggles
     if snapshot.last_activity:
         return snapshot.last_activity, "last_activity"
-    return None, "observed_at"
+    return None, None
 
 
 def _candidate(
@@ -205,10 +206,13 @@ def detect_events(
 
         # 4. Renumbered: reference changed AND the proposal gained its number
         #    (merge). Co-occurs with state_changed -> accepted; emit both.
+        #    Suppressed for pr_number projects (numbered from birth), matching
+        #    backfill, so live and historical logs stay consistent.
         if (
             snap.reference != old.reference
             and old.proposal_id is None
             and snap.proposal_id is not None
+            and renumbers_on_merge(project)
         ):
             eff = snap.merged_on or now
             candidates.append(

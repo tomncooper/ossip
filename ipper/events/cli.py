@@ -60,7 +60,8 @@ def run_tail_cmd(args: Namespace) -> None:
     """Print the last N events, newest last, human-readable."""
     events = load_events(_events_file())
     selected = [e for e in events if _matches(e, args.project, args.type)]
-    for event in selected[-args.limit :]:
+    tail = selected[-args.limit :] if args.limit > 0 else []
+    for event in tail:
         transition = f"{event.state_before or '-'}→{event.state_after or '-'}"
         print(
             f"{event.seq:>6}  {event.stable_id:<50}  {event.observed_at}  "

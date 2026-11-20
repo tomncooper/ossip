@@ -14,7 +14,7 @@ from pathlib import Path
 
 import ipper.events.store as store
 from ipper.common.github_config import GITHUB_PROJECT_CONFIGS
-from ipper.common.projects import SOCIAL_PROJECTS
+from ipper.common.projects import SOCIAL_PROJECTS, renumbers_on_merge
 from ipper.events.adapters import ADAPTERS
 from ipper.events.detection import (
     _new_effective,
@@ -202,9 +202,7 @@ def backfill(
             snapshots = ADAPTERS[project](cache_file)
             # Renumbering only applies to sequential-numbering GitHub projects
             # (a pr_number project like Kroxylicious is numbered from birth).
-            renumber_applicable = project not in GITHUB_PROJECT_CONFIGS or (
-                GITHUB_PROJECT_CONFIGS[project].numbering == "sequential"
-            )
+            renumber_applicable = renumbers_on_merge(project)
             candidates: list[EventCandidate] = []
             for snapshot in snapshots:
                 candidates.extend(

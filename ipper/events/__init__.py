@@ -12,9 +12,14 @@ Feed-integration example::
         filter_events(load_events(), types={"new", "state_changed"}), limit=50
     )
 
-The public API is exposed lazily (``__getattr__``) to keep module import
-cycles between ``ipper.events`` and ``ipper.social`` impossible; the names
-below import exactly as they would eagerly.
+The public API is exposed lazily (``__getattr__``) to break a genuine import
+cycle: ``ipper.events.adapters.{kafka,flink}`` import
+``ipper.social.messages.strip_reference_prefix``, while ``ipper.social``
+imports back from ``ipper.events``. Only :mod:`ipper.events.models` (which is
+dependency-free) is imported eagerly here; everything heavier (``store``,
+``consumer``, ``presentation``, and the adapters they pull in) is deferred so
+importing this package never re-enters a half-initialised ``ipper.social``.
+The names below resolve exactly as they would eagerly.
 """
 
 from ipper.events.models import (  # models are dependency-free — eager

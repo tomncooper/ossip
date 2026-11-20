@@ -131,29 +131,55 @@ def save_state(state: SocialState, path: Path) -> None:
     os.replace(tmp, path)
 
 
-def seed_state(head: int, destinations: list[str], now: str) -> SocialState:
-    """Cursors at the log head; posts nothing."""
+def seed_state(
+    head: int, projects: list[str], destinations: list[str], now: str
+) -> SocialState:
+    """Cursors at the log head for every (project, destination); posts nothing."""
     return SocialState(
         version=STATE_VERSION,
         last_run=now,
-        cursors=dict.fromkeys(destinations, head),
+        cursors={p: dict.fromkeys(destinations, head) for p in projects},
         pending=[],
     )
 
 
-def _frontier(state: SocialState, destinations: list[str], head: int) -> int:
-    """Least-advanced cursor; a destination missing from cursors starts at head."""
-    return min((state.cursors.get(d, head) for d in destinations), default=head)
+def _cursor(state: SocialState, project: str, dest: str, head: int) -> int:
+    """Acked-through seq for one (project, destination); unseen pairs start at head."""
+    return state.cursors.get(project, {}).get(dest, head)
+
+
+def _frontier(
+    state: SocialState, project: str, destinations: list[str], head: int
+) -> int:
+    """Least-advanced cursor among a project's destinations."""
+    return min((_cursor(state, project, d, head) for d in destinations), default=head)
+
+
+def _behind_destinations(
+    state: SocialState, project: str, destinations: list[str], seq: int, head: int
+) -> dict[str, DestinationStatus]:
+    """Destinations whose cursor is behind ``seq`` (i.e. owe this event).
+
+    A destination already past ``seq`` — including a freshly-added one sitting
+    at ``head`` — is never put on the hook for pre-existing events.
+    """
+    return {
+        name: DestinationStatus()
+        for name in destinations
+        if _cursor(state, project, name, head) < seq
+    }
 
 
 def _merge_candidates(
     state: SocialState,
     candidates: list[EventRecord],
     destinations: list[str],
+    head: int,
 ) -> None:
     """Add candidates to pending; a candidate for an already-pending proposal
     REPLACES the pending one (fresh acks); a candidate already pending by
-    stable_id is skipped (its ack/attempts state is preserved).
+    stable_id is skipped (its ack/attempts state is preserved). Only
+    destinations behind the event's seq are attached.
     """
     by_key = {p.event.key: p for p in state.pending}
     by_sid = {p.event.stable_id: p for p in state.pending}
@@ -166,7 +192,9 @@ def _merge_candidates(
             by_sid.pop(superseded.event.stable_id, None)
         pending = PendingEvent(
             event=event,
-            destinations={name: DestinationStatus() for name in destinations},
+            destinations=_behind_destinations(
+                state, event.project, destinations, event.seq, head
+            ),
         )
         by_key[event.key] = pending
         by_sid[event.stable_id] = pending
@@ -185,18 +213,26 @@ def _eligible(state: SocialState) -> list[PendingEvent]:
     return eligible
 
 
-def _recompute_cursors(state: SocialState, destinations: list[str], head: int) -> None:
-    """cursor[d] = min(unacked-by-d pending seq) - 1, else head.
+def _recompute_cursors(
+    state: SocialState, projects: list[str], destinations: list[str], head: int
+) -> None:
+    """cursor[project][d] = min(unacked-by-d pending seq for project) - 1, else head.
 
-    Called BEFORE pruning so pruned events do not hold cursors back.
+    Called AFTER pruning so events that have been dropped (fully acked or
+    retry-exhausted) do not hold their destination's cursor back and resurrect
+    on the next run.
     """
-    for name in destinations:
-        unacked = [
-            p.event.seq
-            for p in state.pending
-            if name in p.destinations and not p.destinations[name].acked
-        ]
-        state.cursors[name] = (min(unacked) - 1) if unacked else head
+    for project in projects:
+        project_cursors = state.cursors.setdefault(project, {})
+        for name in destinations:
+            unacked = [
+                p.event.seq
+                for p in state.pending
+                if p.event.project == project
+                and name in p.destinations
+                and not p.destinations[name].acked
+            ]
+            project_cursors[name] = (min(unacked) - 1) if unacked else head
 
 
 def _prune(
@@ -226,10 +262,20 @@ def _prune(
     return state
 
 
-def _sync_destinations(pending: PendingEvent, destinations: list[str]) -> None:
-    """Align a pending event's ack map with the currently configured destinations."""
+def _sync_destinations(
+    pending: PendingEvent, state: SocialState, destinations: list[str], head: int
+) -> None:
+    """Align a pending event's ack map with the configured destinations.
+
+    A newly-configured destination is only put on the hook when its cursor is
+    behind this event (so adding a destination never replays old backlog);
+    de-configured destinations are dropped.
+    """
     for name in destinations:
-        pending.destinations.setdefault(name, DestinationStatus())
+        if name not in pending.destinations and _cursor(
+            state, pending.event.project, name, head
+        ) < pending.event.seq:
+            pending.destinations[name] = DestinationStatus()
     for name in list(pending.destinations):
         if name not in destinations:
             del pending.destinations[name]
@@ -282,7 +328,7 @@ def run_announce_cmd(args: Namespace) -> None:
                 f"{destinations}; pending queue would be cleared."
             )
             return
-        save_state(seed_state(head, destinations, now), state_path)
+        save_state(seed_state(head, projects, destinations, now), state_path)
         print(f"Re-seeded cursors to head {head}; pending queue cleared.")
         return
 
@@ -290,22 +336,22 @@ def run_announce_cmd(args: Namespace) -> None:
         if args.dry_run:
             print(f"Would seed cursors to event-log head {head} (no announcements).")
             return
-        save_state(seed_state(head, destinations, now), state_path)
+        save_state(seed_state(head, projects, destinations, now), state_path)
         print(f"Seeded cursors to head {head}; no announcements this run.")
         return
 
-    # Discover new candidates past the least-advanced cursor.
-    frontier = _frontier(state, destinations, head)
+    # Discover new candidates past each project's least-advanced cursor. Cursors
+    # are per-project, so a --projects subset only touches its own projects.
     candidates = [
         e
         for e in events
-        if e.seq > frontier
+        if e.project in projects
+        and e.seq > _frontier(state, e.project, destinations, head)
         and announcement_type(e) is not None
-        and e.project in projects
     ]
-    _merge_candidates(state, candidates, destinations)
+    _merge_candidates(state, candidates, destinations, head)
     for pending in state.pending:
-        _sync_destinations(pending, destinations)
+        _sync_destinations(pending, state, destinations, head)
 
     eligible = _eligible(state)
     chosen = eligible[: policy.max_posts]
@@ -328,17 +374,22 @@ def run_announce_cmd(args: Namespace) -> None:
         except PosterNotConfigured as exc:
             raise SystemExit(f"Destination {name!r} not configured: {exc}") from exc
 
+    posted = 0  # posts actually made this run (not counting prior acks)
     for pending in chosen:
         for poster in posters_list:
-            status = pending.destinations.setdefault(poster.name, DestinationStatus())
-            if status.acked:
-                continue  # re-post only to failed destinations
+            # Only post to destinations that owe this event; a destination not
+            # on the hook (e.g. added after the event, sitting at head) is skipped.
+            status = pending.destinations.get(poster.name)
+            if status is None or status.acked:
+                continue
             result = poster.post(to_proposal_event(pending.event))
             status.attempts += 1
             status.acked = result.ok
             status.post_id = result.post_id
             status.last_error = result.error
-            if not result.ok:
+            if result.ok:
+                posted += 1
+            else:
                 logger.error(
                     "Posting to %s failed for %s: %s",
                     poster.name,
@@ -346,16 +397,12 @@ def run_announce_cmd(args: Namespace) -> None:
                     result.error,
                 )
 
-    _recompute_cursors(state, destinations, head)
+    # Prune first, then recompute, so dropped events never pin a cursor behind
+    # themselves and resurrect next run.
     state = _prune(state, policy, destinations)
+    _recompute_cursors(state, projects, destinations, head)
     state.last_run = now
     save_state(state, state_path)
-    posted = sum(
-        1
-        for p in chosen
-        for name in destinations
-        if (s := p.destinations.get(name)) is not None and s.acked
-    )
     print(
         f"Announcements: {len(chosen)} event(s), {posted} successful post(s); "
         f"{len(state.pending)} pending."

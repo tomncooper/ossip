@@ -43,3 +43,15 @@ for _cfg in GITHUB_PROJECT_CONFIGS.values():
 def base_url() -> str:
     """Site base URL (override with OSSIP_BASE_URL for local testing)."""
     return os.environ.get("OSSIP_BASE_URL", "https://ossip.dev").rstrip("/")
+
+
+def renumbers_on_merge(project: str) -> bool:
+    """Whether a project's proposals are renumbered when a PR merges.
+
+    True for wiki projects and sequential-numbering GitHub projects (the file
+    lands on main and gets its number). False for pr_number projects (e.g.
+    Kroxylicious/KDP), which are numbered from the PR itself. Shared by live
+    detection and backfill so the event log never disagrees with itself.
+    """
+    cfg = GITHUB_PROJECT_CONFIGS.get(project)
+    return cfg is None or cfg.numbering == "sequential"

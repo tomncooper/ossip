@@ -230,6 +230,17 @@ def update_from_cache(
         seen = seen_state.projects.get(project, {})
 
         snapshots = ADAPTERS[project](cache_path)
+        if not snapshots and seen:
+            # Present-but-empty cache (a failed/partial fetch that still wrote
+            # valid JSON): skip, exactly like a missing cache. Detecting here
+            # would emit DISAPPEARED for every proposal and wipe the baseline.
+            logger.warning(
+                "Cache for %s produced zero proposals but baseline has %d; "
+                "skipping to avoid mass-disappearance",
+                project,
+                len(seen),
+            )
+            return []
         candidates, new_seen = detect_events(project, snapshots, seen, now)
         appended = append_events(events, candidates, EVENTS_FILE)
 
