@@ -17,12 +17,14 @@ list archives; the Strimzi, StreamsHub and Kroxylicious pipelines read
 proposal PRs from GitHub repositories.
 
 Every detectable proposal change is recorded in an append-only event log
-(`ipper/events/`, `cache/events/events.jsonl`) with best-known change
-times, maintained automatically by each project's update command. New,
-accepted and rejected/closed proposals are then announced on social media
-(Mastodon and Bluesky) by the daily build as a consumer of that log. See
-`docs/event-log-plan.md` for the event-log design and the `ipper/social/`
-package for the announcement pipeline.
+(`ipper/events/`, `cache/events/events.jsonl`) with best-known change times,
+maintained automatically by each project's update command. The log is a
+reusable change stream: new consumers (feeds, webhooks, a public events API)
+read it through a small helper API without touching cache internals. The first
+consumer is the daily social-media announcer, which posts new, accepted and
+rejected/closed proposals to Mastodon and Bluesky. See
+[`docs/event-log.md`](docs/event-log.md) for the schema and a guide to writing
+a consumer, and the `ipper/social/` package for the announcement pipeline.
 
 ## JSON API and OSSIP Skill
 

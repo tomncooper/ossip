@@ -29,7 +29,9 @@ ossip/
 │   ├── flink/         # Flink Improvement Proposals (FLIP) processing
 │   ├── strimzi/       # Strimzi Improvement Proposals (SIP) — GitHub-based
 │   ├── streamshub/    # StreamsHub Improvement Proposals (SHIP) — GitHub-based
-│   └── kroxylicious/  # Kroxylicious Design Proposals (KDP) — GitHub-based
+│   ├── kroxylicious/  # Kroxylicious Design Proposals (KDP) — GitHub-based
+│   ├── events/        # Append-only proposal event log (see docs/event-log.md)
+│   └── social/        # Mastodon/Bluesky announcements (event-log consumer)
 ├── templates/         # Jinja2 HTML templates
 ├── cache/            # Local data cache (gitignored)
 ├── site_files/       # Generated static site files
@@ -40,7 +42,10 @@ ossip/
 
 1. **CLI Interface** (`ipper/main.py`)
    - Argument parsing with subcommands for each project (kafka, flink, strimzi, streamshub, kroxylicious)
-   - Commands: `init`, `update`, `refresh`, `wiki`, `output`
+   - Commands: `init`, `update`, `refresh`, `output` for every project; the
+     wiki-backed projects (kafka, flink) add `wiki` and `keys` (flink also
+     `mail`); the GitHub-backed projects (strimzi/streamshub/kroxylicious) have
+     only `init`/`update`/`refresh`/`output`. Top-level: `events`, `social`.
    - The three GitHub-backed projects (strimzi/streamshub/kroxylicious) share
      one implementation in `common/github_cli.py`, dispatched with their
      `GithubProjectConfig`
@@ -108,6 +113,8 @@ ossip/
 - **[Requests](https://requests.readthedocs.io/)** - HTTP client for API/web requests
 - **[Jira](https://jira.readthedocs.io/)** - Jira API integration (common module)
 - **[rapidfuzz](https://maxbachmann.github.io/RapidFuzz/)** - Fast fuzzy string matching for committer name matching
+- **[Pydantic](https://docs.pydantic.dev/)** - Data models for the JSON API, GitHub pipeline, event log and social modules
+- **[atproto](https://atproto.blue/) / [Mastodon.py](https://mastodonpy.readthedocs.io/)** - Bluesky and Mastodon clients for social announcements
 
 ### Development Tools
 
@@ -184,7 +191,8 @@ ossip/
 6. Append proposal events to `cache/events/events.jsonl`
 
 ### Event Log (automatic, part of each `update`)
-1. Each project's `update` command ends with `update_from_cache(project, cache_path)`
+1. Each project's `update` command ends with `update_event_log(project, cache_path)`
+   (`ipper/events/hooks.py`, which wraps `update_from_cache`)
    — diffs the cache against `cache/events/last_seen.json` baselines
 2. Detectable changes append to the append-only log `cache/events/events.jsonl`
    (under an exclusive `fcntl.flock`; parallel `local_build.sh` updates are safe)
@@ -337,6 +345,9 @@ An append-only JSONL record of every detectable proposal change, maintained
 automatically by each project's `update` command and consumed by social
 (and future feeds/webhooks/JSON API).
 
+**→ Full design, on-disk schema and consumer guide: [`docs/event-log.md`](docs/event-log.md).**
+The essentials an agent usually needs:
+
 **Files:**
 
 ```
@@ -346,48 +357,23 @@ cache/events/
 └── .lock           # fcntl lock file (gitignored)
 ```
 
-**Producer flow:** `update_from_cache(project, cache_path)` — under an
-exclusive `fcntl.flock` on `.lock` (the five updates run in parallel), load
-the log + baselines, convert the cache to `SeenSnapshot`s via an adapter,
-pure-diff (`detection.detect_events`), append candidates (replay-dedup
-makes a crash between append and baseline-save harmless), then atomically
-save the baselines.
-
 **Event taxonomy** (`EventType`): `new`, `state_changed`, `renumbered`,
 `disappeared`, `first_approval`, `changes_requested`, `vote_started`.
 Everything detectable is logged; consumers decide what they care about.
 
-**Effective-at:** every event has `observed_at` (detection run time) plus
-`effective_at`/`effective_at_source` (best-known change time). Wiki
-`last_modified_on` values are upper bounds only (the wiki records just the
-page's latest edit); GitHub `merged_on`/`closed_on`/`created_at` and review
-timestamps are exact.
-
-**stable_id:** `{key}/{event_type}@{YYYY-MM-DD}` with a `-2`, `-3` ...
-suffix on same-day same-type collisions; computed once at append time and
-stored on the record (consumers never recompute). Keys are PR-number-stable
-for GitHub projects (`strimzi:pr-245` survives renumbering to SIP-46).
-
-**Schema evolution:** pydantic models in `ipper/events/models.py` are the
-source of truth; per-record `schema_version`. Additive changes need no
-bump (readers tolerate unknown fields via `extra="allow"` and unknown
-`event_type` values — it's a plain str); breaking changes bump the version
-and ship a one-time migrator (git history is the archive).
+**Schema source of truth:** the pydantic models in `ipper/events/models.py`
+(each log line is one JSON-serialized `EventRecord`). Additive changes need no
+version bump (`extra="allow"`, `event_type` is a plain str); breaking changes
+bump `schema_version` and ship a migrator.
 
 **Version guard:** a `last_seen.json` version mismatch raises
 `EventsVersionError` — never silently reseeded (a reseed would re-emit
 thousands of duplicate events into the permanent log).
 
-**Backfill:** `events backfill` (one-time; refuses a non-empty log)
-synthesizes historical events from current caches (chronological within
-each project, `backfilled: true`) and seeds `last_seen`.
-
-**Consumer API** (`ipper.events`, see the package docstring for a feed
-example): `load_events`/`read_events`, `filter_events` (project/type/date/
-backfill), `newest_first`, `events_after_seq`, `max_seq`, `latest_snapshot`
-(current reference/URL for a key — fixes stale links for renumbered
-proposals) plus `headline`/`summary_text` display helpers shared with the
-social messages.
+**Consumer API** (`ipper.events`): `load_events`/`read_events`,
+`filter_events`, `newest_first`, `events_after_seq`, `max_seq`,
+`latest_snapshot`, plus `headline`/`summary_text` display helpers. See
+`docs/event-log.md` §7–8 for signatures and the cursor-consumer pattern.
 
 **CLI:** `events tail [--project K] [--type T] [--limit N]`,
 `events backfill`, `events stats`.
@@ -565,7 +551,7 @@ uv run ruff check .
 ## Testing & Quality
 
 The project includes:
-- **534 comprehensive tests** covering all core functionality
+- **659 comprehensive tests** covering all core functionality
 - Type hints throughout (checked with MyPy)
 - Code formatting with Black
 - Linting with Pylint and Ruff
@@ -681,10 +667,10 @@ announced_states.json (v2 cursors/pending) ↔ git (committed with caches)
 
 ---
 
-**Last Updated:** 2026-10-01
+**Last Updated:** 2026-11-20
 **Maintainer:** Thomas Cooper
 
-## Recent Changes (2026-10-01)
+## Recent Changes (2026-11-20)
 
 ### Proposal Event Log (ipper/events) + Social v2 Consumer
 
@@ -721,9 +707,10 @@ announced_states.json (v2 cursors/pending) ↔ git (committed with caches)
   `ipper/social/adapters/` deleted
 
 **New Files:** `ipper/events/` (models, store, detection, backfill,
-presentation, consumer, cli, adapters/{kafka,flink,github}),
+presentation, consumer, cli, hooks, adapters/{kafka,flink,github}),
 `ipper/common/projects.py`, `ipper/social/consumer.py`,
-`tests/events/` (7 modules + golden fixture), `cache/events/`
+`tests/events/` (9 modules + golden fixture), `cache/events/`,
+`docs/event-log.md` (developer guide)
 
 **Deleted Files:** `ipper/social/detector.py`, `ipper/social/adapters/`,
 `tests/social/test_detector.py`, `tests/social/test_adapters.py`
