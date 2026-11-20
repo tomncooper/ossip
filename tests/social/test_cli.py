@@ -296,7 +296,9 @@ class TestCoalescing:
         assert out.count("[console]") == 2
         state = load_state_file(state_file)
         assert len(state.pending) == 1  # overflow stays pending
-        assert state.cursors["kafka"]["console"] == 3  # held just below the pending seq-4 event
+        assert (
+            state.cursors["kafka"]["console"] == 3
+        )  # held just below the pending seq-4 event
         # next run: overflow is re-discovered and posted
         run_announce_cmd(make_args(max_posts=2, state_file=str(state_file)))
         assert capsys.readouterr().out.count("[console]") == 1
@@ -485,10 +487,14 @@ class TestCursorRegressions:
         _register(monkeypatch, "bad", ok=False)
         write_event(1)
         state_file = tmp_path / "state.json"
-        run_announce_cmd(make_args(post_to="good,bad", state_file=str(state_file)))  # seed
+        run_announce_cmd(
+            make_args(post_to="good,bad", state_file=str(state_file))
+        )  # seed
         write_event(
-            2, event_type="state_changed",
-            state_before="under discussion", state_after="accepted",
+            2,
+            event_type="state_changed",
+            state_before="under discussion",
+            state_after="accepted",
         )
         # run twice with max_attempts=2 to exhaust "bad" and drop the event
         run_announce_cmd(
@@ -527,9 +533,7 @@ class TestCursorRegressions:
         state = load_state_file(state_file)
         assert state.cursors["flink"] == {"console": 2}  # unchanged
         # later all-projects run still posts the flink event (not skipped)
-        run_announce_cmd(
-            make_args(projects="kafka,flink", state_file=str(state_file))
-        )
+        run_announce_cmd(make_args(projects="kafka,flink", state_file=str(state_file)))
         out = capsys.readouterr().out
         assert "FLIP-2" in out
 
@@ -542,7 +546,9 @@ class TestCursorRegressions:
         _register(monkeypatch, "newdest", ok=True, record_calls=newdest_posts)
         write_event(1)
         state_file = tmp_path / "state.json"
-        run_announce_cmd(make_args(post_to="console", state_file=str(state_file)))  # seed
+        run_announce_cmd(
+            make_args(post_to="console", state_file=str(state_file))
+        )  # seed
         # build a backlog that console has NOT yet seen
         write_event(2, key="kafka:kip-801", reference="KIP-801")
         write_event(3, key="kafka:kip-802", reference="KIP-802")
@@ -578,15 +584,19 @@ class TestCursorRegressions:
         state_file = tmp_path / "state.json"
         run_announce_cmd(make_args(post_to="console,flaky", state_file=str(state_file)))
         write_event(
-            2, event_type="state_changed",
-            state_before="under discussion", state_after="accepted",
+            2,
+            event_type="state_changed",
+            state_before="under discussion",
+            state_after="accepted",
         )
         run_announce_cmd(make_args(post_to="console,flaky", state_file=str(state_file)))
         capsys.readouterr()  # discard: console acked, flaky failed
         Flaky.ok = True
         run_announce_cmd(make_args(post_to="console,flaky", state_file=str(state_file)))
         out = capsys.readouterr().out
-        assert "1 successful post(s)" in out  # only flaky posted this run, not console too
+        assert (
+            "1 successful post(s)" in out
+        )  # only flaky posted this run, not console too
 
 
 def test_unconfigured_poster_exits(event_dirs, tmp_path, monkeypatch):
@@ -606,8 +616,10 @@ def test_unconfigured_poster_exits(event_dirs, tmp_path, monkeypatch):
     state_file = tmp_path / "state.json"
     run_announce_cmd(make_args(post_to="console", state_file=str(state_file)))  # seed
     write_event(
-        2, event_type="state_changed",
-        state_before="under discussion", state_after="accepted",
+        2,
+        event_type="state_changed",
+        state_before="under discussion",
+        state_after="accepted",
     )
     with pytest.raises(SystemExit):
         run_announce_cmd(make_args(post_to="unconfigured", state_file=str(state_file)))

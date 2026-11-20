@@ -176,7 +176,10 @@ class TestPresentation:
             detail_url="https://x",
         )
         existing = {"kafka:kip-1/new@2026-10-01", "kafka:kip-1/new@2026-10-01-2"}
-        assert stable_id(candidate, "2026-10-01", existing) == "kafka:kip-1/new@2026-10-01-3"
+        assert (
+            stable_id(candidate, "2026-10-01", existing)
+            == "kafka:kip-1/new@2026-10-01-3"
+        )
 
     def test_headline_state_changed(self):
         event = record(

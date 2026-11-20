@@ -99,9 +99,7 @@ def test_cache_to_log_to_announcement(event_dirs, tmp_path, capsys):
 
     # 3. A real state change flows through detection into the log...
     write_kafka(kafka_cache, "accepted")
-    appended = update_from_cache(
-        "kafka", kafka_cache, now="2026-04-01T00:00:00+00:00"
-    )
+    appended = update_from_cache("kafka", kafka_cache, now="2026-04-01T00:00:00+00:00")
     assert [e.event_type for e in appended] == ["state_changed"]
     assert appended[0].state_after == "accepted"
 

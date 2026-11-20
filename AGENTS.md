@@ -544,8 +544,10 @@ uv run python ipper/main.py kroxylicious output \
   cache/kdp_proposals_cache.json site_files/kroxylicious.html site_files/kdps \
   --api-dir site_files/api/v1/kroxylicious
 
-# Run linting checks
-uv run ruff check .
+# Run CI checks locally (run ALL of these before committing — these gate CI)
+uv run ruff check ipper/ tests/          # linting
+uv run ruff format --check ipper/ tests/ # formatting (use `ruff format` to fix)
+uv run pytest                            # full test suite with coverage
 ```
 
 ## Testing & Quality
@@ -559,7 +561,15 @@ The project includes:
 - Test coverage for the GitHub pipeline (client, classification, incremental
   updates, HTML/JSON output, CLI wiring)
 
-**Always run `uv run ruff check .` after making code changes to ensure code quality.**
+**Always run the CI checks locally before committing** — the `Run Tests`
+workflow (`.github/workflows/test.yaml`) gates on all three and a failure
+blocks the publish pipeline:
+
+```bash
+uv run ruff check ipper/ tests/          # linting
+uv run ruff format --check ipper/ tests/ # formatting — run `uv run ruff format ipper/ tests/` to auto-fix
+uv run pytest                            # tests
+```
 
 ## API Integrations
 
@@ -598,7 +608,10 @@ The project includes:
 8. **Project structure** - Each supported project (kafka, flink, strimzi,
    streamshub, kroxylicious) has its own submodule under `ipper/`; the three
    GitHub-backed ones share `ipper/common/github*.py`
-9. **Run linting after code changes** - Always run `uv run ruff check .` after making code changes to catch issues early
+9. **Run CI checks before committing** - Run all three CI gates locally
+   (`uv run ruff check ipper/ tests/`, `uv run ruff format --check ipper/ tests/`,
+   `uv run pytest`) before committing; a failure in any blocks the publish
+   pipeline. Use `uv run ruff format ipper/ tests/` to auto-fix formatting.
 
 ### Common Tasks:
 

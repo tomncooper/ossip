@@ -272,9 +272,10 @@ def _sync_destinations(
     de-configured destinations are dropped.
     """
     for name in destinations:
-        if name not in pending.destinations and _cursor(
-            state, pending.event.project, name, head
-        ) < pending.event.seq:
+        if (
+            name not in pending.destinations
+            and _cursor(state, pending.event.project, name, head) < pending.event.seq
+        ):
             pending.destinations[name] = DestinationStatus()
     for name in list(pending.destinations):
         if name not in destinations:
