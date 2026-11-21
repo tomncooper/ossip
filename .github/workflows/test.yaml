@@ -36,7 +36,7 @@ jobs:
           enable-cache: true
       
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --locked
       
       - name: Run Ruff linting
         run: uv run ruff check ipper/ tests/
