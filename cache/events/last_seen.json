@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "last_run": "2026-11-20T17:56:44+00:00",
+  "last_run": "2026-11-21T09:44:31+00:00",
   "projects": {
     "kafka": {
       "kafka:kip-1": {
@@ -17538,7 +17538,7 @@
         "state": "accepted",
         "detail_url": "https://ossip.dev/kips/KIP-1071.html",
         "created_on": "2024-07-12T06:46:11.000Z",
-        "last_modified_on": "2026-11-19T18:46:25.000Z",
+        "last_modified_on": "2026-11-21T01:25:19.000Z",
         "merged_on": null,
         "closed_on": null,
         "last_activity": null,
@@ -22876,7 +22876,7 @@
         "state": "under discussion",
         "detail_url": "https://ossip.dev/kips/KIP-1392.html",
         "created_on": "2026-11-05T14:01:51.000Z",
-        "last_modified_on": "2026-11-20T17:54:50.000Z",
+        "last_modified_on": "2026-11-20T18:16:57.000Z",
         "merged_on": null,
         "closed_on": null,
         "last_activity": null,
@@ -22907,10 +22907,10 @@
         "project": "kafka",
         "reference": "KIP-1394",
         "title": "The Streams client will send a hash value computed from its topology metadata.",
-        "state": "unknown",
+        "state": "under discussion",
         "detail_url": "https://ossip.dev/kips/KIP-1394.html",
         "created_on": "2026-11-10T11:54:35.000Z",
-        "last_modified_on": "2026-11-10T12:08:27.000Z",
+        "last_modified_on": "2026-11-21T07:43:50.000Z",
         "merged_on": null,
         "closed_on": null,
         "last_activity": null,
