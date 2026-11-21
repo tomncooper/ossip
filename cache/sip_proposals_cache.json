@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-21T09:44:26Z",
+  "last_updated": "2026-11-21T16:54:32Z",
   "proposals": {
     "pr-203": {
       "pr_number": 203,
@@ -11062,7 +11062,7 @@
         ],
         "changes_requested": []
       },
-      "last_activity": "2026-11-20T16:08:46Z",
+      "last_activity": "2026-11-21T14:32:36Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -59156,7 +59156,7 @@
           "patch": "@@ -9,6 +9,7 @@ This repository lists proposals for the Strimzi project. A template for new prop\n \n | #  | Title                                                                 |\n |:--:|:----------------------------------------------------------------------|\n+| 162 | [HTTP Bridge authentication (OAuth, Basic and TLS client certificates)](./162-http-bridge-authentication.md) |\n | 161 | [Honor the `deletionTimestamp` on `KafkaUser` resources](./161-honor-deletion-timestamp-in-the-user-operator.md) |\n | 160 | [Strimzi MCP Servers](./160-mcp-servers.md) |\n | 159 | [Post-Quantum Hybrid Key Exchange (PQHKE) support in Strimzi](./159-post-quantum-hybrid-key-exchange.md) |"
         }
       ],
-      "updated_at": "2026-11-20T16:08:46Z",
+      "updated_at": "2026-11-21T14:32:36Z",
       "head_sha": "d0b7b131bad6b6d7c7f8201000d9361209b67506",
       "frozen": false,
       "reviews_snapshot": [
@@ -59239,5 +59239,5 @@
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-20T16:08:46Z"
+  "watermark": "2026-11-21T14:32:36Z"
 }
