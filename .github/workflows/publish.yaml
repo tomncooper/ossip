@@ -39,11 +39,7 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v6
 
-      - name: Setup python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-      
+      # Python comes from .python-version via uv (auto-downloaded & cached)
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
