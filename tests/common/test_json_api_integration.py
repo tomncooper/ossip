@@ -368,7 +368,7 @@ class TestApiIndexIntegration:
             index_data = json.load(f)
 
         index = ApiIndex(**index_data)
-        assert index.version == 2
+        assert index.version == 3
         assert len(index.projects) == 2
         assert "kafka" in index.projects
         assert "flink" in index.projects
@@ -395,7 +395,7 @@ class TestApiIndexIntegration:
         assert schemas_dir.is_dir()
 
         schema_files = list(schemas_dir.glob("*.json"))
-        assert len(schema_files) == 5
+        assert len(schema_files) == 7
 
         expected_schemas = {
             "ApiIndex.schema.json",
@@ -403,6 +403,8 @@ class TestApiIndexIntegration:
             "KipDetail.schema.json",
             "FlipDetail.schema.json",
             "GithubProposalDetail.schema.json",
+            "ApiEvent.schema.json",
+            "EventsDocument.schema.json",
         }
         actual_schemas = {f.name for f in schema_files}
         assert actual_schemas == expected_schemas
@@ -444,14 +446,14 @@ class TestApiIndexIntegration:
             index_data = json.load(f)
 
         index = ApiIndex(**index_data)
-        assert index.version == 2
+        assert index.version == 3
         assert len(index.projects) == 0
         assert index.last_updated  # Should still have a timestamp
 
         # Schemas should still be generated
         schemas_dir = api_dir / "schemas"
         assert schemas_dir.exists()
-        assert len(list(schemas_dir.glob("*.json"))) == 5
+        assert len(list(schemas_dir.glob("*.json"))) == 7
 
 
 class TestSchemaValidation:
@@ -525,7 +527,7 @@ class TestSchemaValidation:
             index_data = json.load(f)
 
         index = ApiIndex(**index_data)
-        assert index.version == 2
+        assert index.version == 3
         assert len(index.projects) == 1
 
 

@@ -54,7 +54,8 @@ def headline(event: EventRecord, include_project: bool = False) -> str:
     """One-line headline, e.g. "SIP-46 accepted — <title>".
 
     With ``include_project`` the project name prefixes the reference:
-    "Kafka KIP-123 new — <title>".
+    "Kafka KIP-123 new — <title>". A project key missing from
+    ``SOCIAL_PROJECTS`` (a future project) falls back to the raw key.
     """
     from ipper.common.projects import SOCIAL_PROJECTS
 
@@ -62,7 +63,11 @@ def headline(event: EventRecord, include_project: bool = False) -> str:
         phrase = display_state(event.state_after or "unknown")
     else:
         phrase = _EVENT_PHRASES.get(event.event_type, event.event_type)
-    prefix = f"{SOCIAL_PROJECTS[event.project].name} " if include_project else ""
+    prefix = ""
+    if include_project:
+        project = SOCIAL_PROJECTS.get(event.project)
+        name = project.name if project is not None else event.project
+        prefix = f"{name} "
     return f"{prefix}{event.reference} {phrase} — {event.title}"
 
 

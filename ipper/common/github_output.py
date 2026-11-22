@@ -134,6 +134,7 @@ def render_index_page(
 
     output: str = template.render(
         project_name=config.name,
+        project_key=config.key,
         display_title=config.display_title,
         prefix=config.prefix,
         rows=rows,

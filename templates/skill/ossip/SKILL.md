@@ -49,6 +49,17 @@ All data is available as JSON via REST endpoints. Queries are client-side — fe
   - Additional fields: release_version, release_component, jira_id, jira_link
   - Use for tracking releases and Jira linkage
 
+### Events (all projects)
+
+- **Event log**: `https://ossip.dev/api/v1/events/events.json`
+  - Every detected proposal change across all five projects (KIP, FLIP, SIP, SHIP, KDP), newest-first (~3.8k events)
+  - Envelope: `version`, `generated_at`, `count`, `latest_seq`, `events`
+  - Event types (`event_type`): `new`, `state_changed`, `renumbered`, `disappeared`, `first_approval`, `changes_requested`, `vote_started` (tolerate unknown types)
+  - Key fields: `seq` (monotonic cursor), `stable_id` (stable per-event identity), `project`, `key`, `reference`, `title`, `state_before`, `state_after`, `event_time`, `headline`, `summary`, `current_reference`, `current_detail_url`, `backfilled`
+  - `event_time` = `effective_at` (best-known actual change time) falling back to `observed_at` (detection time) — use `event_time` for ordering and display
+  - Prefer `current_detail_url` for links (resolved to the proposal's current page, renumber-safe)
+  - `backfilled: true` marks events synthesized once from historical cache data (approximate dates)
+
 ### Schemas
 
 - **Schema Directory**: `https://ossip.dev/api/v1/schemas/`
@@ -118,7 +129,18 @@ GET https://ossip.dev/api/v1/kafka/kips.json
 → filter title contains "consumer" OR title contains "group"
 ```
 
-### 5. Author-Based Queries
+### 5. Recent Proposal Activity
+
+Track what changed recently across one or all projects:
+
+1. Fetch the events endpoint (`api/v1/events/events.json`)
+2. Filter by `project` (client-side) for a single project's timeline
+3. For incremental polling, remember `latest_seq` from the document; next time, keep only events with `seq > previous_latest_seq`
+4. Use `event_time` for ordering/display; `effective_at` when the exact change time matters and is present
+
+A human-facing version of this feed is available at `https://ossip.dev/timeline.html`.
+
+### 6. Author-Based Queries
 
 Find proposals by a specific author:
 

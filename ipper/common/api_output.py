@@ -2,6 +2,7 @@
 
 import datetime as dt
 import json
+import logging
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from ipper.common.constants import NOT_SET_STR, UNKNOWN_STR
 from ipper.common.github_models import GithubProposalDetail
 from ipper.common.models import (
     ApiIndex,
+    EventsMeta,
     FlipDetail,
     KipDetail,
     ProjectMeta,
@@ -18,8 +20,11 @@ from ipper.common.models import (
     ProposalDetailBase,
 )
 from ipper.common.wiki import APACHE_CONFLUENCE_DATE_FORMAT
+from ipper.events.models import ApiEvent, EventsDocument
 
 VOTE_TIMESTAMP_FORMAT = "%b %d, %Y %H:%M UTC"
+
+logger = logging.getLogger(__name__)
 
 
 def confluence_date_to_iso_date(date_str: str) -> str:
@@ -148,6 +153,8 @@ def write_schemas(dir_path: Path) -> None:
         (KipDetail, "KipDetail.schema.json"),
         (FlipDetail, "FlipDetail.schema.json"),
         (GithubProposalDetail, "GithubProposalDetail.schema.json"),
+        (ApiEvent, "ApiEvent.schema.json"),
+        (EventsDocument, "EventsDocument.schema.json"),
     ]
 
     for model_class, filename in models_to_export:
@@ -208,12 +215,37 @@ def generate_api_index(base_dir: Path) -> None:
     if latest_update is None:
         latest_update = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    # Build the API index (version 2: GitHub projects report review
-    # counts instead of vote counts)
+    # Events metadata: read from the events document if it was generated
+    # (the events emitter runs before generate_api_index in the build)
+    events_meta = None
+    events_path = base_dir / "events" / "events.json"
+    if events_path.exists():
+        try:
+            with open(events_path) as f:
+                events_data = json.load(f)
+            event_list = events_data.get("events", [])
+            events_meta = EventsMeta(
+                url="events/events.json",
+                count=events_data.get("count", len(event_list)),
+                latest_seq=events_data.get("latest_seq", 0),
+                last_event_at=(event_list[0].get("event_time") if event_list else None),
+            )
+        except (json.JSONDecodeError, AttributeError, TypeError) as exc:
+            # A corrupt/partial events document must not kill the index
+            # step — omit the entry and let the rest of the API build.
+            logger.warning(
+                "Could not read %s for the API index (%s); events entry omitted",
+                events_path,
+                exc,
+            )
+
+    # Build the API index (version 3: adds the events entry; version 2
+    # introduced review counts for GitHub projects)
     index = ApiIndex(
-        version=2,
+        version=3,
         last_updated=latest_update,
         projects=projects,
+        events=events_meta,
     )
 
     # Write index.json

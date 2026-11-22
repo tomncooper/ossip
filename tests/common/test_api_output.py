@@ -248,6 +248,8 @@ class TestWriteSchemas:
             "ProjectSummary.schema.json",
             "KipDetail.schema.json",
             "FlipDetail.schema.json",
+            "ApiEvent.schema.json",
+            "EventsDocument.schema.json",
         ]
 
         for filename in expected_files:
@@ -323,7 +325,7 @@ class TestGenerateApiIndex:
         with open(index_file) as f:
             data = json.load(f)
 
-        assert data["version"] == 2
+        assert data["version"] == 3
         # Should use the latest last_updated (flink's)
         assert data["last_updated"] == "2025-01-25T14:30:00Z"
         assert "kafka" in data["projects"]
@@ -379,12 +381,68 @@ class TestGenerateApiIndex:
         with open(index_file) as f:
             data = json.load(f)
 
-        assert data["version"] == 2
+        assert data["version"] == 3
+        assert data["events"] is None
         assert data["projects"] == {}
         # Should have a valid timestamp even with no projects
         assert "last_updated" in data
         # Verify it's a valid ISO timestamp
         dt.datetime.fromisoformat(data["last_updated"].replace("Z", "+00:00"))
+
+    def test_events_entry_present(self, tmp_path):
+        """Test that an events/events.json populates the index events entry."""
+        events_dir = tmp_path / "events"
+        events_dir.mkdir()
+        (events_dir / "events.json").write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "generated_at": "2026-11-21T09:30:00Z",
+                    "count": 42,
+                    "latest_seq": 42,
+                    "events": [
+                        {
+                            "seq": 42,
+                            "event_time": "2026-11-20T10:00:00Z",
+                            "project": "kafka",
+                            "key": "kafka:kip-1",
+                            "event_type": "new",
+                            "reference": "KIP-1",
+                            "title": "T",
+                            "observed_at": "2026-11-20T10:00:00Z",
+                            "detail_url": "https://x",
+                            "stable_id": "s",
+                            "headline": "h",
+                            "summary": "s",
+                        }
+                    ],
+                }
+            )
+        )
+
+        generate_api_index(tmp_path)
+
+        with open(tmp_path / "index.json") as f:
+            data = json.load(f)
+        assert data["events"] == {
+            "url": "events/events.json",
+            "count": 42,
+            "latest_seq": 42,
+            "last_event_at": "2026-11-20T10:00:00Z",
+        }
+
+    def test_corrupt_events_file_omits_entry(self, tmp_path):
+        """A corrupt events/events.json omits the entry but still builds."""
+        events_dir = tmp_path / "events"
+        events_dir.mkdir()
+        (events_dir / "events.json").write_text("{ not json")
+
+        generate_api_index(tmp_path)
+
+        with open(tmp_path / "index.json") as f:
+            data = json.load(f)
+        assert data["events"] is None
+        assert data["version"] == 3
 
     def test_writes_schemas(self, tmp_path):
         """Test that generate_api_index calls write_schemas."""
@@ -394,3 +452,5 @@ class TestGenerateApiIndex:
         schema_dir = tmp_path / "schemas"
         assert schema_dir.exists()
         assert (schema_dir / "ApiIndex.schema.json").exists()
+        assert (schema_dir / "ApiEvent.schema.json").exists()
+        assert (schema_dir / "EventsDocument.schema.json").exists()

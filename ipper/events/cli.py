@@ -1,5 +1,6 @@
 """CLI for the proposal event log: tail / backfill / stats."""
 
+import json
 import logging
 from argparse import Namespace
 from collections import Counter
@@ -49,6 +50,26 @@ def setup_events_parser(top_level_subparsers) -> None:
     stats = sub.add_parser("stats", help="Log statistics")
     stats.set_defaults(func=run_stats_cmd)
 
+    output = sub.add_parser(
+        "output", help="Write the public events JSON API (api_dir/events.json)"
+    )
+    output.add_argument(
+        "--api-dir",
+        required=True,
+        help="Output directory (e.g. site_files/api/v1/events)",
+    )
+    output.add_argument(
+        "--events-file",
+        default=None,
+        help="Event log path (default: cache/events/events.jsonl)",
+    )
+    output.add_argument(
+        "--seen-file",
+        default=None,
+        help="last_seen.json path (default: cache/events/last_seen.json)",
+    )
+    output.set_defaults(func=run_output_cmd)
+
 
 def _matches(event: EventRecord, project: str | None, event_type: str | None) -> bool:
     if project and event.project != project:
@@ -85,6 +106,19 @@ def run_backfill_cmd(args: Namespace) -> None:
         print(f"  {project}: {count}")
     for event_type, count in sorted(by_type.items()):
         print(f"  {event_type}: {count}")
+
+
+def run_output_cmd(args: Namespace) -> None:
+    """Write the public events JSON document and print a summary."""
+    from ipper.events.output import generate_events_api
+
+    path = generate_events_api(
+        args.api_dir,
+        events_file=Path(args.events_file) if args.events_file else None,
+        seen_file=Path(args.seen_file) if args.seen_file else None,
+    )
+    count = json.loads(path.read_text(encoding="utf-8"))["count"]
+    print(f"Wrote {count} events to {path}")
 
 
 def run_stats_cmd(args: Namespace) -> None:

@@ -54,6 +54,7 @@
             <div class="nav-item"><a href="index.html">Home</a></div>
             <div class="nav-item"><a href="kafka.html">Kafka KIPs</a></div>
             <div class="nav-item"><a href="flink.html">Flink FLIPs</a></div>
+            <div class="nav-item"><a href="timeline.html">Timeline</a></div>
             <div class="nav-item"><a href="api.html">API Docs</a></div>
             <div class="nav-item"><a href="skills.html">Agent Skill</a></div>
         </div>
@@ -111,8 +112,12 @@
                         <td>Individual FLIP detail with full vote history and Flink-specific metadata (release version, JIRA links)</td>
                     </tr>
                     <tr>
+                        <td><code>events/events.json</code></td>
+                        <td>Proposal event log — one entry per detected change across all five projects, newest-first (~3,800 events, ~200KB gzipped). Powers the <a href="timeline.html">Timeline page</a>.</td>
+                    </tr>
+                    <tr>
                         <td><code>schemas/</code></td>
-                        <td>JSON Schema files for all response types (ApiIndex.schema.json, KipSummary.schema.json, etc.)</td>
+                        <td>JSON Schema files for all response types (ApiIndex.schema.json, EventsDocument.schema.json, KipSummary.schema.json, etc.)</td>
                     </tr>
                 </tbody>
             </table>
@@ -122,6 +127,59 @@
 
             <p><strong>Example:</strong> Fetch KIP-123 detail</p>
             <div class="code-block">GET https://ossip.dev/api/v1/kafka/kips/123.json</div>
+        </div>
+
+        <!-- Events endpoint -->
+        <div class="section">
+            <h2>Events (all projects)</h2>
+            <p>
+                <code>events/events.json</code> is the public JSON API for the proposal event
+                log: every detected change to a tracked proposal (KIP, FLIP, SIP, SHIP, KDP),
+                published newest-first in a single document.
+            </p>
+            <p><strong>Example:</strong> Fetch the event log</p>
+            <div class="code-block">GET https://ossip.dev/api/v1/events/events.json</div>
+
+            <h3>Document envelope</h3>
+            <ul class="field-list">
+                <li><code>version</code> — document format version (1)</li>
+                <li><code>generated_at</code> — build time (<code>YYYY-MM-DDTHH:MM:SSZ</code>)</li>
+                <li><code>count</code> — number of events</li>
+                <li><code>latest_seq</code> — highest <code>seq</code> in the log; use as a cursor for incremental polling</li>
+                <li><code>events</code> — the events themselves, newest-first</li>
+            </ul>
+
+            <h3>Event types</h3>
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th><code>event_type</code></th>
+                        <th>Meaning</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>new</code></td><td>Proposal first appeared on the tracker</td></tr>
+                    <tr><td><code>state_changed</code></td><td>State transition (<code>state_before</code> → <code>state_after</code>)</td></tr>
+                    <tr><td><code>renumbered</code></td><td>Proposal received its number on merge (GitHub projects)</td></tr>
+                    <tr><td><code>disappeared</code></td><td>Proposal was removed from the upstream tracker</td></tr>
+                    <tr><td><code>first_approval</code></td><td>First review approval on a GitHub proposal PR</td></tr>
+                    <tr><td><code>changes_requested</code></td><td>Changes requested on a GitHub proposal PR</td></tr>
+                    <tr><td><code>vote_started</code></td><td>A vote thread started (wiki-tracked projects)</td></tr>
+                </tbody>
+            </table>
+            <p><em>Unknown future types may appear; readers should tolerate them.</em></p>
+
+            <h3>Key fields</h3>
+            <ul class="field-list">
+                <li><code>seq</code> — strictly increasing, never reused. Use it as a cursor: remember <code>latest_seq</code> and next time keep only events with <code>seq &gt; previous_latest_seq</code>.</li>
+                <li><code>stable_id</code> — stable per-event identity (<code>{key}/{event_type}@{date}</code>), suitable for deduplication and <code>tag:</code> URIs. Never recompute it.</li>
+                <li><code>event_time</code> — best-known change time; prefer this for ordering and display.</li>
+                <li><code>observed_at</code> — when the detection run noticed the change (always present).</li>
+                <li><code>effective_at</code> — best-known actual change time (may be absent; e.g. wiki pages carry no exact change timestamps, so it is an upper bound there).</li>
+                <li><code>current_reference</code> / <code>current_detail_url</code> — the proposal's <em>current</em> reference and OSSIP detail URL, resolved at build time. Prefer <code>current_detail_url</code> for links: it stays correct after renumbering. Falls back to the event-time <code>reference</code> / <code>detail_url</code> when the proposal is no longer tracked.</li>
+                <li><code>headline</code> / <code>summary</code> — ready-made display strings ("Kafka KIP-123 accepted — Title"), shared verbatim with the site's social announcements.</li>
+                <li><code>backfilled</code> — <code>true</code> for events synthesized once from historical cache data (approximate dates, full depth of history).</li>
+            </ul>
         </div>
 
         <!-- Field Reference -->
@@ -185,6 +243,8 @@
                 <li><code>ProjectSummary.schema.json</code> — Project summary list (used for both Kafka KIPs and Flink FLIPs)</li>
                 <li><code>KipDetail.schema.json</code> — Individual Kafka KIP detail</li>
                 <li><code>FlipDetail.schema.json</code> — Individual Flink FLIP detail</li>
+                <li><code>ApiEvent.schema.json</code> — One event in the proposal event log (enriched)</li>
+                <li><code>EventsDocument.schema.json</code> — Events document envelope</li>
             </ul>
         </div>
 

@@ -19,12 +19,19 @@ proposal PRs from GitHub repositories.
 Every detectable proposal change is recorded in an append-only event log
 (`ipper/events/`, `cache/events/events.jsonl`) with best-known change times,
 maintained automatically by each project's update command. The log is a
-reusable change stream: new consumers (feeds, webhooks, a public events API)
-read it through a small helper API without touching cache internals. The first
-consumer is the daily social-media announcer, which posts new, accepted and
-rejected/closed proposals to Mastodon and Bluesky. See
-[`docs/event-log.md`](docs/event-log.md) for the schema and a guide to writing
-a consumer, and the `ipper/social/` package for the announcement pipeline.
+reusable change stream: consumers (feeds, webhooks, the public events API)
+read it through a small helper API without touching cache internals. Consumers
+today are the daily social-media announcer — which posts new, accepted and
+rejected/closed proposals to Mastodon and Bluesky — and the public events
+endpoint. See [`docs/event-log.md`](docs/event-log.md) for the schema and a
+guide to writing a consumer, and the `ipper/social/` package for the
+announcement pipeline.
+
+The site also includes a human-facing [Timeline](https://ossip.dev/timeline.html)
+page: every recorded event across all five projects on a single vertical
+timeline (newest first), with per-project, per-event-type and text filters
+plus infinite scroll. Each project's index page links to
+the timeline pre-filtered to that project.
 
 ## JSON API and OSSIP Skill
 
@@ -46,6 +53,7 @@ The OSSIP project provides a JSON API for programmatic access to KIP and FLIP da
 - `https://ossip.dev/api/v1/streamshub/ships/{id}.json` — Individual SHIP detail
 - `https://ossip.dev/api/v1/kroxylicious/kdps.json` — All Kroxylicious KDPs (summary)
 - `https://ossip.dev/api/v1/kroxylicious/kdps/{id}.json` — Individual KDP detail
+- `https://ossip.dev/api/v1/events/events.json` — Proposal event log, newest-first (all projects)
 - `https://ossip.dev/api/v1/schemas/` — JSON Schema definitions
 
 ### OSSIP Skill for AI Agents
