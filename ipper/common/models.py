@@ -256,17 +256,36 @@ class ProjectSummary(BaseModel):
     proposals: Sequence[ProposalSummary | GithubProposalSummary]
 
 
+class EventsMeta(BaseModel):
+    """Metadata about the events endpoint in the API index.
+
+    Attributes:
+        url: Path of the events document relative to the API base ("events/events.json")
+        count: Number of events in the document
+        latest_seq: Highest seq in the event log (0 if empty) — cursor for polling
+        last_event_at: event_time of the newest event, None if the log is empty
+    """
+
+    url: str
+    count: int
+    latest_seq: int
+    last_event_at: str | None = None
+
+
 class ApiIndex(BaseModel):
     """Top-level API index.
 
     Entry point for the JSON API, listing all available projects.
 
     Attributes:
-        version: API version number
+        version: API version number (3: adds the events entry)
         last_updated: Timestamp when the index was last updated (YYYY-MM-DDTHH:MM:SSZ)
         projects: Dictionary mapping project keys (e.g., "kafka", "flink") to metadata
+        events: Metadata about the proposal event log endpoint, or None when
+            the events document was not generated
     """
 
     version: int
     last_updated: str
     projects: dict[str, ProjectMeta]
+    events: EventsMeta | None = None

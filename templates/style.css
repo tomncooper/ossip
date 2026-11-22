@@ -123,6 +123,22 @@ h2 {
     font-size: 1.1rem;
 }
 
+/* Landing page: prominent Event Timeline call-to-action link */
+.timeline-cta {
+    display: inline-block;
+    background: var(--sol-bg-highlight);
+    border: 1px solid var(--sol-secondary);
+    border-radius: 8px;
+    padding: 8px 18px;
+    text-decoration: none;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.timeline-cta:hover {
+    border-color: var(--sol-blue);
+    color: var(--sol-blue);
+}
+
 .social-links {
     text-align: center;
     margin: 0 0 10px 0;
@@ -737,4 +753,294 @@ tr.filtered-out {
 .trademark-footer a:hover {
     color: var(--sol-cyan);
     text-decoration: underline;
+}
+
+/* Timeline page */
+body.timeline-page .container {
+    max-width: 900px;
+    padding: 40px 30px;
+}
+
+body.timeline-page h1 {
+    font-size: 2.8rem;
+    text-align: center;
+}
+
+.tl-controls {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--sol-bg);
+    border: 1px solid var(--sol-secondary);
+    border-bottom: 2px solid var(--sol-secondary);
+    border-radius: 10px;
+    padding: 12px 15px;
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tl-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tl-chip {
+    border: 1px solid var(--sol-secondary);
+    background: var(--sol-bg-highlight);
+    color: var(--sol-body-text);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.tl-chip:hover {
+    border-color: var(--sol-blue);
+    color: var(--sol-emphasis);
+}
+
+.tl-chip.active {
+    background: var(--sol-blue);
+    border-color: var(--sol-blue);
+    color: var(--sol-accent-light-text);
+}
+
+.tl-chip:not(.active) {
+    opacity: 0.55;
+}
+
+.tl-search-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+#tl-search {
+    flex: 1 1 220px;
+    background: var(--sol-bg-highlight);
+    border: 1px solid var(--sol-secondary);
+    border-radius: 6px;
+    color: var(--sol-emphasis);
+    padding: 7px 10px;
+    font-size: 0.9rem;
+}
+
+#tl-search::placeholder {
+    color: var(--sol-secondary);
+}
+
+.tl-count {
+    font-size: 0.85rem;
+    color: var(--sol-secondary);
+    white-space: nowrap;
+}
+
+.tl-noscript {
+    text-align: center;
+    border: 1px solid var(--sol-orange);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+/* Vertical line + node cards */
+.timeline {
+    list-style: none;
+    position: relative;
+    margin: 0;
+    padding: 0 0 0 3rem;
+}
+
+.timeline::before {
+    content: "";
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--sol-secondary);
+}
+
+.tl-event {
+    position: relative;
+}
+
+.tl-node {
+    position: absolute;
+    left: -3rem;
+    margin-left: calc(1rem - 0.85em);
+    /* Vertically centered on the card: the li's height equals the card's
+       height (the card's bottom margin doesn't count toward it), so 50% of
+       the li is the card's center; the negative margin pulls the 1.7em-tall
+       node up by half its own height. */
+    top: 50%;
+    margin-top: -0.85em;
+    width: 1.7em;
+    height: 1.7em;
+    line-height: 1.7em;
+    text-align: center;
+    font-size: 0.95rem;
+    border-radius: 50%;
+    background: var(--sol-bg);
+    box-shadow: 0 0 0 2px var(--sol-secondary);
+}
+
+.tl-event::before {
+    /* Horizontal connector linking the node circle to the card's left
+       border. Paints before the .tl-node span (later sibling, opaque), so
+       the circle sits on top where they overlap. Vertically centered like
+       the node (top: 50%), so it aligns with both the card center and the
+       vertical line's node. */
+    content: "";
+    position: absolute;
+    left: -2rem;
+    top: 50%;
+    width: 2rem;
+    height: 2px;
+    margin-top: -1px;
+    background: var(--sol-secondary);
+}
+
+.tl-card {
+    background: var(--sol-bg-highlight);
+    border: 1px solid var(--sol-secondary);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+
+    /* Skip layout/paint for off-screen cards so deep scrolling through the
+       full history stays cheap. Applied to the card (not .tl-event) because
+       content-visibility clips descendants to the element's own box, and
+       the absolutely-positioned .tl-node hangs outside the .tl-event box
+       on the timeline line. `auto` in contain-intrinsic-size lets the
+       browser remember each card's real rendered height once painted, so
+       the scrollbar estimate converges without jitter. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 110px;
+}
+
+.tl-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.82rem;
+    color: var(--sol-secondary);
+    margin-bottom: 6px;
+}
+
+.tl-date {
+    color: var(--sol-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.tl-project {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 700;
+}
+
+.tl-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    background: var(--sol-secondary);
+}
+
+.tl-project-kafka .tl-dot {
+    background: var(--sol-yellow);
+}
+
+.tl-project-flink .tl-dot {
+    background: var(--sol-blue);
+}
+
+.tl-project-strimzi .tl-dot {
+    background: var(--sol-strimzi);
+}
+
+.tl-project-streamshub .tl-dot {
+    background: var(--sol-cyan);
+}
+
+.tl-project-kroxylicious .tl-dot {
+    background: var(--sol-green);
+}
+
+.tl-ref {
+    color: var(--sol-cyan);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.tl-ref:hover {
+    text-decoration: underline;
+}
+
+
+.tl-headline {
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: var(--sol-emphasis);
+    margin-bottom: 4px;
+}
+
+.tl-headline-link {
+    color: var(--sol-emphasis);
+    text-decoration: none;
+}
+
+.tl-headline-link:hover {
+    color: var(--sol-blue);
+    text-decoration: underline;
+}
+
+.tl-summary {
+    font-size: 0.9rem;
+    color: var(--sol-body-text);
+}
+
+.tl-sentinel {
+    text-align: center;
+    padding: 15px 0 30px 0;
+    color: var(--sol-secondary);
+    font-size: 0.9rem;
+}
+
+.tl-error {
+    color: var(--sol-orange);
+}
+
+@media (max-width: 600px) {
+    body.timeline-page .container {
+        padding: 25px 12px;
+    }
+
+    .timeline {
+        padding-left: 2.2rem;
+    }
+
+    .timeline::before {
+        left: 0.6rem;
+    }
+
+    .tl-node {
+        left: -2.2rem;
+        margin-left: calc(0.6rem - 0.85em);
+    }
+
+    .tl-event::before {
+        left: -1.6rem;
+        width: 1.6rem;
+    }
+
+    .tl-card {
+        padding: 12px 14px;
+    }
 }

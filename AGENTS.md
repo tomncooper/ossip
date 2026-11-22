@@ -256,18 +256,24 @@ processing logic changes.
    - Main index page showing ALL proposals (not filtered by state)
    - Individual detail pages for each proposal (KIP-XXX.html, FLIP-XXX.html,
      SIP-XXX.html / SIP-PR-N.html for unnumbered open proposals, etc.)
-4. Emit JSON API files (`write_proposal_details`, `write_schemas`, `generate_api_index`)
-5. Copy static pages into `site_files/`: the landing page (`templates/index.html`)
-   and the agent-skill page (`templates/skills.html` +
-   `templates/skill/ossip/SKILL.md`, which documents the JSON API endpoints
-   for AI agents)
+4. Emit JSON API files (`write_proposal_details`, `write_schemas`,
+   `generate_api_index`); the events JSON API
+   (`site_files/api/v1/events/events.json`) is emitted first via
+   `events output` so the index can include its `events` entry
+5. Copy static pages into `site_files/`: the landing page (`templates/index.html`),
+   the timeline page (`templates/timeline.html`) and the agent-skill page
+   (`templates/skills.html` + `templates/skill/ossip/SKILL.md`, which documents
+   the JSON API endpoints for AI agents)
 
 **Client-side enhancements (vanilla JS in `templates/assets/`, no build
 step):** per-column dropdown filters plus global text search
 (`table-filter.js`, with multi-value cell support for multi-author columns),
 sortable column headings (`table-sort.js`, driven by `data-sort` attributes
-emitted from Python), and a light/dark theme toggle (`theme-toggle.js`,
-persisted in localStorage).
+emitted from Python), a light/dark theme toggle (`theme-toggle.js`,
+persisted in localStorage), and the proposal timeline
+(`timeline.js`: fetches `api/v1/events/events.json`, project/type/search
+filters, infinite scroll, deep links via `?project=`/`?hide=`/`?q=` —
+project index pages link with `?project=<key>`).
 
 ### Social Media Announcements (`ipper/social/`)
 
@@ -343,7 +349,7 @@ module in `posters/__init__.py`; add its env vars to CI. No other changes.
 
 An append-only JSONL record of every detectable proposal change, maintained
 automatically by each project's `update` command and consumed by social
-(and future feeds/webhooks/JSON API).
+and by the public events JSON API + timeline page.
 
 **→ Full design, on-disk schema and consumer guide: [`docs/event-log.md`](docs/event-log.md).**
 The essentials an agent usually needs:
@@ -376,7 +382,11 @@ thousands of duplicate events into the permanent log).
 `docs/event-log.md` §7–8 for signatures and the cursor-consumer pattern.
 
 **CLI:** `events tail [--project K] [--type T] [--limit N]`,
-`events backfill`, `events stats`.
+`events backfill`, `events stats`,
+`events output --api-dir site_files/api/v1/events` (public JSON API emitter:
+`events.json` — verbatim log fields + `event_time`/`headline`/`summary`/
+`current_reference`/`current_detail_url`, newest-first; feeds the timeline
+page and the `events` entry in `index.json`, ApiIndex v3).
 
 ### CI/CD Pipeline (`.github/workflows/publish.yaml`)
 - **Triggers:** daily cron (09:30 UTC), manual `workflow_dispatch`, push to
@@ -390,9 +400,11 @@ thousands of duplicate events into the permanent log).
   4. Run `strimzi/streamshub/kroxylicious update` (incremental; `GITHUB_TOKEN`
      env passed from secrets — optional, update works unauthenticated)
   5. Copy static pages (landing `index.html`, `skills.html` + the agent
-     skill) into `site_files/`
+     skill, `timeline.html`) into `site_files/`
   6. Generate HTML files from cached data (kafka.html, flink.html,
      strimzi/streamshub/kroxylicious.html + individual detail pages + JSON API)
+     and the events JSON API (`events output` — before `generate_api_index`,
+     which reads it)
   7. Check build results (a single failed project build only warns; all five
      failing is an error)
   8. Post social media announcements (`social announce --max-posts 10`;
@@ -544,6 +556,10 @@ uv run python ipper/main.py kroxylicious output \
   cache/kdp_proposals_cache.json site_files/kroxylicious.html site_files/kdps \
   --api-dir site_files/api/v1/kroxylicious
 
+# Generate the public events JSON API (feeds timeline.html + the API index;
+# run before generate_api_index)
+uv run python ipper/main.py events output --api-dir site_files/api/v1/events
+
 # Run CI checks locally (run ALL of these before committing — these gate CI)
 uv run ruff check ipper/ tests/          # linting
 uv run ruff format --check ipper/ tests/ # formatting (use `ruff format` to fix)
@@ -634,6 +650,7 @@ CSV/JSON Cache → Jinja2 Templates → Static HTML → GitHub Pages
 CSV/JSON Cache → Pydantic → JSON API (/api/v1/)
 CSV/JSON Cache → ipper.events adapters → events.jsonl (append-only log)
 last_seen.json ↔ git (detection baselines, committed with caches)
+event log → events output → api/v1/events/events.json → timeline.html + agents
 event log → social consumer → Posters → Mastodon/Bluesky
 announced_states.json (v2 cursors/pending) ↔ git (committed with caches)
 ```
@@ -680,8 +697,71 @@ announced_states.json (v2 cursors/pending) ↔ git (committed with caches)
 
 ---
 
-**Last Updated:** 2026-11-20
+**Last Updated:** 2026-11-21
 **Maintainer:** Thomas Cooper
+
+## Recent Changes (2026-11-21)
+
+### Timeline Page + Public Events JSON API
+
+**What Changed:**
+- The event log is now published: `events output`
+  (`ipper/events/output.py`) writes `site_files/api/v1/events/events.json` —
+  newest-first (by `event_time`, `seq` descending), envelope `version` /
+  `generated_at` / `count` / `latest_seq` / `events`
+- Each event is enriched into an `ApiEvent` (verbatim `EventRecord` fields
+  unchanged + additive display fields): `event_time`, `headline`, `summary`
+  (precomputed from `ipper.events.presentation` so JS and social wording
+  never diverge) and `current_reference` / `current_detail_url` (resolved
+  from `last_seen.json`, renumber-safe linking; `None` when untracked)
+- New human-facing `timeline.html` page (`templates/timeline.html` +
+  `assets/timeline.js`, vanilla JS): vertical line-and-node timeline with
+  summary cards over the FULL history (including `backfilled` events back
+  to KIP-1 in 2015), newest first, infinite scroll (50-event batches)
+- Filters: single-select project chips (`?project=<key>` deep link),
+  toggleable event-type chips (`?hide=a,b` — all 7 shown by default; unknown
+  types render with a generic badge), case-insensitive title/reference text
+  search (`?q=`)
+- Cards link to the CURRENT detail page (`current_detail_url ?? detail_url`,
+  converted to same-origin paths); display via `textContent` only
+- Navigation: landing page top-links and every project index page (Kafka,
+  Flink, and the shared GitHub template, which now receives `project_key`)
+  link to the timeline pre-filtered to that project
+- API index bumped to version 3: new `EventsMeta` model + `ApiIndex.events`
+  entry (`url`/`count`/`latest_seq`/`last_event_at`); schema exports gained
+  `ApiEvent.schema.json` + `EventsDocument.schema.json`
+- Docs updated: `templates/api.html` (Events endpoint section, event-type
+  table, cursor guidance), `SKILL.md` (events endpoint + query pattern 5),
+  `docs/event-log.md` (publishing section rewritten)
+
+**New Files:** `ipper/events/output.py`, `templates/timeline.html`,
+`templates/assets/timeline.js`, `tests/events/test_output.py`
+
+**Modified Files:** `ipper/events/models.py` (ApiEvent, EventsDocument),
+`ipper/events/presentation.py` (headline tolerates unknown project keys),
+`ipper/events/cli.py` (`events output`), `ipper/common/models.py`
+(EventsMeta; ApiIndex v3), `ipper/common/api_output.py`,
+`ipper/common/github_output.py` (project_key), `templates/style.css`,
+`templates/index.html`, `templates/{kafka,flink,github}-index.html.jinja`,
+`templates/skills.html`, `templates/api.html`,
+`templates/skill/ossip/SKILL.md`, `docs/event-log.md`, `README.md`,
+`.github/workflows/publish.yaml`, `local_build.sh`, `AGENTS.md`,
+`tests/events/test_cli.py`, `tests/common/test_api_output.py`,
+`tests/common/test_github_output.py`
+
+**Benefits:**
+- The full proposal change history is browsable by humans (one page, all
+  five projects) and machine-readable for agents (documented in the skill)
+- `latest_seq` gives consumers a cursor for cheap incremental polling
+- Display wording is precomputed server-side — the timeline page can never
+  drift from social announcement phrasing
+
+**Dev commands:**
+
+```bash
+uv run python ipper/main.py events output --api-dir site_files/api/v1/events
+./local_build.sh --render-only
+```
 
 ## Recent Changes (2026-11-20)
 

@@ -58,6 +58,46 @@ class EventRecord(BaseModel):
     backfilled: bool = False
 
 
+class ApiEvent(EventRecord):
+    """An EventRecord enriched for the public JSON API and timeline page.
+
+    Extends the verbatim log fields (the versioned contract) with additive,
+    precomputed display fields only:
+
+    - ``event_time``: :func:`ipper.events.presentation.event_time` —
+      ``effective_at`` when present, else ``observed_at``
+    - ``headline``: :func:`ipper.events.presentation.headline` with the
+      project name included ("Kafka KIP-123 accepted — <title>")
+    - ``summary``: :func:`ipper.events.presentation.summary_text`
+    - ``current_reference`` / ``current_detail_url``: the proposal's CURRENT
+      reference/URL from ``last_seen.json`` (``latest_snapshot``), or ``None``
+      when the key is no longer tracked; consumers should prefer these for
+      linking (renumber-safe) and fall back to the event-time fields.
+    """
+
+    event_time: str
+    headline: str
+    summary: str
+    current_reference: str | None = None
+    current_detail_url: str | None = None
+
+
+class EventsDocument(BaseModel):
+    """Root of the published events document (/api/v1/events/events.json).
+
+    Unknown extra fields are tolerated so future additions never break
+    readers.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    version: int = 1
+    generated_at: str  # YYYY-MM-DDTHH:MM:SSZ, build time
+    count: int  # len(events)
+    latest_seq: int  # max seq in the log (0 if empty)
+    events: list[ApiEvent]  # newest-first
+
+
 class EventCandidate(BaseModel):
     """An event before seq/stable_id/schema_version are assigned at append time."""
 

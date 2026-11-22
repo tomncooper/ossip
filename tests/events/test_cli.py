@@ -204,3 +204,57 @@ def _fake_backfill(cache_dir):
         [],
         s.EVENTS_FILE,
     )
+
+
+class TestOutputCmd:
+    def test_parser_defaults(self):
+        parser = make_parser()
+        args = parser.parse_args(["events", "output", "--api-dir", "out"])
+        assert args.api_dir == "out"
+        assert args.events_file is None
+        assert args.seen_file is None
+
+    def test_output_writes_document(self, event_dirs, tmp_path, capsys):
+        write_record(1, "kafka", "new")
+        write_record(2, "kafka", "state_changed", state_before="a", state_after="b")
+        api_dir = tmp_path / "api" / "v1" / "events"
+        parser = make_parser()
+        args = parser.parse_args(["events", "output", "--api-dir", str(api_dir)])
+        args.func(args)
+        assert (api_dir / "events.json").exists()
+        out = capsys.readouterr().out
+        assert "Wrote 2 events to" in out
+
+    def test_output_explicit_files(self, tmp_path, capsys):
+        events_file = tmp_path / "log.jsonl"
+        record = EventRecord(
+            seq=1,
+            stable_id="kafka:k-1/new@2026-10-01",
+            project="kafka",
+            key="kafka:k-1",
+            event_type="new",
+            reference="REF-1",
+            title="T",
+            observed_at=NOW,
+            detail_url="https://x",
+        )
+        events_file.write_text(json.dumps(record.model_dump()) + "\n")
+        seen_file = tmp_path / "last_seen.json"
+        seen_file.write_text(json.dumps({"version": 1, "projects": {}}))
+        api_dir = tmp_path / "out"
+        parser = make_parser()
+        args = parser.parse_args(
+            [
+                "events",
+                "output",
+                "--api-dir",
+                str(api_dir),
+                "--events-file",
+                str(events_file),
+                "--seen-file",
+                str(seen_file),
+            ]
+        )
+        args.func(args)
+        assert (api_dir / "events.json").exists()
+        assert "Wrote 1 events to" in capsys.readouterr().out

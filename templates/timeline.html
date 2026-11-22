@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSSIP - Proposal Timeline</title>
+    <link rel="stylesheet" href="style.css">
+    <script>(function(){var t=localStorage.getItem('ossip-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();</script>
+</head>
+
+<body class="timeline-page">
+    <div class="container">
+        <h1>Proposal Timeline</h1>
+        <p class="subtitle">Every detected proposal change across all tracked projects, newest first</p>
+
+        <div class="nav-bar">
+            <div class="nav-item"><a href="index.html">Back to OSSIP</a></div>
+            <div class="nav-item">GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></div>
+            <div class="nav-item"><a href="api.html">JSON API</a></div>
+            <div class="nav-item">Last Updated: <span id="tl-updated">…</span></div>
+        </div>
+
+        <div class="tl-controls" id="tl-controls">
+            <div class="tl-chip-row" id="tl-project-chips" role="group" aria-label="Filter by project"></div>
+            <div class="tl-chip-row" id="tl-type-chips" role="group" aria-label="Filter by event type"></div>
+            <div class="tl-search-row">
+                <input type="search" id="tl-search" placeholder="Search title or reference…" aria-label="Search title or reference">
+                <span id="tl-count" class="tl-count" aria-live="polite"></span>
+            </div>
+        </div>
+
+        <noscript>
+            <p class="tl-noscript">The timeline requires JavaScript. The same data is available as JSON on the
+            <a href="api.html">JSON API</a> (see <code>api/v1/events/events.json</code>).</p>
+        </noscript>
+
+        <ol class="timeline" id="tl-timeline"></ol>
+        <div id="tl-sentinel" class="tl-sentinel"></div>
+
+        <!-- Trademark footer (sync with templates/_footer.html for Jinja2 templates) -->
+        <div class="trademark-footer">
+            <p>Apache Kafka&reg;, Apache Flink&reg;, Kafka&reg;, Flink&reg;, Apache&reg;, the Apache feather logo, and the Apache Kafka and Apache Flink project logos are either registered trademarks or trademarks of The Apache Software Foundation in the United States and/or other countries. No endorsement by The Apache Software Foundation is implied by the use of these marks.</p>
+            <p>Strimzi&reg;, the Strimzi logo, StreamsHub&reg;, the StreamsHub logo, Kroxylicious&reg;, and the Kroxylicious logo are trademarks of their respective projects and are used for identification purposes only. No endorsement by these projects is implied by the use of these marks.</p>
+            <p>This site is not affiliated with, endorsed by, or part of The Apache Software Foundation. It is an independent community resource created by <a href="https://tomcooper.dev">Tom Cooper</a>.</p>
+            <p>Official project pages: <a href="https://kafka.apache.org">kafka.apache.org</a> | <a href="https://flink.apache.org">flink.apache.org</a> | <a href="https://strimzi.io">strimzi.io</a> | <a href="https://streamshub.io">streamshub.io</a> | <a href="https://kroxylicious.io">kroxylicious.io</a></p>
+            <p>GitHub Repository: <a href="https://github.com/tomncooper/ossip">tomncooper/ossip</a></p>
+        </div>
+    </div>
+    <script src="assets/theme-toggle.js"></script>
+    <script src="assets/timeline.js"></script>
+</body>
+
+</html>

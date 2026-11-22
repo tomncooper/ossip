@@ -110,6 +110,7 @@ mkdir -p site_files/skill/ossip
 cp templates/skill/ossip/SKILL.md site_files/skill/ossip/SKILL.md
 cp templates/api.html site_files/api.html 2>/dev/null || true
 cp templates/skills.html site_files/skills.html 2>/dev/null || true
+cp templates/timeline.html site_files/timeline.html 2>/dev/null || true
 
 # Build the Kafka site
 echo "🏗️  Building Kafka site..."
@@ -130,6 +131,10 @@ uv run python ipper/main.py streamshub output cache/ship_proposals_cache.json si
 # Build the Kroxylicious site
 echo "🏗️  Building Kroxylicious site..."
 uv run python ipper/main.py kroxylicious output cache/kdp_proposals_cache.json site_files/kroxylicious.html site_files/kdps --api-dir site_files/api/v1/kroxylicious
+
+# Generate the public events JSON API (before the API index, which reads it)
+echo "📋 Generating events JSON API..."
+uv run python ipper/main.py events output --api-dir site_files/api/v1/events
 
 # Generate API index
 echo "📋 Generating API index..."

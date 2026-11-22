@@ -132,6 +132,15 @@ class TestIndexRendering:
         assert "✅" in html
         assert "❌" in html
 
+    def test_timeline_link_pre_filtered_to_project(self, tmp_path):
+        output = tmp_path / "strimzi.html"
+        render_index_page(STRIMZI_CONFIG, self._cache(), str(output))
+        assert "timeline.html?project=strimzi" in output.read_text()
+
+        output = tmp_path / "kroxylicious.html"
+        render_index_page(KROXYLICIOUS_CONFIG, self._cache(), str(output))
+        assert "timeline.html?project=kroxylicious" in output.read_text()
+
     def test_review_tooltip(self, tmp_path):
         output = tmp_path / "strimzi.html"
         render_index_page(STRIMZI_CONFIG, self._cache(), str(output))

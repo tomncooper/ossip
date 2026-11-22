@@ -4,12 +4,13 @@ Developer guide to the append-only event log: what it is, its on-disk schema,
 how to consume it, and how it is produced. This is the canonical reference —
 `README.md` and `AGENTS.md` point here.
 
-> **Scope:** The event log is an **internal cache**, committed to git alongside
-> the other caches under `cache/`. It is **not** (yet) a public endpoint: it is
-> not served under `/api/v1/` and is not documented in the agent-facing
-> `SKILL.md`. "Consuming it" today means building a consumer *inside this repo*
-> (as `ipper/social/` does). Publishing it externally is a possible future step
-> — see [Future: publishing](#future-publishing).
+> **Scope:** The event log is committed to git alongside the other caches
+> under `cache/`, and it is **also published**: the build enriches it into
+> `site_files/api/v1/events/events.json` (`ApiEvent`/`EventsDocument` — the
+> verbatim log fields plus precomputed display fields), documented in the
+> agent-facing `SKILL.md` and rendered for humans at `timeline.html`
+> (see [Publishing](#publishing)). "Consuming it" inside this repo
+> (as `ipper/social/` does) still goes through the same consumer helpers.
 
 ## 1. Purpose & architecture
 
@@ -257,11 +258,26 @@ second run is idempotent.
 present-but-empty cache (a failed fetch that still wrote valid JSON) is also
 skipped rather than emitting `disappeared` for every proposal.
 
-## Future: publishing
+## Publishing
 
-The code is written for an eventual external audience (the docstrings mention
-feeds, webhooks and a JSON API), but no publishing step exists today. Promoting
-the log to a public surface would mean: serving `events.jsonl` (or a derived
-events API) under `/api/v1/`, documenting the schema for outside integrators,
-and covering it in the agent-facing `SKILL.md`. Treat the schema in §3 as a
-versioned contract so that promotion is low-rework when it happens.
+The log **is now published** as part of every build:
+
+1. `events output` (`ipper/events/output.py`) loads the log, orders it
+   newest-first by `(event_time, seq)`, and enriches each record into an
+   `ApiEvent` — the verbatim `EventRecord` fields (the versioned contract;
+   see §3) plus additive display fields:
+   - `event_time` — `effective_at` or `observed_at` (presentation helper)
+   - `headline` / `summary` — the shared display wording
+   - `current_reference` / `current_detail_url` — the proposal's CURRENT
+     reference/URL from `last_seen.json` (renumber-safe linking; `None` when
+     the key is no longer tracked)
+2. The document is written to `site_files/api/v1/events/events.json`
+   (envelope: `version`, `generated_at`, `count`, `latest_seq`, `events`).
+3. `generate_api_index` picks it up into `index.json`'s `events` entry
+   (`ApiIndex` version 3).
+4. The timeline page (`timeline.html` + `assets/timeline.js`) fetches the
+   document client-side; `templates/api.html` and
+   `templates/skill/ossip/SKILL.md` document the endpoint for agents.
+
+Treat the schema in §3 as a versioned contract: the verbatim log fields are
+never rewritten by the emitter, only extended.
