@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "last_run": "2026-11-21T16:54:37+00:00",
+  "last_run": "2026-11-22T10:31:14+00:00",
   "projects": {
     "kafka": {
       "kafka:kip-1": {
@@ -23030,6 +23030,23 @@
         "detail_url": "https://ossip.dev/kips/KIP-1401.html",
         "created_on": "2026-11-20T16:29:45.000Z",
         "last_modified_on": "2026-11-20T16:32:51.000Z",
+        "merged_on": null,
+        "closed_on": null,
+        "last_activity": null,
+        "proposal_id": null,
+        "pr_number": null,
+        "vote_thread": null,
+        "reviews": null
+      },
+      "kafka:kip-1402": {
+        "key": "kafka:kip-1402",
+        "project": "kafka",
+        "reference": "KIP-1402",
+        "title": "Use nested @InterfaceAudience.Private classes for internal access to public classes",
+        "state": "under discussion",
+        "detail_url": "https://ossip.dev/kips/KIP-1402.html",
+        "created_on": "2026-11-22T00:31:47.000Z",
+        "last_modified_on": "2026-11-22T00:36:44.000Z",
         "merged_on": null,
         "closed_on": null,
         "last_activity": null,
