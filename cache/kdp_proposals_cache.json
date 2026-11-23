@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-22T17:17:39Z",
+  "last_updated": "2026-11-23T21:36:49Z",
   "proposals": {
     "pr-133": {
       "pr_number": 133,
@@ -2083,10 +2083,19 @@
             "timestamp": "2026-11-18T19:19:57Z"
           }
         ],
-        "commented": [],
+        "commented": [
+          {
+            "name": "MarkNSweep",
+            "timestamp": "2026-11-23T16:39:03Z"
+          },
+          {
+            "name": "k-wall",
+            "timestamp": "2026-11-23T11:48:46Z"
+          }
+        ],
         "changes_requested": []
       },
-      "last_activity": "2026-11-19T12:35:11Z",
+      "last_activity": "2026-11-23T20:39:02Z",
       "activity_status": "green",
       "last_activity_age": "0 days",
       "amendments": [],
@@ -2132,6 +2141,36 @@
       "merged_on": "2026-11-18T20:00:20Z",
       "last_modified_on": "2026-11-18T20:00:20Z",
       "file_path": "proposals/151-proxy-pod-scheduling.md"
+    },
+    "pr-155": {
+      "pr_number": 155,
+      "pr_url": "https://github.com/kroxylicious/design/pull/155",
+      "title": "Proposal: rules for anonymous clients in the ACL authorizer",
+      "created_by": "carlesarnal",
+      "authors": [
+        "carlesarnal"
+      ],
+      "created_on": "2026-11-23",
+      "created_at": "2026-11-23T08:12:49Z",
+      "closed_on": "",
+      "state": "under discussion",
+      "web_url": "https://github.com/kroxylicious/design/pull/155",
+      "reviews": {
+        "accepted": [
+          {
+            "name": "k-wall",
+            "timestamp": "2026-11-23T12:10:06Z"
+          }
+        ],
+        "commented": [],
+        "changes_requested": []
+      },
+      "last_activity": "2026-11-23T12:10:06Z",
+      "activity_status": "green",
+      "last_activity_age": "0 days",
+      "amendments": [],
+      "frozen": false,
+      "id": 155
     }
   },
   "pr_index": {
@@ -11517,7 +11556,7 @@
           "patch": "@@ -0,0 +1,235 @@\n+# 154 - Metrics for negotiated TLS parameters\n+\n+Administrators can configure which TLS protocols, cipher suites and named groups the proxy allows, but they cannot see what is actually negotiated on each connection.\n+This proposal adds two counters that record the TLS parameters of every TLS connection, on the client side per gateway and on the server side per target cluster, and a per-connection log line that identifies the clients behind each count.\n+It addresses [kroxylicious#5197](https://github.com/kroxylicious/kroxylicious/issues/5197).\n+\n+## Current situation\n+\n+A client's traffic through the proxy passes over two separate connections, and each can use its own TLS settings:\n+\n+- **Client to proxy:** the client connects to a *gateway*, a network entry point of a virtual cluster.\n+  The proxy acts as the TLS server.\n+  The settings come from the gateway's `tls`.\n+- **Proxy to server:** the proxy connects to the real Kafka cluster named in the virtual cluster's `target.cluster`.\n+  The proxy acts as the TLS client.\n+  The settings come from that cluster's `tls`.\n+\n+```yaml\n+clusters:\n+  - name: demo-cluster\n+    bootstrapServers: kafka:9093\n+    tls: ...          # connection 2 (proxy \u2192 server)\n+virtualClusters:\n+  - name: demo\n+    target:\n+      cluster: demo-cluster\n+    gateways:\n+      - name: external\n+        sniHostIdentifiesNode: ...\n+        tls: ...      # connection 1 (client \u2192 proxy)\n+```\n+\n+A virtual cluster can have several gateways, for example a plain-text one for internal clients and a TLS one for external clients, each with its own TLS settings.\n+\n+The existing connection metrics, `kroxylicious_client_to_proxy_connections_total` and `kroxylicious_proxy_to_server_connections_total`, count connections by `virtual_cluster` and `node_id` (the broker the connection is for, or `bootstrap`).\n+They record nothing about TLS and nothing about the gateway.\n+\n+The proxy does not log the negotiated TLS parameters either, and by default it logs nothing for each connection.\n+Today, the only way to see them is to raise the TLS debug level and read the trace output.\n+\n+## Motivation\n+\n+Administrators need to confirm that their TLS configuration has taken effect, for example:\n+\n+- Are all connections using TLS 1.3?\n+- Are all connections using the cipher suites I allowed?\n+\n+When the answer is no, they need to find the clients responsible, so that the owners of those applications can upgrade them.\n+\n+A misconfigured gateway or cluster is easy to miss without this.\n+[Proposal 144](https://github.com/kroxylicious/design/blob/main/proposals/144-pqc-support.md) (post-quantum cryptography support) makes this more important, as administrators tighten protocols, cipher suites and named groups and need to see that clients and brokers comply.\n+Metrics make this visible on a dashboard or in an alert, without debug logging.\n+\n+## Proposal\n+\n+### Metrics\n+\n+Two counters, each incremented once per successful TLS handshake:\n+\n+| Metric | Labels |\n+|---|---|\n+| `kroxylicious_client_to_proxy_tls_connections_total` | `virtual_cluster`, `gateway`, `tls_protocol`, `tls_ciphersuite`, `tls_named_group` |\n+| `kroxylicious_proxy_to_server_tls_connections_total` | `virtual_cluster`, `target_cluster`, `tls_protocol`, `tls_ciphersuite`, `tls_named_group` |\n+\n+The names follow the existing `kroxylicious_*_connections_total` counters.\n+\n+`tls_protocol`, `tls_ciphersuite` and `tls_named_group` use the standard JDK names, such as `TLSv1.3`, `TLS_AES_256_GCM_SHA384` and `X25519MLKEM768`.\n+These are the same names administrators use in the proxy's TLS configuration, so a value can be compared directly with the configured one.\n+\n+### Label choices\n+\n+Each metric is labelled with where its TLS settings come from.\n+\n+- `gateway` (client side): TLS is configured per gateway, so this points to the configuration that produced the result.\n+- `target_cluster` (server side): upstream TLS comes from the `clusters` entry, not from the gateway.\n+  The value is the cluster's `name`.\n+  This also covers a virtual cluster that uses a router to reach several clusters with different TLS settings, and a cluster shared by several virtual clusters.\n+- `virtual_cluster` (both): matches every existing proxy metric and lets administrators filter by virtual cluster.\n+\n+`node_id` is not used.\n+All brokers behind one gateway or cluster share the same TLS settings, so a per-broker breakdown adds series without adding information.\n+The existing connection metrics are unchanged and keep `node_id`.\n+\n+### What is counted\n+\n+Only successful handshakes are counted.\n+This proposal is about what was negotiated, and a failed handshake negotiated nothing.\n+\n+Plain-text connections are not counted.\n+TLS is either on or off for a whole gateway or cluster, so the configuration already shows which connections are unencrypted.\n+\n+Cardinality stays low.\n+Label values come from configured names and from a small set of protocol, cipher suite and named group names.\n+As in the issue, the client address and the authenticated subject are deliberately left out of the metrics.\n+The log line below provides them instead.\n+\n+### Named group\n+\n+The named group is the key exchange algorithm of the handshake, such as `X25519MLKEM768`.\n+Reading it needs `ExtendedSSLSession.getNamedGroup()`, which JDK 28 adds ([JDK-8388519](https://bugs.openjdk.org/browse/JDK-8388519)) and which is currently in the JDK 28 early-access builds.\n+The project's runtime baseline is OpenJDK 21, with 25 preferred (see proposal 144), and neither has it.\n+\n+The `tls_named_group` label and the `tlsNamedGroup` log field are always present, so the labels of a metric are the same on every JDK.\n+The proxy checks once, at startup, whether the running JDK provides this method:\n+\n+- If it does, the value is the negotiated named group, or `none` if the handshake negotiated no named group.\n+- If it does not, the value is `unsupported`.\n+\n+An explicit `unsupported` value is clearer in queries and aggregations than a missing label.\n+\n+The named group is part of this design, but reading it is deferred.\n+The first implementation can report `unsupported` for every connection; detecting the API and reporting the real group can be added later, by any contributor, without a new proposal.\n+\n+### Finding the clients behind a count\n+\n+The metrics show that some connections use, say, TLS 1.2, but not which clients made them.\n+For that, the proxy logs one line for every connection once it is established, whether or not it uses TLS:\n+\n+- Logger: `io.kroxylicious.proxy.connection`.\n+- Level: `INFO`.\n+- When: after the TLS handshake for a TLS connection, or as soon as the connection is established for a plain-text one.\n+- Client side fields: `sessionId`, `virtualCluster`, `gateway`, `clientAddress`, and for TLS connections `clientCertificateSubject` (when the client presents a certificate), `tlsProtocol`, `tlsCipherSuite` and `tlsNamedGroup`.\n+- Server side fields: `sessionId`, `virtualCluster`, `targetCluster`, `serverAddress`, and for TLS connections `tlsProtocol`, `tlsCipherSuite` and `tlsNamedGroup`.\n+\n+Using one logger for both kinds of connection keeps connection logging consistent; the TLS fields are simply absent when TLS is not used.\n+\n+Examples, using the default text log format:\n+\n+```\n+INFO  io.kroxylicious.proxy.connection - Client connection established {clientAddress=10.0.4.17:51432, gateway=external, sessionId=7f3c..., tlsCipherSuite=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, tlsNamedGroup=unsupported, tlsProtocol=TLSv1.2, virtualCluster=demo}\n+INFO  io.kroxylicious.proxy.connection - Client connection established {clientAddress=10.0.7.3:40118, gateway=internal, sessionId=9a1e..., virtualCluster=demo}\n+```\n+\n+`clientAddress` is the client's own address: when the gateway uses the PROXY protocol, it is the source address reported by the load balancer, which the proxy receives at the start of the connection.\n+\n+The level is `INFO` because Kafka client connections are long-lived.\n+By the time an administrator sees an unexpected value in the metrics, the connection has usually already been established, so a line logged at a lower level would be missed until the client reconnects.\n+\n+By default, the lines go to standard output with the other proxy logs, including on Kubernetes.\n+On bare metal, setting the `KROXYLICIOUS_CONNECTION_LOG_FILE` environment variable writes them to that file instead, in the style of an nginx `access.log`.\n+This works like the existing `KROXYLICIOUS_LOG_FORMAT` setting of the proxy's default Log4j2 configuration.\n+Because the lines have their own logger, they can also be filtered or turned off without affecting other proxy logs.\n+\n+Other details that identify a client only become known later in the connection.\n+The `sessionId` field links the connection log line to the proxy's later log lines for the same connection, such as the SASL identity logged when a SASL filter is configured.\n+The proxy does not currently log the Kafka client ID.\n+The documentation will explain how to trace a connection back to the application that made it.\n+\n+This overlaps with the audit logging proposal ([design#85](https://github.com/kroxylicious/design/pull/85)), whose `ClientConnect` and `ServerConnect` actions cover the same events.\n+This proposal does not depend on it; the connection logging can be revised to fit audit logging when that lands.\n+\n+## Future extensions\n+\n+Once the project's minimum Java version provides `ExtendedSSLSession.getNamedGroup()`, the startup check can be removed and `unsupported` will no longer be reported.\n+\n+## Testing\n+\n+- Unit tests for the new metrics and the connection log line, for both TLS and plain-text connections.\n+- Integration tests that make TLS connections with known protocol and cipher suite settings on both sides, and check the reported metric values, labels and log fields.\n+- Named group tests check for `unsupported` on JDKs without the API, and for the negotiated group on JDKs that provide it.\n+\n+## Affected/not affected projects\n+\n+**Affected:**\n+\n+- `kroxylicious` proxy runtime: the two new metrics, the connection log line, and the opt-in log file setting in the default Log4j2 configuration.\n+- Proxy documentation: the metrics reference, and how to find the clients behind a metric using the log line.\n+\n+**Not affected:**\n+\n+- The proxy configuration format.\n+- The Kubernetes Operator and its custom resources.\n+- The filter API.\n+- Existing metrics.\n+\n+## Compatibility\n+\n+The change is purely additive: two new metrics, one new log line, one new optional logging environment variable, no proxy configuration changes, and no change to existing metrics or labels.\n+The `tls_named_group` label is always present; its value is `unsupported` until the proxy runs on a JDK that provides the API and the named group is implemented.\n+\n+## Rejected alternatives\n+\n+### A `node_id` label\n+\n+This would match the existing connection metrics.\n+It was rejected because every broker behind a gateway or cluster uses the same TLS settings, so it adds series without adding information.\n+\n+### A `gateway` label on the proxy-to-server metric\n+\n+The issue suggests `virtual_cluster` and `gateway` on both metrics.\n+It was rejected for the server side because the gateway does not determine upstream TLS settings; the target cluster does.\n+\n+### Counting plain-text connections with `tls_protocol=\"none\"`\n+\n+This would let administrators check for unencrypted traffic with a single query.\n+It was rejected because plain text is already clear from the configuration, and a TLS metric would then carry non-TLS data.\n+\n+### `_info` metric names\n+\n+The issue names the metrics `kroxylicious_client_to_proxy_tls_connection_info` and `kroxylicious_proxy_to_server_tls_connection_info`.\n+By convention, an `_info` metric has a constant value of 1, but these are counters, so they follow the `_total` naming of the existing connection counters.\n+\n+### Client identity as metric labels\n+\n+Labelling the metrics with the client address, client ID or authenticated subject would identify clients directly.\n+It was rejected because these values are unbounded and would cause a cardinality explosion; the log line provides them instead.\n+\n+### Logging connections at `DEBUG`\n+\n+This would keep the default logs quieter.\n+It was rejected because long-lived connections would already have been established before an administrator raised the level, so the clients to upgrade would not appear.\n+\n+### Logging only TLS connections\n+\n+This would keep the log line focused on TLS.\n+It was rejected because connection logging should be consistent whether or not TLS is used.\n+\n+### Writing a separate log file by default\n+\n+Like an nginx `access.log`, this would keep connection lines apart from other logs.\n+It was rejected as a default because on Kubernetes there is no suitable filesystem to write to.\n+Bare-metal users can opt in to a separate file instead.\n+\n+### Omitting `tls_named_group` when the JDK lacks the API\n+\n+This would avoid a label whose value is `unsupported` on every runtime the project supports today.\n+It was rejected because a missing label shows up as an empty value in aggregations, and the metric's labels would then differ between JDKs; an explicit `unsupported` is clearer.\n+\n+### Other ways to get the named group on Java 21\n+\n+- **Read the group from the handshake bytes** (the ServerHello `key_share` in TLS 1.3, or the ServerKeyExchange in TLS 1.2): possible, but it adds TLS-parsing code the project must maintain, on the setup path of every TLS connection.\n+- **Reflection into JDK internals (`sun.security.ssl`):** needs `--add-opens` and may break with any JDK update.\n+- **JDK Flight Recorder (`jdk.TLSHandshake` event):** on JDK 21 the event has no named group field.\n+  JDK 28 adds one, but the event is off by default, cannot be linked to a gateway or virtual cluster, and is a diagnostics tool rather than a metrics source.\n+- **Switching to the OpenSSL TLS provider:** OpenSSL can report the group, but changing the proxy's TLS provider is far too large a change for a metrics feature."
         }
       ],
-      "updated_at": "2026-11-19T12:35:11Z",
+      "updated_at": "2026-11-23T20:38:58Z",
       "head_sha": "24c3cad191a839b659ecec0e80487e0989925eb4",
       "frozen": false,
       "reviews_snapshot": [
@@ -11560,11 +11599,97 @@
           "name": "AdityaThakur1998",
           "state": "COMMENTED",
           "timestamp": "2026-11-19T11:43:53Z"
+        },
+        {
+          "name": "k-wall",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-23T10:51:26Z"
+        },
+        {
+          "name": "k-wall",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-23T10:56:26Z"
+        },
+        {
+          "name": "k-wall",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-23T11:27:53Z"
+        },
+        {
+          "name": "k-wall",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-23T11:46:50Z"
+        },
+        {
+          "name": "k-wall",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-23T11:48:46Z"
+        },
+        {
+          "name": "AdityaThakur1998",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-23T15:45:23Z"
+        },
+        {
+          "name": "MarkNSweep",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-23T16:39:03Z"
+        },
+        {
+          "name": "tombentley",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-23T20:38:33Z"
+        },
+        {
+          "name": "tombentley",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-23T20:38:58Z"
+        },
+        {
+          "name": "tombentley",
+          "state": "COMMENTED",
+          "timestamp": "2026-11-23T20:39:02Z"
+        }
+      ],
+      "comments_snapshot": [],
+      "snapshots_fetched": true
+    },
+    "155": {
+      "state": "open",
+      "classification": "proposal",
+      "proposal_key": "pr-155",
+      "files": [
+        {
+          "sha": "799acc0f2bcfb4daddfa0c190206bcff8d89c3f7",
+          "filename": "proposals/155-acl-anonymous-subjects.md",
+          "status": "added",
+          "additions": 77,
+          "deletions": 0,
+          "changes": 77,
+          "blob_url": "https://github.com/kroxylicious/design/blob/b96e049d43fcd2ea81a9e6b14a92ca057d381b7e/proposals%2F155-acl-anonymous-subjects.md",
+          "raw_url": "https://github.com/kroxylicious/design/raw/b96e049d43fcd2ea81a9e6b14a92ca057d381b7e/proposals%2F155-acl-anonymous-subjects.md",
+          "contents_url": "https://api.github.com/repos/kroxylicious/design/contents/proposals%2F155-acl-anonymous-subjects.md?ref=b96e049d43fcd2ea81a9e6b14a92ca057d381b7e",
+          "patch": "@@ -0,0 +1,77 @@\n+# 155 - Rules for anonymous clients in the ACL authorizer\n+\n+The ACL authorizer has no way to write a rule for a client that has not authenticated.\n+This proposal adds `anonymous` to the ACL rules format, selecting exactly those clients, and records where it deliberately departs from [proposal 009](./009-authorizer.md).\n+\n+## Current situation\n+\n+A client's identity is its *subject*: the set of facts the proxy has proven about it, each one a *principal*, such as `User[\"alice\"]`.\n+A client that has not authenticated has a subject with no principals, which `Subject.anonymous()` returns.\n+\n+ACL rules select subjects by principal: `allow User with name = \"alice\" to ...`.\n+Every rule needs a principal to match, so no rule can apply to an anonymous subject, and the ACL authorizer denies it everything.\n+\n+Proposal 009 describes a selector for this case:\n+\n+```\n+allow anonymous User to READ Topic with name = \"foo\";\n+```\n+\n+where `anonymous User` means \"none of the subject's principals are of type `User`\".\n+It was never implemented: `anonymous` is not part of the grammar.\n+\n+## Motivation\n+\n+Some deployments allow unauthenticated access to a few resources, for example public topics, or public schemas in Apicurio Registry, which uses the ACL rules format for per-resource authorization.\n+Today they cannot express that in ACL rules at all.\n+\n+The meaning in proposal 009 is not the right one for this, though.\n+\"No principal of type `User`\" also matches a client that authenticated as something else: with `User` and `ServiceAccount` principals, `Subject[{ServiceAccount[\"billing\"]}]` has no `User`, so `allow anonymous User ...` would apply to it, and `deny anonymous User ...` would deny it.\n+A rule written for unauthenticated clients would silently apply to authenticated ones too.\n+It also treats \"anonymous\" as a fact about one principal type, when a subject is a set of proven facts, and \"anonymous\" means that nothing has been proven.\n+That meaning already exists, `Subject.anonymous()`, and every authorizer should share it.\n+\n+## Proposal\n+\n+Add `anonymous` as an alternative to the principal selector in allow and deny rules:\n+\n+```\n+deny anonymous to READ Topic with name = \"public-secret\";\n+allow anonymous to READ Topic with name like \"public-*\";\n+```\n+\n+- `anonymous` selects only the subject with no principals, as returned by `Subject.anonymous()`.\n+  It takes no principal type.\n+- An `anonymous` rule never applies to a subject with any principal, and no other rule applies to the anonymous subject.\n+  So `allow User with name * ...` still does not grant anything to unauthenticated clients.\n+- Deny rules work as for any other selector: a matching deny wins over a matching allow.\n+- The builder API gains a matching method, `anonymousSubjects()`, next to `subjectsHavingPrincipal(...)`.\n+\n+### Departure from proposal 009\n+\n+This replaces the `anonymous <PrincipalType>` selector of proposal 009.\n+The type is dropped, and the selector matches the anonymous subject only, for the reasons under Motivation.\n+Proposal 009 is not changed; this proposal records the difference.\n+\n+## Affected/not affected projects\n+\n+- `kroxylicious`: the ACL authorizer (`kroxylicious-authorizer-acl`): grammar, rule evaluation, builder API, documentation.\n+- The `Authorizer` API is not affected: `Subject.anonymous()` already exists.\n+- Other authorizers are not affected.\n+\n+## Compatibility\n+\n+- Existing rules files keep their meaning: none can contain an `anonymous` rule today.\n+- `anonymous` becomes a keyword of the rules format.\n+  A file that uses `anonymous` as a name, for example as the alias of an imported type (`import User as anonymous`), needs another one.\n+- If principals that are not about identity are ever added to subjects, for example the client's network address, unauthenticated clients would no longer have an empty subject, and `anonymous` rules would stop matching them.\n+  This proposal ties `anonymous` to `Subject.anonymous()` so that such a change has to decide, in one place, what anonymous means.\n+\n+## Rejected alternatives\n+\n+- **Implement proposal 009 as written** (`anonymous User` = no principal of type `User`).\n+  Rules meant for unauthenticated clients would also apply to clients authenticated with another principal type, as described under Motivation.\n+- **Keep the type, but match only the anonymous subject** (`anonymous User` = no principals).\n+  The type would then be ignored, and the syntax would suggest a type check that isn't there.\n+- **No syntax; applications give unauthenticated clients a made-up principal**, such as a role named `$anonymous`.\n+  That works in a single application, but it is a fact nobody proved, every application has to invent its own, and rules files that look shared would mean different things in each."
+        }
+      ],
+      "updated_at": "2026-11-23T12:10:02Z",
+      "head_sha": "b96e049d43fcd2ea81a9e6b14a92ca057d381b7e",
+      "frozen": false,
+      "reviews_snapshot": [
+        {
+          "name": "k-wall",
+          "state": "APPROVED",
+          "timestamp": "2026-11-23T12:09:17Z"
+        },
+        {
+          "name": "k-wall",
+          "state": "APPROVED",
+          "timestamp": "2026-11-23T12:10:06Z"
         }
       ],
       "comments_snapshot": [],
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-19T12:35:11Z"
+  "watermark": "2026-11-23T20:38:58Z"
 }
