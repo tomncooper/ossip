@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-24T20:17:30Z",
+  "last_updated": "2026-11-25T19:31:46Z",
   "proposals": {
     "pr-133": {
       "pr_number": 133,
@@ -2175,6 +2175,31 @@
       "merged_on": "2026-11-24T10:59:53Z",
       "last_modified_on": "2026-11-24T10:59:53Z",
       "file_path": "proposals/155-acl-anonymous-subjects.md"
+    },
+    "pr-157": {
+      "pr_number": 157,
+      "pr_url": "https://github.com/kroxylicious/design/pull/157",
+      "title": "proposal: add granular timer metrics for SASL termination",
+      "created_by": "Divyanshkumar62",
+      "authors": [
+        "Divyanshkumar62"
+      ],
+      "created_on": "2026-11-25",
+      "created_at": "2026-11-25T18:00:00Z",
+      "closed_on": "",
+      "state": "under discussion",
+      "web_url": "https://github.com/kroxylicious/design/pull/157",
+      "reviews": {
+        "accepted": [],
+        "commented": [],
+        "changes_requested": []
+      },
+      "last_activity": "2026-11-25T18:03:49Z",
+      "activity_status": "green",
+      "last_activity_age": "0 days",
+      "amendments": [],
+      "frozen": false,
+      "id": 157
     }
   },
   "pr_index": {
@@ -11714,7 +11739,32 @@
       ],
       "comments_snapshot": [],
       "snapshots_fetched": true
+    },
+    "157": {
+      "state": "open",
+      "classification": "proposal",
+      "proposal_key": "pr-157",
+      "files": [
+        {
+          "sha": "6da36f3beae47ba153562f67531e34781f341ffa",
+          "filename": "proposals/157-sasl-termination-timer-metrics.md",
+          "status": "added",
+          "additions": 70,
+          "deletions": 0,
+          "changes": 70,
+          "blob_url": "https://github.com/kroxylicious/design/blob/4287728b261923e09163a822c0e4f0b28d06b636/proposals%2F157-sasl-termination-timer-metrics.md",
+          "raw_url": "https://github.com/kroxylicious/design/raw/4287728b261923e09163a822c0e4f0b28d06b636/proposals%2F157-sasl-termination-timer-metrics.md",
+          "contents_url": "https://api.github.com/repos/kroxylicious/design/contents/proposals%2F157-sasl-termination-timer-metrics.md?ref=4287728b261923e09163a822c0e4f0b28d06b636",
+          "patch": "@@ -0,0 +1,70 @@\n+<!--\n+PROPOSAL WORKFLOW:\n+1. Copy this template to: proposals/000-<descriptive-name>.md\n+2. Fill in your proposal content\n+3. Open a PR on GitHub\n+4. Rename the file to use your PR number: proposals/<PR#>-<descriptive-name>.md\n+   Example: git mv proposals/000-my-feature.md proposals/105-my-feature.md\n+5. Update the heading below to include your PR number: # <PR#> - <Title>\n+6. Push the rename and updated title to your PR\n+\n+See proposals/README.md for complete instructions.\n+-->\n+\n+# 157 - Granular Timer Metrics for SASL Termination\n+\n+This proposal adds component-level latency timers and outcome tagging to the SASL Termination filter so operators can isolate slow external dependencies during authentication.\n+\n+## Current situation\n+\n+[Proposal 124](124-sasl-termination.md) introduced SASL Termination with a single latency timer:\n+\n+* `kroxylicious_filter_sasl_termination_auth_duration_seconds` (tagged with `virtual_cluster` and `mechanism`).\n+\n+In `SaslTerminationFilter`, `accumulatedAuthWorkNanos` currently sums only the durations from `stateMachine.evaluateRound(...)`, excluding `subjectBuilder.buildSaslSubject(...)`. The timer also has no `outcome` tag, so failed authentications (such as remote timeouts) are recorded into the same histogram as successful handshakes.\n+\n+## Motivation\n+\n+SASL authentication relies on three external integration boundaries:\n+\n+1. **SCRAM credential store lookup** (`ScramCredentialStore.lookupCredential`) against Vault, LDAP, or databases.\n+2. **OAUTHBEARER token validation** (`OAuthBearerValidatorCallbackHandler`) against JWKS endpoints or token introspection services.\n+3. **Subject building** (`SaslSubjectBuilder.buildSaslSubject`) against external directory services.\n+\n+A single aggregate timer hides which dependency caused a latency spike, omits `SaslSubjectBuilder` latency completely, and mixes failure timeouts into success SLO histograms.\n+\n+## Proposal\n+\n+### Metric Definitions\n+\n+Following [Proposal 003](003-metric-improvements.md) Prometheus naming conventions, we propose updating the aggregate timer and introducing three component timers:\n+\n+| Metric Name | Type | Tags | Description |\n+| :--- | :--- | :--- | :--- |\n+| `kroxylicious_filter_sasl_termination_auth_duration_seconds` | Timer | `virtual_cluster`, `mechanism`, `outcome` | Total real authentication work across handshake rounds and subject building, excluding the fixed anti-timing delay. |\n+| `kroxylicious_filter_sasl_termination_scram_credential_lookup_seconds` | Timer | `virtual_cluster`, `mechanism`, `outcome` | Duration of `ScramCredentialStore.lookupCredential(...)`. |\n+| `kroxylicious_filter_sasl_termination_oauthbearer_token_validation_seconds` | Timer | `virtual_cluster`, `mechanism`, `outcome` | Duration of OAUTHBEARER token validation. |\n+| `kroxylicious_filter_sasl_termination_subject_building_seconds` | Timer | `virtual_cluster`, `mechanism`, `outcome` | Duration of `SaslSubjectBuilder.buildSaslSubject(...)`. |\n+\n+### Tag Values\n+\n+* `virtual_cluster`: Configured virtual cluster name.\n+* `mechanism`: SASL mechanism name (`SCRAM-SHA-256`, `SCRAM-SHA-512`, `OAUTHBEARER`).\n+* `outcome`: `\"success\"` or `\"failure\"`.\n+\n+### Timing Isolation\n+\n+The configured fixed authentication delay (`applyFixedAuthDelay`) remains excluded from all four timers. Metrics are exposed only on the administrative Prometheus endpoint, preserving SCRAM phantom-user side-channel protection.\n+\n+## Affected/not affected projects\n+\n+* **Affected:** `kroxylicious` (`kroxylicious-filters/kroxylicious-sasl-termination` and observability documentation).\n+* **Not affected:** `kroxylicious-operator`, `kroxylicious-junit5-extension`.\n+\n+## Compatibility\n+\n+Existing queries on `kroxylicious_filter_sasl_termination_auth_duration_seconds` continue to match. Adding the `outcome` tag increases time-series cardinality by a factor of 2 (`success` / `failure`), which is bounded.\n+\n+## Rejected alternatives\n+\n+* **Keep a single timer with a phase tag:** Rejected because Prometheus histograms and summary percentiles are clearer and easier to alert on per dependency with distinct metric names matching the component boundaries."
+        }
+      ],
+      "updated_at": "2026-11-25T18:03:49Z",
+      "head_sha": "4287728b261923e09163a822c0e4f0b28d06b636",
+      "frozen": false,
+      "reviews_snapshot": [],
+      "comments_snapshot": [],
+      "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-24T11:54:58Z"
+  "watermark": "2026-11-25T18:03:49Z"
 }
