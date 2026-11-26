@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-25T19:31:39Z",
+  "last_updated": "2026-11-26T19:13:22Z",
   "proposals": {
     "pr-203": {
       "pr_number": 203,
@@ -10810,12 +10810,18 @@
       "last_activity": null,
       "activity_status": null,
       "last_activity_age": null,
-      "amendments": [],
+      "amendments": [
+        {
+          "pr_number": 262,
+          "url": "https://github.com/strimzi/proposals/pull/262",
+          "date": "2026-11-26"
+        }
+      ],
       "frozen": true,
       "id": 159,
       "key": "159",
       "merged_on": "2026-10-16T16:44:51Z",
-      "last_modified_on": "2026-10-16T16:44:51Z",
+      "last_modified_on": "2026-11-26T16:58:43Z",
       "file_path": "159-post-quantum-hybrid-key-exchange.md"
     },
     "160": {
@@ -59294,7 +59300,7 @@
       "snapshots_fetched": true
     },
     "262": {
-      "state": "open",
+      "state": "merged",
       "classification": "amendment",
       "proposal_key": "",
       "files": [
@@ -59311,11 +59317,33 @@
           "patch": "@@ -105,7 +105,9 @@ It also addresses the HNDL threat on the data plane: external user-facing listen\n \n Because enforcing TLS 1.3 on external listeners is a breaking change for TLS 1.2-only clients, the plugin is rolled out across consecutive Strimzi releases rather than being enabled by default immediately.\n \n-In 1.4.0 and 1.5.0, `Tls13EnforcerGatekeeperPlugin` is shipped as an available but optional plugin: it is not added to `DEFAULT_GATEKEEPER_PLUGINS`.\n+In 1.4.0, the release notes include a warning stating that TLS 1.3 will be enforced, by a dedicated Gatekeeper plugin, starting from 1.6.0 release with the possibility to opt-out.\n+\n+In 1.5.0, `Tls13EnforcerGatekeeperPlugin` is shipped as an available but optional plugin: it is not added to `DEFAULT_GATEKEEPER_PLUGINS`.\n Users who want to opt in early can add it to the `STRIMZI_GATEKEEPER_DEFAULT_PLUGINS` environment variable on the Cluster Operator deployment.\n The release notes include a warning that the plugin will be moved to `DEFAULT_GATEKEEPER_PLUGINS` in 1.6.0, giving users time to prepare.\n \n@@ -116,8 +118,8 @@ The following table summarises the rollout schedule:\n \n | Release | Plugin status                     | Notes                                                                                                |\n |---------|-----------------------------------|------------------------------------------------------------------------------------------------------|\n-| 1.4.0   | Available, not enabled by default | Opt in via `STRIMZI_GATEKEEPER_DEFAULT_PLUGINS`. Warns it will be default in 1.6.0.                  |\n-| 1.5.0   | Available, not enabled by default | Same as 1.4.0.                                                                                       |\n+| 1.4.0   | Not available                     | Warns TLS 1.3 will be enforced from 1.6.0.                                                            |\n+| 1.5.0   | Available, not enabled by default | Opt in via `STRIMZI_GATEKEEPER_DEFAULT_PLUGINS`. Warns it will be default in 1.6.0.                  |\n | 1.6.0   | Enabled by default                | Opt out via `STRIMZI_GATEKEEPER_DEFAULT_PLUGINS` or explicit `ssl.enabled.protocols`/`ssl.protocol`. |\n \n #### Impact on external listener compatibility\n@@ -184,7 +186,7 @@ The proposal doesn't affect the Kafka Exporter component which is a pre-compiled\n ## Compatibility\n \n The `Tls13EnforcerGatekeeperPlugin` Gatekeeper plugin enforces TLS 1.3 on all Kafka listeners and components' clients once it is active.\n-In 1.4.0 and 1.5.0 the plugin is optional and not enabled by default, so both releases are fully backward compatible: no existing TLS behavior changes unless the user explicitly enables the plugin.\n+In 1.4.0 the plugin is not available at all and in 1.5.0 it is optional and not enabled by default, so both releases are fully backward compatible: no existing TLS behavior changes unless the user explicitly enables the plugin.\n Starting from 1.6.0, when the plugin is promoted to `DEFAULT_GATEKEEPER_PLUGINS`, the behavior changes: for internal connections (ports 9090 and 9091) this has no backward compatibility risk because every component connecting to them already supports TLS 1.3, but for external user-facing listeners this is a breaking change for Kafka clients that only support TLS 1.2, as those clients will be rejected while the plugin is active.\n Users with such clients can disable the plugin or set `ssl.enabled.protocols: TLSv1.2,TLSv1.3` in custom resources to restore the previous behavior.\n "
         }
       ],
-      "updated_at": "2026-11-23T19:08:54Z",
+      "updated_at": "2026-11-26T16:58:43Z",
       "head_sha": "1050f3f116e0410e69abf2ff7be011e7099a795d",
-      "frozen": false,
-      "reviews_snapshot": [],
-      "comments_snapshot": []
+      "frozen": true,
+      "reviews_snapshot": [
+        {
+          "name": "scholzj",
+          "state": "APPROVED",
+          "timestamp": "2026-11-23T09:31:47Z"
+        },
+        {
+          "name": "im-konge",
+          "state": "APPROVED",
+          "timestamp": "2026-11-23T17:16:15Z"
+        },
+        {
+          "name": "Frawless",
+          "state": "APPROVED",
+          "timestamp": "2026-11-23T19:08:54Z"
+        },
+        {
+          "name": "see-quick",
+          "state": "APPROVED",
+          "timestamp": "2026-11-26T13:18:46Z"
+        }
+      ],
+      "comments_snapshot": [],
+      "snapshots_fetched": true
     },
     "261": {
       "state": "open",
@@ -59419,5 +59447,5 @@
       "snapshots_fetched": true
     }
   },
-  "watermark": "2026-11-25T00:57:45Z"
+  "watermark": "2026-11-26T16:58:43Z"
 }
