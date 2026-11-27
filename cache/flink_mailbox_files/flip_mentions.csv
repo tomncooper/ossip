@@ -53124,3 +53124,9 @@ flip,mention_type,message_id,mbox_year,mbox_month,timestamp,from,vote
 595,subject,605,2026,11,2026-11-26 10:19:43+00:00,"""Piotr Nowojski via dev"" <dev@flink.apache.org>",
 595,vote,605,2026,11,2026-11-26 10:19:43+00:00,"""Piotr Nowojski via dev"" <dev@flink.apache.org>",+1
 595,body,605,2026,11,2026-11-26 10:19:43+00:00,"""Piotr Nowojski via dev"" <dev@flink.apache.org>",
+623,subject,620,2026,11,2026-11-26 19:51:06+00:00,Sergey Nuyanzin <snuyanzin@gmail.com>,
+623,discuss,620,2026,11,2026-11-26 19:51:06+00:00,Sergey Nuyanzin <snuyanzin@gmail.com>,
+623,body,620,2026,11,2026-11-26 19:51:06+00:00,Sergey Nuyanzin <snuyanzin@gmail.com>,
+617,subject,622,2026,11,2026-11-27 03:31:39+00:00,Xuannan Su <suxuannan95@gmail.com>,
+617,discuss,622,2026,11,2026-11-27 03:31:39+00:00,Xuannan Su <suxuannan95@gmail.com>,
+617,body,622,2026,11,2026-11-27 03:31:39+00:00,Xuannan Su <suxuannan95@gmail.com>,
